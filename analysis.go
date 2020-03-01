@@ -2,6 +2,7 @@ package portfolio_analysis
 
 import (
 	"fmt"
+	"math"
 )
 
 type returns []float64
@@ -46,7 +47,78 @@ func portfolioReturns(returnsList [][]float64, percentages []float64) ([]float64
 	return res, nil
 }
 
-// really this is a like a  transpose operation
+// percentages convert numbers from 0-100.0 to a "growth multiplier" percentage based around 1.00.
+// Example: 20 => 1.20
+func percentages(xs []float64) []float64 {
+	return mapFloats(xs, func(x float64) float64 {
+		return (100 + x) / 100
+	})
+}
+
+// calculates the cumulative growth of the returns
+func cumulative(returns []float64) float64 {
+	return product(percentages(returns))
+	//return reduce(lambda x, y: x*y, percentages(returns))
+}
+
+// # calculates the cumulative growth of the returns
+func cumulativeList(returns []float64) []float64 {
+	res := make([]float64, len(returns))
+	acc := 1.0
+	for i, r := range percentages(returns) {
+		acc *= r
+		res[i] = acc
+	}
+	return res
+
+	//    res = []
+	//    acc = 1
+	//    for r in percentages(returns):
+	//        acc *= r
+	//        res.append(acc)
+	//    return res
+}
+
+// CAGR - calculates the compound annual growth rate of the returns
+func cagr(returns []float64) float64 {
+	n := float64(len(returns))
+	return math.Pow(cumulative(returns), (1/n)-1)
+	// return cumulative(returns)** (1 / len(returns)) - 1
+}
+
+// swr returns the Safe-withdrawal rate
+func swr(returns []float64) float64 {
+	// prepend 1.0 to the list of returns
+	cumulativeGrowth := make([]float64, 0, len(returns)+1)
+	cumulativeGrowth = append(cumulativeGrowth, 1.0)
+	cumulativeGrowth = append(cumulativeGrowth, cumulativeList(returns)...)
+
+	return harmonicMean(cumulativeGrowth) / float64(len(cumulativeGrowth))
+}
+
+// pwr returns the perpetual withdrawal rate.
+// The amount that can be safely withdrawn annually (before growth), such that at the end of the series,
+// the account balance will match what we started with.
+func pwr(returns []float64) float64 {
+	preservationPercent := 1.00
+	return swr(returns) * (preservationPercent - 1/cumulative(returns))
+}
+
+// harmonicMean returns the harmonic mean of the given numbers, which must all be greater than zero.
+// See: https://en.wikipedia.org/wiki/Harmonic_mean#Definition
+func harmonicMean(xs []float64) float64 {
+	acc := 0.0
+	for i, x := range xs {
+		if x <= 0 {
+			panic(fmt.Sprintf("harmonicMean requires inputs greater than zero, but element #%x is %v", i+1, x))
+		}
+		acc += 1 / x
+	}
+	return float64(len(xs)) / acc
+}
+
+// zipWalk zips together the streams, calling fn for each set of numbers.
+// Really this is a like a transpose operation.
 // Example: zip([[1,2,3],[4,5,6]]) => [[1,4],[2,5],[3,6]]
 func zipWalk(streams [][]float64, fn func([]float64)) {
 	var width = len(streams)
@@ -80,6 +152,23 @@ func sum(xs []float64) float64 {
 		sum += x
 	}
 	return sum
+}
+
+// product returns the product of the given float64 values.
+func product(xs []float64) float64 {
+	product := 1.0
+	for _, x := range xs {
+		product *= x
+	}
+	return product
+}
+
+func reduceFloats(init float64, xs []float64, fn func(x, y float64) float64) float64 {
+	res := init
+	for _, x := range xs {
+		res = fn(res, x)
+	}
+	return res
 }
 
 func mapFloats(xs []float64, fn func(float64) float64) []float64 {
