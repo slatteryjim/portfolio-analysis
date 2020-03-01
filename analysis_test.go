@@ -129,36 +129,87 @@ func Test_pwr(t *testing.T) {
 func Test_minPWR(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	verify := func(returns []float64, nYears int, expectedPWR float64, expectedIndex int) {
+		t.Helper()
+		g := NewGomegaWithT(t)
+		rate, n := minPWR(returns, nYears)
+		g.Expect(rate).To(Equal(expectedPWR), "rate")
+		g.Expect(n).To(Equal(expectedIndex), "index")
+	}
+
 	g.Expect(func() {
 		minPWR(nil, 1)
 	}).To(Panic())
 
-	g.Expect(minPWR(nil, 0)).To(Equal(0.0))
+	verify(nil, 0, 0, 0)
 
 	// length 1
-	g.Expect(minPWR([]float64{10}, 1)).To(SatisfyAll(
-		Equal(pwr([]float64{10})),
-		Equal(0.04761904761904764),
-	))
-	g.Expect(minPWR([]float64{20}, 1)).To(SatisfyAll(
-		Equal(pwr([]float64{20})),
-		Equal(0.09090909090909088),
-	))
+	verify([]float64{10}, 1, pwr([]float64{10}), 0)
+	verify([]float64{20}, 1, pwr([]float64{20}), 0)
 
 	// length 2
-	g.Expect(minPWR([]float64{10, 20}, 1)).To(Equal(pwr([]float64{10})))
-	g.Expect(minPWR([]float64{10, 20}, 2)).To(Equal(pwr([]float64{10, 20})))
+	verify([]float64{10, 20}, 1, pwr([]float64{10}), 0)
+	verify([]float64{10, 20}, 2, pwr([]float64{10, 20}), 0)
 
 	// length 3
-	g.Expect(minPWR([]float64{10, -5, 30}, 1)).To(Equal(pwr([]float64{-5})))
-	g.Expect(minPWR([]float64{10, -5, 30}, 2)).To(Equal(pwr([]float64{10, -5})))
-	g.Expect(minPWR([]float64{10, -5, 30}, 3)).To(Equal(pwr([]float64{10, -5, 30})))
+	verify([]float64{10, -5, 30}, 1, pwr([]float64{-5}), 1)
+	verify([]float64{10, -5, 30}, 2, pwr([]float64{10, -5}), 0)
+	verify([]float64{10, -5, 30}, 3, pwr([]float64{10, -5, 30}), 0)
 
 	// length 4
-	g.Expect(minPWR([]float64{10, -5, 10, -20}, 1)).To(Equal(pwr([]float64{-20})))
-	g.Expect(minPWR([]float64{10, -5, 10, -20}, 2)).To(Equal(pwr([]float64{10, -20})))
-	g.Expect(minPWR([]float64{10, -5, 10, -20}, 3)).To(Equal(pwr([]float64{-5, 10, -20})))
-	g.Expect(minPWR([]float64{10, -5, 10, -20}, 4)).To(Equal(pwr([]float64{10, -5, 10, -20})))
+	verify([]float64{10, -5, 10, -20}, 1, pwr([]float64{-20}), 3)
+	verify([]float64{10, -5, 10, -20}, 2, pwr([]float64{10, -20}), 2)
+	verify([]float64{10, -5, 10, -20}, 3, pwr([]float64{-5, 10, -20}), 1)
+	verify([]float64{10, -5, 10, -20}, 4, pwr([]float64{10, -5, 10, -20}), 0)
+
+	verify(GoldenButterfly, 10, 0.01945631963862428, 0)
+	verify(GoldenButterfly, 20, 0.038590835351436564, 0)
+	verify(GoldenButterfly, 30, 0.04224334655073258, 0)
+	verify(GoldenButterfly, 40, 0.042057016507784345, 0)
+	verify(GoldenButterfly, 50, 0.04288283017428213, 0)
+}
+
+func Test_minSWR(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	verify := func(returns []float64, nYears int, expectedSWR float64, expectedIndex int) {
+		t.Helper()
+		g := NewGomegaWithT(t)
+		rate, n := minSWR(returns, nYears)
+		g.Expect(rate).To(Equal(expectedSWR), "rate")
+		g.Expect(n).To(Equal(expectedIndex), "index")
+	}
+
+	g.Expect(func() {
+		minSWR(nil, 1)
+	}).To(Panic())
+
+	verify(nil, 0, 0, 0)
+
+	// length 1
+	verify([]float64{10}, 1, swr([]float64{10}), 0)
+	verify([]float64{20}, 1, swr([]float64{20}), 0)
+
+	// length 2
+	verify([]float64{10, 20}, 1, swr([]float64{10}), 0)
+	verify([]float64{10, 20}, 2, swr([]float64{10, 20}), 0)
+
+	// length 3
+	verify([]float64{10, -5, 30}, 1, swr([]float64{-5}), 1)
+	verify([]float64{10, -5, 30}, 2, swr([]float64{10, -5}), 0)
+	verify([]float64{10, -5, 30}, 3, swr([]float64{10, -5, 30}), 0)
+
+	// length 4
+	verify([]float64{10, -5, 10, -20}, 1, swr([]float64{-20}), 3)
+	verify([]float64{10, -5, 10, -20}, 2, swr([]float64{10, -20}), 2)
+	verify([]float64{10, -5, 10, -20}, 3, swr([]float64{-5, 10, -20}), 1)
+	verify([]float64{10, -5, 10, -20}, 4, swr([]float64{10, -5, 10, -20}), 0)
+
+	verify(GoldenButterfly, 10, 0.09331636419042066, 0)
+	verify(GoldenButterfly, 20, 0.06261394175862438, 0)
+	verify(GoldenButterfly, 30, 0.05304896125102126, 0)
+	verify(GoldenButterfly, 40, 0.04879022342090543, 0)
+	verify(GoldenButterfly, 50, 0.04665043650688064, 0)
 }
 
 func Test_subSlices(t *testing.T) {

@@ -105,18 +105,39 @@ func pwr(returns []float64) float64 {
 }
 
 // minPWR looks at all of the nYears-long periods and evaluates their PWR. Returns the min PWR.
-func minPWR(returns []float64, nYears int) float64 {
+func minPWR(returns []float64, nYears int) (rate float64, startAtIndex int) {
 	if nYears == 0 {
-		return 0
+		return 0, 0
 	}
-	res := math.MaxFloat64
-	for _, slice := range subSlices(returns, nYears) {
+
+	rate = math.MaxFloat64
+	startAtIndex = math.MaxInt64
+	for i, slice := range subSlices(returns, nYears) {
 		thisPWR := pwr(slice)
-		if thisPWR < res {
-			res = thisPWR
+		if thisPWR < rate {
+			rate = thisPWR
+			startAtIndex = i
 		}
 	}
-	return res
+	return rate, startAtIndex
+}
+
+// minSWR looks at all of the nYears-long periods and evaluates their SWR. Returns the min SWR.
+func minSWR(returns []float64, nYears int) (rate float64, startAtIndex int) {
+	if nYears == 0 {
+		return 0, 0
+	}
+
+	rate = math.MaxFloat64
+	startAtIndex = math.MaxInt64
+	for i, slice := range subSlices(returns, nYears) {
+		thisPWR := swr(slice)
+		if thisPWR < rate {
+			rate = thisPWR
+			startAtIndex = i
+		}
+	}
+	return rate, startAtIndex
 }
 
 // returns all of the sub-slices of length n.
