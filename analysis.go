@@ -104,6 +104,44 @@ func pwr(returns []float64) float64 {
 	return swr(returns) * (preservationPercent - 1/cumulative(returns))
 }
 
+// minPWR looks at all of the nYears-long periods and evaluates their PWR. Returns the min PWR.
+func minPWR(returns []float64, nYears int) float64 {
+	if nYears == 0 {
+		return 0
+	}
+	res := math.MaxFloat64
+	for _, slice := range subSlices(returns, nYears) {
+		thisPWR := pwr(slice)
+		if thisPWR < res {
+			res = thisPWR
+		}
+	}
+	return res
+}
+
+// returns all of the sub-slices of length n.
+func subSlices(orig []float64, n int) [][]float64 {
+	length := len(orig)
+	if n > length {
+		panic(fmt.Sprintf("n (%d) cannot be greater than the length of the original slice (%d)", n, length))
+	}
+	if length == 0 {
+		return nil
+	}
+	res := make([][]float64, 0, length)
+	if len(orig) <= n {
+		res = append(res, orig)
+		return res
+	}
+	start, end := 0, n
+	for end <= length {
+		res = append(res, orig[start:end])
+		start++
+		end++
+	}
+	return res
+}
+
 // harmonicMean returns the harmonic mean of the given numbers, which must all be greater than zero.
 // See: https://en.wikipedia.org/wiki/Harmonic_mean#Definition
 func harmonicMean(xs []float64) float64 {

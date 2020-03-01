@@ -125,3 +125,60 @@ func Test_pwr(t *testing.T) {
 	sample := []float64{-10.28, 0.90, 17.63, 17.93, -18.55, -28.42, 38.42, 26.54, -2.68, 9.23, 25.51, 33.62, -3.79, 18.66, 23.42, 3.01, 32.51, 16.05, 2.23, 17.89, 29.12, -6.22, 34.15, 8.92, 10.62, -0.17, 35.79, 20.96, 30.99, 23.26, 23.81, -10.57, -10.89, -20.95, 31.42, 12.61, 6.09, 15.63, 5.57, -36.99, 28.83, 17.26, 1.08, 16.38, 33.52, 12.56, 0.39, 12.66, 21.17, -5.17, 30.80}
 	g.Expect(pwr(sample)).To(Equal(0.06574303881824275))
 }
+
+func Test_minPWR(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	g.Expect(func() {
+		minPWR(nil, 1)
+	}).To(Panic())
+
+	g.Expect(minPWR(nil, 0)).To(Equal(0.0))
+
+	// length 1
+	g.Expect(minPWR([]float64{10}, 1)).To(SatisfyAll(
+		Equal(pwr([]float64{10})),
+		Equal(0.04761904761904764),
+	))
+	g.Expect(minPWR([]float64{20}, 1)).To(SatisfyAll(
+		Equal(pwr([]float64{20})),
+		Equal(0.09090909090909088),
+	))
+
+	// length 2
+	g.Expect(minPWR([]float64{10, 20}, 1)).To(Equal(pwr([]float64{10})))
+	g.Expect(minPWR([]float64{10, 20}, 2)).To(Equal(pwr([]float64{10, 20})))
+
+	// length 3
+	g.Expect(minPWR([]float64{10, -5, 30}, 1)).To(Equal(pwr([]float64{-5})))
+	g.Expect(minPWR([]float64{10, -5, 30}, 2)).To(Equal(pwr([]float64{10, -5})))
+	g.Expect(minPWR([]float64{10, -5, 30}, 3)).To(Equal(pwr([]float64{10, -5, 30})))
+
+	// length 4
+	g.Expect(minPWR([]float64{10, -5, 10, -20}, 1)).To(Equal(pwr([]float64{-20})))
+	g.Expect(minPWR([]float64{10, -5, 10, -20}, 2)).To(Equal(pwr([]float64{10, -20})))
+	g.Expect(minPWR([]float64{10, -5, 10, -20}, 3)).To(Equal(pwr([]float64{-5, 10, -20})))
+	g.Expect(minPWR([]float64{10, -5, 10, -20}, 4)).To(Equal(pwr([]float64{10, -5, 10, -20})))
+}
+
+func Test_subSlices(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// length 0
+	g.Expect(subSlices(nil, 0)).To(BeEmpty())
+
+	// length 1
+	g.Expect(subSlices([]float64{1}, 1)).To(Equal([][]float64{{1}}))
+	g.Expect(func() {
+		subSlices([]float64{1}, 2) // n is greater than length of the slice
+	}).To(Panic())
+
+	// length 2
+	g.Expect(subSlices([]float64{1, 2}, 1)).To(Equal([][]float64{{1}, {2}}))
+	g.Expect(subSlices([]float64{1, 2}, 2)).To(Equal([][]float64{{1, 2}}))
+
+	// length 3
+	g.Expect(subSlices([]float64{1, 2, 3}, 1)).To(Equal([][]float64{{1}, {2}, {3}}))
+	g.Expect(subSlices([]float64{1, 2, 3}, 2)).To(Equal([][]float64{{1, 2}, {2, 3}}))
+	g.Expect(subSlices([]float64{1, 2, 3}, 3)).To(Equal([][]float64{{1, 2, 3}}))
+}
