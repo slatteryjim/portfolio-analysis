@@ -5,8 +5,6 @@ import (
 	"math"
 )
 
-type returns []float64
-
 // some data from Boglehead's "Simba Spreadsheet"
 // returns (percentage as a float, 100.0 == 100%) - starting in 1969
 var (
@@ -58,7 +56,6 @@ func percentages(xs []float64) []float64 {
 // calculates the cumulative growth of the returns
 func cumulative(returns []float64) float64 {
 	return product(percentages(returns))
-	//return reduce(lambda x, y: x*y, percentages(returns))
 }
 
 // # calculates the cumulative growth of the returns
@@ -70,20 +67,12 @@ func cumulativeList(returns []float64) []float64 {
 		res[i] = acc
 	}
 	return res
-
-	//    res = []
-	//    acc = 1
-	//    for r in percentages(returns):
-	//        acc *= r
-	//        res.append(acc)
-	//    return res
 }
 
 // CAGR - calculates the compound annual growth rate of the returns
 func cagr(returns []float64) float64 {
 	n := float64(len(returns))
-	return math.Pow(cumulative(returns), (1/n)-1)
-	// return cumulative(returns)** (1 / len(returns)) - 1
+	return math.Pow(cumulative(returns), 1/n) - 1
 }
 
 // swr returns the Safe-withdrawal rate
@@ -138,6 +127,86 @@ func minSWR(returns []float64, nYears int) (rate float64, startAtIndex int) {
 		}
 	}
 	return rate, startAtIndex
+}
+
+type drawdownSequence struct {
+	startIndex        int
+	cumulativeReturns []float64
+	// did the sequence recover by the end?
+	recovered bool
+}
+
+// drawdowns returns a list of all the sequences of negative cumulative returns.
+func drawdowns(returns []float64) []drawdownSequence {
+	if len(returns) == 0 {
+		return nil
+	}
+	var res []drawdownSequence
+	for i := range returns {
+		drawdownSeq, recovered := leadingDrawdownSequence(returns[i:])
+		if len(drawdownSeq) > 0 {
+			res = append(res, drawdownSequence{
+				startIndex:        i,
+				cumulativeReturns: drawdownSeq,
+				recovered:         recovered,
+			})
+		}
+	}
+	return res
+}
+
+// leadingDrawdownSequence returns the drawdown sequence, if this list starts with one.
+// Also returns a boolean indicating whether the drawdown sequence ended in the end,
+// or false if it never ended.
+func leadingDrawdownSequence(returns []float64) ([]float64, bool) {
+	end := -1
+	cumulativeReturns := cumulativeList(returns)
+	for i, value := range cumulativeReturns {
+		if value >= 1 {
+			end = i
+			break
+		}
+	}
+	if end == -1 {
+		return cumulativeReturns, false
+	}
+	return cumulativeReturns[0:end], true
+}
+
+func ulcerScore(cumulativeReturns []float64, recovered bool) float64 {
+	if len(cumulativeReturns) == 0 {
+		return 0
+	}
+	score := 0.0
+	for _, x := range cumulativeReturns {
+		score += (1 - x) * 10
+	}
+	if !recovered {
+		// that's scary, we ended without a recovery, let's increase the score
+		score *= 2
+	}
+	return score
+}
+
+func drawdownScores(returns []float64) (maxUlcerScore, deepestDrawdown float64, longestDrawdown int) {
+	maxUlcerScore = 0.0
+	deepestDrawdown = 0.0
+	longestDrawdown = 0
+	for _, dd := range drawdowns(returns) {
+		score := ulcerScore(dd.cumulativeReturns, dd.recovered)
+		if score > maxUlcerScore {
+			maxUlcerScore = score
+		}
+		lowestPoint := minFloats(dd.cumulativeReturns) - 1
+		if lowestPoint < deepestDrawdown {
+			deepestDrawdown = lowestPoint
+		}
+		length := len(dd.cumulativeReturns)
+		if length > longestDrawdown {
+			longestDrawdown = length
+		}
+	}
+	return maxUlcerScore, deepestDrawdown, longestDrawdown
 }
 
 // returns all of the sub-slices of length n.
@@ -236,4 +305,17 @@ func mapFloats(xs []float64, fn func(float64) float64) []float64 {
 		res[i] = fn(xs[i])
 	}
 	return res
+}
+
+func minFloats(xs []float64) float64 {
+	if len(xs) == 0 {
+		panic("can't return the minimum of an empty slice")
+	}
+	min := math.MaxFloat64
+	for _, x := range xs {
+		if x < min {
+			min = x
+		}
+	}
+	return min
 }
