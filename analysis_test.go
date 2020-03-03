@@ -162,6 +162,13 @@ func Test_minPWR(t *testing.T) {
 	verify([]float64{10, -5, 10, -20}, 3, pwr([]float64{-5, 10, -20}), 1)
 	verify([]float64{10, -5, 10, -20}, 4, pwr([]float64{10, -5, 10, -20}), 0)
 
+	verify(TSM, 30, 0.03237620200614041, 0)
+	verify(SCV, 30, 0.03803355302289947, 0)
+	verify(GLD, 30, -0.015629074083395443, 6)
+	verify(LTT, 30, 0.02167080631193789, 0)
+	verify(STT, 30, 0.01714682750442063, 21)
+	verify(STB, 30, 0.0226647988703317, 0)
+
 	verify(GoldenButterfly, 10, 0.01945631963862428, 0)
 	verify(GoldenButterfly, 20, 0.038590835351436564, 0)
 	verify(GoldenButterfly, 30, 0.04224334655073258, 0)
@@ -204,11 +211,19 @@ func Test_minSWR(t *testing.T) {
 	verify([]float64{10, -5, 10, -20}, 3, swr([]float64{-5, 10, -20}), 1)
 	verify([]float64{10, -5, 10, -20}, 4, swr([]float64{10, -5, 10, -20}), 0)
 
+	verify(TSM, 30, 0.037860676066939845, 0)
+	verify(SCV, 30, 0.04290428968981267, 0)
+	verify(GLD, 30, 0.012375454483082474, 11)
+	verify(LTT, 30, 0.034180844746692515, 0)
+	verify(STT, 30, 0.03974452972823921, 3)
+	verify(STB, 30, 0.0396442756302357, 0)
+
 	verify(GoldenButterfly, 10, 0.09331636419042066, 0)
 	verify(GoldenButterfly, 20, 0.06261394175862438, 0)
 	verify(GoldenButterfly, 30, 0.05304896125102126, 0)
 	verify(GoldenButterfly, 40, 0.04879022342090543, 0)
 	verify(GoldenButterfly, 50, 0.04665043650688064, 0)
+
 }
 
 func Test_subSlices(t *testing.T) {
@@ -233,106 +248,6 @@ func Test_subSlices(t *testing.T) {
 	g.Expect(subSlices([]float64{1, 2, 3}, 3)).To(Equal([][]float64{{1, 2, 3}}))
 }
 
-func Test_leadingDrawdownSequence(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	verify := func(returns, expectedSequence []float64, expectedEnded bool) {
-		t.Helper()
-		sequence, ended := leadingDrawdownSequence(returns)
-		g.Expect(sequence).To(Equal(expectedSequence), "sequence")
-		g.Expect(ended).To(Equal(expectedEnded), "ended")
-	}
-
-	// empty
-	verify(nil, []float64{}, false)
-	verify([]float64{}, []float64{}, false)
-
-	// doesn't start with a drawdown
-	verify([]float64{1}, []float64{}, true)
-	verify([]float64{0, -1, 2}, []float64{}, true)
-
-	// starts with a drawdown
-	verify([]float64{-1}, []float64{0.99}, false)
-	verify([]float64{-1, 2}, []float64{0.99}, true)
-	verify([]float64{-1, -1, 3}, []float64{0.99, 0.9801}, true)
-	verify([]float64{-1, -1, 3, -5, -50}, []float64{0.99, 0.9801}, true)
-
-	verify([]float64{-50, 100}, []float64{0.50}, true)
-
-}
-
-func Test_drawdowns(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	g.Expect(drawdowns(nil)).To(BeEmpty())
-	g.Expect(drawdowns([]float64{0})).To(BeEmpty())
-	g.Expect(drawdowns([]float64{1})).To(BeEmpty())
-	g.Expect(drawdowns([]float64{-1})).To(Equal([]drawdownSequence{
-		{startIndex: 0, cumulativeReturns: []float64{0.99}, recovered: false},
-	}))
-	g.Expect(drawdowns([]float64{-1, 2})).To(Equal([]drawdownSequence{
-		{startIndex: 0, cumulativeReturns: []float64{0.99}, recovered: true},
-	}))
-	g.Expect(drawdowns([]float64{-1, -1, 3})).To(Equal([]drawdownSequence{
-		{startIndex: 0, cumulativeReturns: []float64{0.99, 0.9801}, recovered: true},
-		{startIndex: 1, cumulativeReturns: []float64{0.99}, recovered: true},
-	}))
-	g.Expect(drawdowns([]float64{-1, -1, 1})).To(Equal([]drawdownSequence{
-		{startIndex: 0, cumulativeReturns: []float64{0.99, 0.9801, 0.989901}, recovered: false},
-		{startIndex: 1, cumulativeReturns: []float64{0.99, 0.9999}, recovered: false},
-	}))
-	g.Expect(drawdowns([]float64{-1, 3, -1, -1, 3})).To(Equal([]drawdownSequence{
-		{startIndex: 0, cumulativeReturns: []float64{0.99}, recovered: true},
-		{startIndex: 2, cumulativeReturns: []float64{0.99, 0.9801}, recovered: true},
-		{startIndex: 3, cumulativeReturns: []float64{0.99}, recovered: true},
-	}))
-	g.Expect(drawdowns([]float64{-1, -1, 3, -5, -50, 100})).To(Equal([]drawdownSequence{
-		{startIndex: 0, cumulativeReturns: []float64{0.99, 0.9801}, recovered: true},
-		{startIndex: 1, cumulativeReturns: []float64{0.99}, recovered: true},
-		{startIndex: 3, cumulativeReturns: []float64{0.95, 0.475, 0.95}, recovered: false},
-		{startIndex: 4, cumulativeReturns: []float64{0.50}, recovered: true},
-	}))
-}
-
-func Test_ulcerScore(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	g.Expect(ulcerScore(nil, false)).To(Equal(0.0))
-	g.Expect(ulcerScore(nil, true)).To(Equal(0.0))
-	g.Expect(ulcerScore([]float64{0.99}, true)).To(Equal(0.10000000000000009))
-	g.Expect(ulcerScore([]float64{0.99}, false)).To(Equal(0.20000000000000018))
-	g.Expect(ulcerScore([]float64{0.90}, true)).To(Equal(0.9999999999999998))
-	g.Expect(ulcerScore([]float64{0.90, 0.90}, true)).To(Equal(1.9999999999999996))
-	g.Expect(ulcerScore([]float64{0.90, 0.80}, true)).To(Equal(2.999999999999999))
-
-	dd, _ := leadingDrawdownSequence(GoldenButterfly)
-	g.Expect(dd).To(Equal([]float64{0.84666, 0.8613241511999999, 0.9480594932258399}))
-	g.Expect(ulcerScore(dd, true)).To(Equal(3.4395635557416018))
-}
-
-func Test_drawdownScores(t *testing.T) {
-	g := NewGomegaWithT(t)
-
-	verify := func(returns []float64, expectedUlcer, expectedMaxDrawdown float64, expectedMaxDuration int) {
-		ulcer, maxDD, maxDur := drawdownScores(returns)
-		g.Expect(ulcer).To(Equal(expectedUlcer), "maxUlcerScore")
-		g.Expect(maxDD).To(Equal(expectedMaxDrawdown), "maxDrawdown")
-		g.Expect(maxDur).To(Equal(expectedMaxDuration), "maxDuration")
-	}
-
-	verify(nil, 0, 0, 0)
-	verify([]float64{}, 0, 0, 0)
-	verify([]float64{-1}, 0.20000000000000018, -0.010000000000000009, 1)
-	verify([]float64{-1, 2}, 0.10000000000000009, -0.010000000000000009, 1)
-	verify([]float64{-1, 2, -1, -3}, 0.9940000000000015, -0.03970000000000007, 2)
-	verify([]float64{-1, 2, -1, -3, 10}, 0.4970000000000008, -0.03970000000000007, 2)
-
-	verify([]float64{-10, 30}, 0.9999999999999998, -0.09999999999999998, 1)
-	verify([]float64{-20, 30}, 1.9999999999999996, -0.19999999999999996, 1)
-	verify([]float64{-10, -20, 40}, 3.799999999999999, -0.2799999999999999, 2)
-	verify([]float64{-10, 30, -10, -20, 30}, 8.879999999999995, -0.2799999999999999, 3)
-}
-
 func Test_cagr(t *testing.T) {
 	g := NewGomegaWithT(t)
 
@@ -350,4 +265,12 @@ func Test_cagr(t *testing.T) {
 		g.Expect(1.01 * 1.05).To(Equal(cumulativeTwoYears))
 	}
 	g.Expect(cagr([]float64{5, 5, 5, 5, 5})).To(Equal(0.050000000000000044))
+
+	g.Expect(cagr(TSM)).To(Equal(0.059240605917942224))
+	g.Expect(cagr(SCV)).To(Equal(0.07363836101130472))
+	g.Expect(cagr(LTT)).To(Equal(0.036986778393646835))
+	g.Expect(cagr(STT)).To(Equal(0.018215249078317397))
+	g.Expect(cagr(STB)).To(Equal(0.02224127904840234))
+	g.Expect(cagr(GLD)).To(Equal(0.029259375673007515))
+	g.Expect(cagr(GoldenButterfly)).To(Equal(0.05352050963712207))
 }
