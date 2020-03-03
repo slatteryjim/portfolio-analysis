@@ -49,8 +49,19 @@ func TestPermutations(t *testing.T) {
 		{[]string{"B"}, []float64{100}},
 	}))
 
-	perms = permutations([]string{"A", "B", "C"}, []float64{33, 66, 100})
-	g.Expect(len(perms)).To(Equal(10))
+	perms = translate(permutations([]string{"A", "B", "C"}, []float64{33, 66, 100}))
+	g.Expect(perms).To(ConsistOf([]permutation{
+		{[]string{"A"}, []float64{100}},
+		{[]string{"A", "B"}, []float64{66, 34}},
+		{[]string{"A", "C"}, []float64{66, 34}},
+		{[]string{"A", "B"}, []float64{33, 67}},
+		{[]string{"A", "B", "C"}, []float64{33, 33, 34}},
+		{[]string{"A", "C"}, []float64{33, 67}},
+		{[]string{"B"}, []float64{100}},
+		{[]string{"B", "C"}, []float64{66, 34}},
+		{[]string{"B", "C"}, []float64{33, 67}},
+		{[]string{"C"}, []float64{100}},
+	}))
 
 	g.Expect(floats(25, 100, 25)).To(Equal([]float64{25, 50, 75, 100}))
 
