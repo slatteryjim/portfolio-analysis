@@ -129,6 +129,31 @@ func minSWR(returns []float64, nYears int) (rate float64, startAtIndex int) {
 	return rate, startAtIndex
 }
 
+func startDateSensitivity(returns []float64) float64 {
+	var (
+		worstShortfall  = 0.0
+		bestImprovement = 0.0
+	)
+	for _, twentyYears := range subSlices(returns, 20) {
+		firstTwenty := cagr(twentyYears[:10])
+		secondTwenty := cagr(twentyYears[10:])
+		diff := secondTwenty - firstTwenty
+		// fmt.Println(i+1, firstTwenty, secondTwenty, "diff:", diff)
+		// shortfall?
+		if firstTwenty > secondTwenty {
+			if diff < worstShortfall {
+				worstShortfall = diff
+			}
+		} else {
+			// improvement
+			if diff > bestImprovement {
+				bestImprovement = diff
+			}
+		}
+	}
+	return bestImprovement - worstShortfall
+}
+
 // returns all of the sub-slices of length n.
 func subSlices(orig []float64, n int) [][]float64 {
 	length := len(orig)

@@ -3,6 +3,7 @@ package portfolio_analysis
 import (
 	"fmt"
 	"math"
+	"reflect"
 	"sort"
 	"testing"
 
@@ -75,36 +76,47 @@ func TestPermutations(t *testing.T) {
 	// g.Expect(len(perms)).To(Equal(9_366_819))
 }
 
-type PortfolioStat struct {
-	// describe portfolio assets and percentages
-	Assets      []string
-	Percentages []float64
+type (
+	PortfolioStat struct {
+		// describe portfolio assets and percentages
+		Assets      []string
+		Percentages []float64
 
-	// stats on the portfolio performance
-	MinPWR30        float64
-	MaxUlcerScore   float64
-	DeepestDrawdown float64
-	LongestDrawdown int
+		// stats on the portfolio performance
+		PWR30                float64
+		UlcerScore           float64
+		DeepestDrawdown      float64
+		LongestDrawdown      int
+		StartDateSensitivity float64
 
-	// This portfolio's rank on various stats
-	MinPWR30Rank        int
-	MaxUlcerScoreRank   int
-	DeepestDrawdownRank int
-	LongestDrawdownRank int
-}
+		// This portfolio's rank on various stats
+		PWR30Rank                Rank
+		UlcerScoreRank           Rank
+		DeepestDrawdownRank      Rank
+		LongestDrawdownRank      Rank
+		StartDateSensitivityRank Rank
+	}
+
+	Rank struct {
+		Ordinal    int
+		Percentage float64
+	}
+)
 
 func (p PortfolioStat) String() string {
-	return fmt.Sprintf("%v %v PWR30: %0.3f%% (%d) Ulcer:%0.1f(%d) DeepestDrawdown:%0.2f%%(%d) LongestDrawdown:%d(%d)",
+	return fmt.Sprintf("%v %v PWR: %0.3f%% (%d) Ulcer:%0.1f(%d) DeepestDrawdown:%0.2f%%(%d) LongestDrawdown:%d(%d), StartDateSensitivity:%0.2f%%(%d)",
 		p.Assets,
 		p.Percentages,
-		p.MinPWR30*100,
-		p.MinPWR30Rank,
-		p.MaxUlcerScore,
-		p.MaxUlcerScoreRank,
+		p.PWR30*100,
+		p.PWR30Rank.Ordinal,
+		p.UlcerScore,
+		p.UlcerScoreRank.Ordinal,
 		p.DeepestDrawdown*100,
-		p.DeepestDrawdownRank,
+		p.DeepestDrawdownRank.Ordinal,
 		p.LongestDrawdown,
-		p.LongestDrawdownRank,
+		p.LongestDrawdownRank.Ordinal,
+		p.StartDateSensitivity*100,
+		p.StartDateSensitivityRank.Ordinal,
 	)
 }
 
@@ -158,12 +170,13 @@ func TestPortfolioPermutations(t *testing.T) {
 
 		g.Expect(err).ToNot(HaveOccurred())
 		results = append(results, &PortfolioStat{
-			Assets:          p.Assets,
-			Percentages:     translatedPercentages,
-			MinPWR30:        minPWR30,
-			MaxUlcerScore:   maxUlcerScore,
-			DeepestDrawdown: deepestDrawdown,
-			LongestDrawdown: longestDrawdown,
+			Assets:               p.Assets,
+			Percentages:          translatedPercentages,
+			PWR30:                minPWR30,
+			UlcerScore:           maxUlcerScore,
+			DeepestDrawdown:      deepestDrawdown,
+			LongestDrawdown:      longestDrawdown,
+			StartDateSensitivity: startDateSensitivity(portfolioReturns),
 		})
 	}
 
@@ -174,34 +187,36 @@ func TestPortfolioPermutations(t *testing.T) {
 		//  In that case the ranking numbers should probably then be translated into a percentage (1 to 100.0?)
 		//  So that all the rankings operate on the same scale, regardless of ow many unique ranked values there were.
 
-		// rank by MinPWR
-		{
-			sort.Slice(results, func(i, j int) bool { return results[i].MinPWR30 > results[j].MinPWR30 })
-			for i, portfolioStat := range results {
-				portfolioStat.MinPWR30Rank = i + 1
-			}
-		}
-		// rank by MinPWR
-		{
-			sort.Slice(results, func(i, j int) bool { return results[i].MaxUlcerScore < results[j].MaxUlcerScore })
-			for i, portfolioStat := range results {
-				portfolioStat.MaxUlcerScoreRank = i + 1
-			}
-		}
+		// rank by PWR30
+		RankAll(results, RankAllParams{
+			Metric:       func(stat *PortfolioStat) float64 { return float64(stat.PWR30) },
+			LessIsBetter: false,
+			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.PWR30Rank = rank },
+		})
+		// rank by UlcerScore
+		RankAll(results, RankAllParams{
+			Metric:       func(stat *PortfolioStat) float64 { return float64(stat.UlcerScore) },
+			LessIsBetter: true,
+			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.UlcerScoreRank = rank },
+		})
 		// rank by DeepestDrawdown
-		{
-			sort.Slice(results, func(i, j int) bool { return results[i].DeepestDrawdown > results[j].DeepestDrawdown })
-			for i, portfolioStat := range results {
-				portfolioStat.DeepestDrawdownRank = i + 1
-			}
-		}
+		RankAll(results, RankAllParams{
+			Metric:       func(stat *PortfolioStat) float64 { return float64(stat.DeepestDrawdown) },
+			LessIsBetter: false,
+			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.DeepestDrawdownRank = rank },
+		})
 		// rank by LongestDrawdown
-		{
-			sort.Slice(results, func(i, j int) bool { return results[i].LongestDrawdown < results[j].LongestDrawdown })
-			for i, portfolioStat := range results {
-				portfolioStat.LongestDrawdownRank = i + 1
-			}
-		}
+		RankAll(results, RankAllParams{
+			Metric:       func(stat *PortfolioStat) float64 { return float64(stat.LongestDrawdown) },
+			LessIsBetter: true,
+			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.LongestDrawdownRank = rank },
+		})
+		// rank by StartDateSensitivity
+		RankAll(results, RankAllParams{
+			Metric:       func(stat *PortfolioStat) float64 { return stat.StartDateSensitivity },
+			LessIsBetter: true,
+			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.StartDateSensitivityRank = rank },
+		})
 	}
 
 	// rank by all their ranks (equally weighted)
@@ -216,10 +231,11 @@ func TestPortfolioPermutations(t *testing.T) {
 		// #2: [TSM SCV LTT STT GLD] [15 20 5 40 20] PWR30: 4.180% (894) Ulcer:2.9(658) DeepestDrawdown:-13.28%(412) LongestDrawdown:3(412)
 		// #3: [TSM SCV LTT STT GLD] [30 5 10 30 25] PWR30: 4.142% (985) Ulcer:2.8(596) DeepestDrawdown:-13.13%(386) LongestDrawdown:3(386)
 		sumRanks := func(p *PortfolioStat) float64 {
-			return math.Pow(float64(p.MinPWR30Rank), 2) +
-				math.Pow(float64(p.MaxUlcerScoreRank), 2) +
-				math.Pow(float64(p.LongestDrawdownRank), 2) +
-				math.Pow(float64(p.DeepestDrawdownRank), 2)
+			return math.Pow(p.PWR30Rank.Percentage, 2) +
+				math.Pow(p.UlcerScoreRank.Percentage, 2) +
+				math.Pow(p.LongestDrawdownRank.Percentage, 2) +
+				math.Pow(p.DeepestDrawdownRank.Percentage, 2) +
+				math.Pow(p.StartDateSensitivityRank.Percentage, 2)
 		}
 		sort.Slice(results, func(i, j int) bool {
 			return sumRanks(results[i]) < sumRanks(results[j])
@@ -232,30 +248,63 @@ func TestPortfolioPermutations(t *testing.T) {
 	}
 
 	fmt.Println("\nBest by each ranking:")
-	fmt.Println("Best MinPWR30:", findOne(results, func(p *PortfolioStat) bool { return p.MinPWR30Rank == 1 }))
-	fmt.Println("Best MaxUlcerScore:", findOne(results, func(p *PortfolioStat) bool { return p.MaxUlcerScoreRank == 1 }))
-	fmt.Println("Best DeepestDrawdown:", findOne(results, func(p *PortfolioStat) bool { return p.DeepestDrawdownRank == 1 }))
-	fmt.Println("Best LongestDrawdown:", findOne(results, func(p *PortfolioStat) bool { return p.LongestDrawdownRank == 1 }))
+	fmt.Println("Best PWR30:", findOne(results, func(p *PortfolioStat) bool { return p.PWR30Rank.Ordinal == 1 }))
+	fmt.Println("Best UlcerScore:", findOne(results, func(p *PortfolioStat) bool { return p.UlcerScoreRank.Ordinal == 1 }))
+	fmt.Println("Best DeepestDrawdown:", findOne(results, func(p *PortfolioStat) bool { return p.DeepestDrawdownRank.Ordinal == 1 }))
+	fmt.Println("Best LongestDrawdown:", findOne(results, func(p *PortfolioStat) bool { return p.LongestDrawdownRank.Ordinal == 1 }))
+	fmt.Println("Best StartDateSensitivity:", findOne(results, func(p *PortfolioStat) bool { return p.StartDateSensitivityRank.Ordinal == 1 }))
 
-	goldenButterflyStat := findOne(results, func(p *PortfolioStat) bool {
-		for _, pct := range p.Percentages {
-			if pct != 20 {
-				return false
-			}
-		}
-		return true
+	gbStat := findOne(results, func(p *PortfolioStat) bool {
+		return reflect.DeepEqual(p.Percentages, []float64{20, 20, 20, 20, 20})
 	})
-	fmt.Println("\nGoldenButterfly:", goldenButterflyStat)
+	fmt.Println("\nGoldenButterfly:", gbStat)
 	// find as good or better than GoldenButterfly
 	betterThanGB := findMany(results, func(p *PortfolioStat) bool {
-		return p.DeepestDrawdown >= goldenButterflyStat.DeepestDrawdown &&
-			p.LongestDrawdown <= goldenButterflyStat.LongestDrawdown &&
-			p.MaxUlcerScore <= goldenButterflyStat.MaxUlcerScore &&
-			p.MinPWR30 >= goldenButterflyStat.MinPWR30
+		return p.DeepestDrawdownRank.Ordinal <= gbStat.DeepestDrawdownRank.Ordinal &&
+			p.LongestDrawdownRank.Ordinal <= gbStat.LongestDrawdownRank.Ordinal &&
+			p.UlcerScoreRank.Ordinal <= gbStat.UlcerScoreRank.Ordinal &&
+			p.PWR30Rank.Ordinal <= gbStat.PWR30Rank.Ordinal &&
+			p.StartDateSensitivityRank.Ordinal <= gbStat.StartDateSensitivityRank.Ordinal
 	})
 	fmt.Println("As good or better than GoldenButterfly:", len(betterThanGB))
 	for i, p := range betterThanGB {
 		fmt.Println(" ", i, p)
+	}
+}
+
+type RankAllParams struct {
+	Metric       func(*PortfolioStat) float64
+	LessIsBetter bool
+	SetRank      func(stat *PortfolioStat, rank Rank)
+}
+
+func RankAll(
+	results []*PortfolioStat,
+	params RankAllParams,
+) {
+	if params.LessIsBetter {
+		sort.Slice(results, func(i, j int) bool { return params.Metric(results[i]) < params.Metric(results[j]) })
+	} else {
+		sort.Slice(results, func(i, j int) bool { return params.Metric(results[i]) > params.Metric(results[j]) })
+	}
+	ranks := make([]int, len(results))
+	var (
+		rank      = 0
+		lastValue = 0.0
+	)
+	for i, portfolioStat := range results {
+		value := params.Metric(portfolioStat)
+		if i == 0 || lastValue != value {
+			rank++
+			lastValue = value
+		}
+		ranks[i] = rank
+	}
+	maxRank := float64(rank)
+	for i, portfolioStat := range results {
+		rank := ranks[i]
+		rankPercentage := float64(rank)/maxRank*99 + 1
+		params.SetRank(portfolioStat, Rank{Ordinal: rank, Percentage: rankPercentage})
 	}
 }
 

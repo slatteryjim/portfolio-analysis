@@ -274,3 +274,37 @@ func Test_cagr(t *testing.T) {
 	g.Expect(cagr(GLD)).To(Equal(0.029259375673007515))
 	g.Expect(cagr(GoldenButterfly)).To(Equal(0.05352050963712207))
 }
+
+func Test_startDateSensitivity(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	t.Run("one 20-year segment", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+
+		g.Expect(startDateSensitivity(repeat(0, 20))).To(BeZero())
+
+		// 5% improvment
+		returns := append(
+			repeat(5.0, 10),
+			repeat(10, 10)...)
+		g.Expect(startDateSensitivity(returns)).To(Equal(0.050000000000000044))
+
+		// 5% shortfall
+		returns = append(
+			repeat(10, 10),
+			repeat(5.0, 10)...)
+		g.Expect(startDateSensitivity(returns)).To(Equal(0.050000000000000044))
+	})
+
+	// long steadily increasing set of returns
+	returns := floats(0, 100, 1)
+	g.Expect(startDateSensitivity(returns)).To(Equal(0.10003452051664796))
+}
+
+func repeat(x float64, count int) []float64 {
+	res := make([]float64, count)
+	for i := range res {
+		res[i] = x
+	}
+	return res
+}
