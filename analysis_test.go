@@ -275,6 +275,17 @@ func Test_cagr(t *testing.T) {
 	g.Expect(cagr(GoldenButterfly)).To(Equal(0.05352050963712207))
 }
 
+func Test_averageReturn(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	g.Expect(math.IsNaN(averageReturn(nil))).To(BeTrue())
+	g.Expect(math.IsNaN(averageReturn([]float64{}))).To(BeTrue())
+	g.Expect(averageReturn([]float64{1})).To(Equal(0.01))
+	g.Expect(averageReturn([]float64{1, 2})).To(Equal(0.015))
+	g.Expect(averageReturn([]float64{1, 2, -3})).To(BeNumerically("~", 0))
+	g.Expect(averageReturn(floats(0, 100, 1))).To(Equal(0.50))
+}
+
 func Test_startDateSensitivity(t *testing.T) {
 	g := NewGomegaWithT(t)
 

@@ -73,8 +73,9 @@ func TestEvaluatePortfolios(t *testing.T) {
 		{
 			Assets:               []string{"TSM"},
 			Percentages:          []float64{100},
-			PWR20:                0.019315593695869437,
+			AvgReturn:            0.07452352941176471,
 			PWR30:                0.03237620200614041,
+			SWR30:                0.037860676066939845,
 			UlcerScore:           26.98911264363915,
 			DeepestDrawdown:      -0.5225460399999999,
 			LongestDrawdown:      13,
@@ -90,8 +91,9 @@ func TestEvaluatePortfolios(t *testing.T) {
 		{
 			Assets:               []string{"TSM"},
 			Percentages:          []float64{100},
-			PWR20:                0.019315593695869437,
+			AvgReturn:            0.07452352941176471,
 			PWR30:                0.03237620200614041,
+			SWR30:                0.037860676066939845,
 			UlcerScore:           26.98911264363915,
 			DeepestDrawdown:      -0.5225460399999999,
 			LongestDrawdown:      13,
@@ -100,8 +102,9 @@ func TestEvaluatePortfolios(t *testing.T) {
 		{
 			Assets:               []string{"TSM", "GLD"},
 			Percentages:          []float64{50, 50},
-			PWR20:                0.017425776601744224,
+			AvgReturn:            0.06387058823529412,
 			PWR30:                0.028200924227015436,
+			SWR30:                0.0406623859534676,
 			UlcerScore:           9.965815083766605,
 			DeepestDrawdown:      -0.25932097437400503,
 			LongestDrawdown:      6,

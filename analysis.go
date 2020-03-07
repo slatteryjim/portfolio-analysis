@@ -75,6 +75,12 @@ func cagr(returns []float64) float64 {
 	return math.Pow(cumulative(returns), 1/n) - 1
 }
 
+// averageReturn returns the average of the given returns.
+// See: https://portfoliocharts.com/portfolio/annual-returns/
+func averageReturn(returns []float64) float64 {
+	return sum(returns) / float64(len(returns)) / 100
+}
+
 // swr returns the Safe-withdrawal rate
 func swr(returns []float64) float64 {
 	// prepend 1.0 to the list of returns
@@ -129,6 +135,8 @@ func minSWR(returns []float64, nYears int) (rate float64, startAtIndex int) {
 	return rate, startAtIndex
 }
 
+// startDateSensitivity is a simple quantitative way to measure the dependability of a portfolio.
+// See: https://portfoliocharts.com/portfolio/start-date-sensitivity/
 func startDateSensitivity(returns []float64) float64 {
 	var (
 		worstShortfall  = 0.0

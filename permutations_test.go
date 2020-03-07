@@ -129,8 +129,9 @@ func TestPortfolioPermutations(t *testing.T) {
 	fmt.Println("#3:", results[2])
 
 	fmt.Println("\nBest by each ranking:")
-	fmt.Println("Best PWR20:", FindOne(results, func(p *PortfolioStat) bool { return p.PWR20Rank.Ordinal == 1 }))
+	fmt.Println("Best AvgReturn:", FindOne(results, func(p *PortfolioStat) bool { return p.AvgReturnRank.Ordinal == 1 }))
 	fmt.Println("Best PWR30:", FindOne(results, func(p *PortfolioStat) bool { return p.PWR30Rank.Ordinal == 1 }))
+	fmt.Println("Best SWR30:", FindOne(results, func(p *PortfolioStat) bool { return p.SWR30Rank.Ordinal == 1 }))
 	fmt.Println("Best UlcerScore:", FindOne(results, func(p *PortfolioStat) bool { return p.UlcerScoreRank.Ordinal == 1 }))
 	fmt.Println("Best DeepestDrawdown:", FindOne(results, func(p *PortfolioStat) bool { return p.DeepestDrawdownRank.Ordinal == 1 }))
 	fmt.Println("Best LongestDrawdown:", FindOne(results, func(p *PortfolioStat) bool { return p.LongestDrawdownRank.Ordinal == 1 }))
@@ -142,23 +143,25 @@ func TestPortfolioPermutations(t *testing.T) {
 	fmt.Println("\nGoldenButterfly:", gbStat)
 	// find as good or better than GoldenButterfly
 	betterThanGB := CopyAll(FindMany(results, func(p *PortfolioStat) bool {
-		return p.DeepestDrawdownRank.Ordinal <= gbStat.DeepestDrawdownRank.Ordinal &&
-			p.LongestDrawdownRank.Ordinal <= gbStat.LongestDrawdownRank.Ordinal &&
-			p.UlcerScoreRank.Ordinal <= gbStat.UlcerScoreRank.Ordinal &&
+		return p.AvgReturnRank.Ordinal <= gbStat.AvgReturnRank.Ordinal &&
 			p.PWR30Rank.Ordinal <= gbStat.PWR30Rank.Ordinal &&
-			p.PWR20Rank.Ordinal <= gbStat.PWR20Rank.Ordinal &&
+			p.SWR30Rank.Ordinal <= gbStat.SWR30Rank.Ordinal &&
+			p.UlcerScoreRank.Ordinal <= gbStat.UlcerScoreRank.Ordinal &&
+			p.DeepestDrawdownRank.Ordinal <= gbStat.DeepestDrawdownRank.Ordinal &&
+			p.LongestDrawdownRank.Ordinal <= gbStat.LongestDrawdownRank.Ordinal &&
 			p.StartDateSensitivityRank.Ordinal <= gbStat.StartDateSensitivityRank.Ordinal
 	}))
 	RankPortfoliosInPlace(betterThanGB)
 	fmt.Println("As good or better than GoldenButterfly:", len(betterThanGB))
-	fmt.Println("Best PWR20:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.PWR20Rank.Ordinal == 1 }))
+	fmt.Println("Best AvgReturn:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.AvgReturnRank.Ordinal == 1 }))
 	fmt.Println("Best PWR30:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.PWR30Rank.Ordinal == 1 }))
+	fmt.Println("Best SWR30:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.SWR30Rank.Ordinal == 1 }))
 	fmt.Println("Best UlcerScore:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.UlcerScoreRank.Ordinal == 1 }))
 	fmt.Println("Best DeepestDrawdown:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.DeepestDrawdownRank.Ordinal == 1 }))
 	fmt.Println("Best LongestDrawdown:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.LongestDrawdownRank.Ordinal == 1 }))
 	fmt.Println("Best StartDateSensitivity:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.StartDateSensitivityRank.Ordinal == 1 }))
 	fmt.Println("\nAll as good or better:")
-	for i, p := range betterThanGB[:5] {
+	for i, p := range betterThanGB[:min(len(betterThanGB), 5)] {
 		fmt.Println(" ", i, p.ComparePerformance(*gbStat))
 	}
 }
@@ -188,4 +191,11 @@ func floats(start, end, step float64) []float64 {
 		res = append(res, i)
 	}
 	return res
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
