@@ -43,6 +43,12 @@ type (
 		DeepestDrawdownRank      Rank
 		LongestDrawdownRank      Rank
 		StartDateSensitivityRank Rank
+
+		// Score the rankings!
+		OverallRankScore float64
+
+		// rank based on overall rank! (头晕了)
+		OverallRankScoreRank Rank
 	}
 
 	Rank struct {
@@ -52,9 +58,10 @@ type (
 )
 
 func (p PortfolioStat) String() string {
-	return fmt.Sprintf("%v %v AvgReturn:%0.3f%%(%d) PWR:%0.3f%%(%d) SWR:%0.3f%%(%d) Ulcer:%0.1f(%d) DeepestDrawdown:%0.2f%%(%d) LongestDrawdown:%d(%d), StartDateSensitivity:%0.2f%%(%d)",
+	return fmt.Sprintf("%v %v (%d) AvgReturn:%0.3f%%(%d) PWR:%0.3f%%(%d) SWR:%0.3f%%(%d) Ulcer:%0.1f(%d) DeepestDrawdown:%0.2f%%(%d) LongestDrawdown:%d(%d), StartDateSensitivity:%0.2f%%(%d)",
 		p.Assets,
 		p.Percentages,
+		p.OverallRankScoreRank.Ordinal,
 		p.AvgReturn*100,
 		p.AvgReturnRank.Ordinal,
 		p.PWR30*100,
@@ -109,6 +116,8 @@ func (p PortfolioStat) Clone() *PortfolioStat {
 		DeepestDrawdownRank:      p.DeepestDrawdownRank,
 		LongestDrawdownRank:      p.LongestDrawdownRank,
 		StartDateSensitivityRank: p.StartDateSensitivityRank,
+		OverallRankScore:         p.OverallRankScore,
+		OverallRankScoreRank:     p.OverallRankScoreRank,
 	}
 }
 
@@ -260,8 +269,10 @@ func RankPortfoliosInPlace(results []*PortfolioStat) {
 		// #1: [TSM SCV LTT STT GLD] [35 5 5 30 25] PWR30: 4.232% (790) Ulcer:3.0(730) DeepestDrawdown:-13.32%(420) LongestDrawdown:3(420)
 		// #2: [TSM SCV LTT STT GLD] [15 20 5 40 20] PWR30: 4.180% (894) Ulcer:2.9(658) DeepestDrawdown:-13.28%(412) LongestDrawdown:3(412)
 		// #3: [TSM SCV LTT STT GLD] [30 5 10 30 25] PWR30: 4.142% (985) Ulcer:2.8(596) DeepestDrawdown:-13.13%(386) LongestDrawdown:3(386)
-		sumRanks := func(p *PortfolioStat) float64 {
-			return math.Pow(p.AvgReturnRank.Percentage, 2) +
+
+		// populate the OverallRankScore for all
+		for _, p := range results {
+			p.OverallRankScore = math.Pow(p.AvgReturnRank.Percentage, 2) +
 				math.Pow(p.PWR30Rank.Percentage, 2) +
 				math.Pow(p.SWR30Rank.Percentage, 2) +
 				math.Pow(p.UlcerScoreRank.Percentage, 2) +
@@ -269,8 +280,11 @@ func RankPortfoliosInPlace(results []*PortfolioStat) {
 				math.Pow(p.DeepestDrawdownRank.Percentage, 2) +
 				math.Pow(p.StartDateSensitivityRank.Percentage, 2)
 		}
-		sort.Slice(results, func(i, j int) bool {
-			return sumRanks(results[i]) < sumRanks(results[j])
+		// rank by OverallRankScore
+		RankAll(results, RankAllParams{
+			Metric:       func(stat *PortfolioStat) float64 { return stat.OverallRankScore },
+			LessIsBetter: true,
+			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.OverallRankScoreRank = rank },
 		})
 	}
 }
