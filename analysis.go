@@ -113,6 +113,23 @@ func baselineReturn(returns []float64, nYears int, percentile float64) float64 {
 	return cagrs[int(float64(len(cagrs))*percentile/100)]
 }
 
+// standardDeviation returns "The statistical uncertainty of the average real return"
+// See: https://portfoliocharts.com/portfolio/annual-returns/
+func standardDeviation(xs []float64) float64 {
+	n := float64(len(xs))
+	if n == 0 {
+		panic("returns list must not be empty")
+	}
+	var sumOfSquaredDiffs float64
+	{
+		avg := sum(xs) / n
+		for _, x := range xs {
+			sumOfSquaredDiffs += math.Pow(x-avg, 2)
+		}
+	}
+	return math.Sqrt((1 / n) * sumOfSquaredDiffs)
+}
+
 // swr returns the Safe-withdrawal rate
 func swr(returns []float64) float64 {
 	// prepend 1.0 to the list of returns

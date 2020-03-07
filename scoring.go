@@ -32,6 +32,7 @@ type (
 		BaselineSTReturn     float64
 		PWR30                float64
 		SWR30                float64
+		StdDev               float64
 		UlcerScore           float64
 		DeepestDrawdown      float64
 		LongestDrawdown      int
@@ -43,6 +44,7 @@ type (
 		BaselineSTReturnRank     Rank
 		PWR30Rank                Rank
 		SWR30Rank                Rank
+		StdDevRank               Rank
 		UlcerScoreRank           Rank
 		DeepestDrawdownRank      Rank
 		LongestDrawdownRank      Rank
@@ -62,7 +64,7 @@ type (
 )
 
 func (p PortfolioStat) String() string {
-	return fmt.Sprintf("%v %v (%d) AvgReturn:%0.3f%%(%d) BLT:%0.3f%%(%d) BST:%0.3f%%(%d) PWR:%0.3f%%(%d) SWR:%0.3f%%(%d) Ulcer:%0.1f(%d) DeepestDrawdown:%0.2f%%(%d) LongestDrawdown:%d(%d), StartDateSensitivity:%0.2f%%(%d)",
+	return fmt.Sprintf("%v %v (%d) AvgReturn:%0.3f%%(%d) BLT:%0.3f%%(%d) BST:%0.3f%%(%d) PWR:%0.3f%%(%d) SWR:%0.3f%%(%d) StdDev:%0.3f%%(%d) Ulcer:%0.1f(%d) DeepestDrawdown:%0.2f%%(%d) LongestDrawdown:%d(%d), StartDateSensitivity:%0.2f%%(%d)",
 		p.Assets,
 		p.Percentages,
 		p.OverallRankScoreRank.Ordinal,
@@ -76,6 +78,8 @@ func (p PortfolioStat) String() string {
 		p.PWR30Rank.Ordinal,
 		p.SWR30*100,
 		p.SWR30Rank.Ordinal,
+		p.StdDev,
+		p.StdDevRank.Ordinal,
 		p.UlcerScore,
 		p.UlcerScoreRank.Ordinal,
 		p.DeepestDrawdown*100,
@@ -94,6 +98,7 @@ func (p PortfolioStat) ComparePerformance(other PortfolioStat) PortfolioStat {
 	copied.BaselineSTReturn -= other.BaselineSTReturn
 	copied.PWR30 -= other.PWR30
 	copied.SWR30 -= other.SWR30
+	copied.StdDev -= other.StdDev
 	copied.UlcerScore -= other.UlcerScore
 	copied.DeepestDrawdown -= other.DeepestDrawdown
 	copied.LongestDrawdown -= other.LongestDrawdown
@@ -117,6 +122,7 @@ func (p PortfolioStat) Clone() *PortfolioStat {
 		BaselineSTReturn:         p.BaselineSTReturn,
 		PWR30:                    p.PWR30,
 		SWR30:                    p.SWR30,
+		StdDev:                   p.StdDev,
 		UlcerScore:               p.UlcerScore,
 		DeepestDrawdown:          p.DeepestDrawdown,
 		LongestDrawdown:          p.LongestDrawdown,
@@ -124,6 +130,7 @@ func (p PortfolioStat) Clone() *PortfolioStat {
 		AvgReturnRank:            p.AvgReturnRank,
 		PWR30Rank:                p.PWR30Rank,
 		SWR30Rank:                p.SWR30Rank,
+		StdDevRank:               p.StdDevRank,
 		UlcerScoreRank:           p.UlcerScoreRank,
 		DeepestDrawdownRank:      p.DeepestDrawdownRank,
 		LongestDrawdownRank:      p.LongestDrawdownRank,
@@ -213,6 +220,7 @@ func evaluatePortfolios(perms []Permutation, assetMap map[string][]float64) ([]*
 			BaselineSTReturn:     baselineShortTermReturn(portfolioReturns),
 			PWR30:                minPWR30,
 			SWR30:                minSWR30,
+			StdDev:               standardDeviation(portfolioReturns),
 			UlcerScore:           maxUlcerScore,
 			DeepestDrawdown:      deepestDrawdown,
 			LongestDrawdown:      longestDrawdown,
@@ -226,7 +234,7 @@ func evaluatePortfolios(perms []Permutation, assetMap map[string][]float64) ([]*
 // It sorts the list by the various performance metrics and populates the corresponding Rank field for each.
 // It finishes up by sorting them by their "overall" rank, considering all of the performance metrics equally.
 func RankPortfoliosInPlace(results []*PortfolioStat) {
-	fmt.Println("Calculate rank scores for the portfolios")
+	fmt.Println("...Calculate rank scores for the portfolios")
 	{
 		// rank by AvgReturn
 		RankAll(results, RankAllParams{
@@ -258,6 +266,12 @@ func RankPortfoliosInPlace(results []*PortfolioStat) {
 			LessIsBetter: false,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.SWR30Rank = rank },
 		})
+		// rank by StdDev
+		RankAll(results, RankAllParams{
+			Metric:       func(stat *PortfolioStat) float64 { return stat.StdDev },
+			LessIsBetter: true,
+			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.StdDevRank = rank },
+		})
 		// rank by UlcerScore
 		RankAll(results, RankAllParams{
 			Metric:       func(stat *PortfolioStat) float64 { return stat.UlcerScore },
@@ -284,7 +298,7 @@ func RankPortfoliosInPlace(results []*PortfolioStat) {
 		})
 	}
 
-	fmt.Println("rank by all their ranks (equally weighted)")
+	fmt.Println("...rank by all their ranks (equally weighted)")
 	{
 		// populate the OverallRankScore for all
 		for _, p := range results {
@@ -293,6 +307,7 @@ func RankPortfoliosInPlace(results []*PortfolioStat) {
 				math.Pow(p.BaselineSTReturnRank.Percentage, 2) +
 				math.Pow(p.PWR30Rank.Percentage, 2) +
 				math.Pow(p.SWR30Rank.Percentage, 2) +
+				math.Pow(p.StdDevRank.Percentage, 2) +
 				math.Pow(p.UlcerScoreRank.Percentage, 2) +
 				math.Pow(p.LongestDrawdownRank.Percentage, 2) +
 				math.Pow(p.DeepestDrawdownRank.Percentage, 2) +

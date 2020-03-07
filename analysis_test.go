@@ -393,3 +393,27 @@ func Test_baselineShortTermReturn(t *testing.T) {
 	g.Expect(baselineShortTermReturn(GLD)).To(Equal(-0.11357718226127445))
 	g.Expect(baselineShortTermReturn(GoldenButterfly)).To(Equal(0.02848353512272328))
 }
+
+func Test_standardDeviation(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	g.Expect(func() {
+		standardDeviation(nil)
+	}).To(Panic())
+
+	t.Run("matches STDEVP function in google spreadsheet", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+		g.Expect(standardDeviation([]float64{1})).To(Equal(0.0))
+		g.Expect(standardDeviation([]float64{1, 2})).To(Equal(0.5))
+		g.Expect(standardDeviation([]float64{1, 2, 3, 4})).To(Equal(1.118033988749895))
+		g.Expect(standardDeviation([]float64{1, -2, 3, -4})).To(Equal(2.692582403567252))
+	})
+
+	g.Expect(standardDeviation(TSM)).To(Equal(17.165685399889558))
+	g.Expect(standardDeviation(SCV)).To(Equal(19.394760597619783))
+	g.Expect(standardDeviation(LTT)).To(Equal(12.327064319013905))
+	g.Expect(standardDeviation(STT)).To(Equal(4.387180601846475))
+	g.Expect(standardDeviation(STB)).To(Equal(4.82507718671391))
+	g.Expect(standardDeviation(GLD)).To(Equal(23.857500543433524))
+	g.Expect(standardDeviation(GoldenButterfly)).To(Equal(8.103170495645953))
+}
