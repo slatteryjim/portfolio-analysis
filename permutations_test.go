@@ -97,21 +97,10 @@ func TestPortfolioPermutations(t *testing.T) {
 	// g.Expect(len(perms)).To(Equal(10_626)) // only 3,876 include all five.
 	fmt.Println("Generated", len(perms), "permutations.")
 
-	// TODO: use an enum for the assets, so it's just an int under the covers, but has a nice String method,
-	//  and maybe even a Returns() method that returns the appropriate []float64?
-	assetMap := map[string][]float64{
-		"TSM": TSM,
-		"SCV": SCV,
-		"LTT": LTT,
-		"STT": STT,
-		"GLD": GLD,
-	}
-
-	numberOfAssets := 5
-
 	// filter to only include permutations where all 5 assets are used/
 	// (See: https://github.com/golang/go/wiki/SliceTricks#filtering-without-allocating)
 	{
+		numberOfAssets := 5
 		filtered := perms[:0]
 		for _, p := range perms {
 			// this cuts 10,626 permutations down to 3,876

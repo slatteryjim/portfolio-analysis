@@ -3,7 +3,21 @@ package portfolio_analysis
 import (
 	"fmt"
 	"math"
+	"runtime"
 	"sort"
+	"sync"
+)
+
+var (
+	// TODO: use an enum for the assets, so it's just an int under the covers, but has a nice String method,
+	//  and maybe even a Returns() method that returns the appropriate []float64?
+	assetMap = map[string][]float64{
+		"TSM": TSM,
+		"SCV": SCV,
+		"LTT": LTT,
+		"STT": STT,
+		"GLD": GLD,
+	}
 )
 
 type (
@@ -100,7 +114,44 @@ func CopyAll(ps []*PortfolioStat) []*PortfolioStat {
 }
 
 // EvaluatePortfolios evaluates the portfolio for each of the given permutations, returning a slice of stats.
+// It processes in parallel using multiple CPUs as needed.
 func EvaluatePortfolios(perms []Permutation, assetMap map[string][]float64) ([]*PortfolioStat, error) {
+	res := make([]*PortfolioStat, len(perms))
+	var (
+		wg sync.WaitGroup
+
+		mu       sync.Mutex
+		finalErr error
+	)
+	startIndex := 0
+	for i, index := range segmentIndexes(len(perms), runtime.NumCPU()) {
+		wg.Add(1)
+		go func(startIndex, endIndex int) {
+			defer wg.Done()
+			// evaluate this portion of the perms
+			stats, err := evaluatePortfolios(perms[startIndex:endIndex], assetMap)
+			if err != nil {
+				mu.Lock()
+				mu.Unlock()
+				finalErr = fmt.Errorf("error in segment %d, perms offset %d: %w", i+1, startIndex, err)
+				return
+			}
+			// copy over the PortfolioStats to the appropriate part of the final slice
+			for i := startIndex; i < endIndex; i++ {
+				res[i] = stats[i-startIndex]
+			}
+		}(startIndex, index)
+		startIndex = index // the last index is the next startIndex
+	}
+	wg.Wait()
+	if finalErr != nil {
+		return nil, finalErr
+	}
+	return res, nil
+}
+
+// evaluatePortfolios evaluates the portfolio for each of the given permutations, returning a slice of stats.
+func evaluatePortfolios(perms []Permutation, assetMap map[string][]float64) ([]*PortfolioStat, error) {
 	// define this array to be reused
 	var returnsList [][]float64
 
@@ -260,6 +311,27 @@ func FindMany(results []*PortfolioStat, pred func(p *PortfolioStat) bool) []*Por
 		if pred(p) {
 			res = append(res, p)
 		}
+	}
+	return res
+}
+
+// segmentIndexes splits the `count` number of items into the given number of segments.
+// It returns the array of indexes to refer to those segments.
+func segmentIndexes(count, segments int) []int {
+	if segments < 1 {
+		panic(fmt.Sprintf("segments must be greater than zero but got %d", segments))
+	}
+	if count <= segments {
+		res := make([]int, 0, count)
+		for i := 1; i <= count; i++ {
+			res = append(res, i)
+		}
+		return res
+	}
+	res := make([]int, 0, segments)
+	step := float64(count) / float64(segments)
+	for i := 1; i <= segments; i++ {
+		res = append(res, int(float64(i)*step))
 	}
 	return res
 }
