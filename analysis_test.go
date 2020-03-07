@@ -319,3 +319,77 @@ func repeat(x float64, count int) []float64 {
 	}
 	return res
 }
+
+func Test_baselineReturn(t *testing.T) {
+
+	t.Run("percentile out of range", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+		g.Expect(func() {
+			baselineReturn([]float64{10}, 1, -0.0001)
+		}).To(Panic())
+		g.Expect(func() {
+			baselineReturn([]float64{10}, 1, 100)
+		}).To(Panic())
+	})
+
+	t.Run("empty returns ok", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+		g.Expect(baselineReturn(nil, 0, 0)).To(Equal(0.0))
+		g.Expect(baselineReturn(nil, 1, 50)).To(Equal(0.0))
+	})
+
+	t.Run("one return", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+		g.Expect(baselineReturn([]float64{10}, 1, 0)).To(Equal(0.10000000000000009))
+		g.Expect(baselineReturn([]float64{10}, 1, 50)).To(Equal(0.10000000000000009))
+		g.Expect(baselineReturn([]float64{10}, 1, 99.999)).To(Equal(0.10000000000000009))
+	})
+
+	t.Run("two returns", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+		g.Expect(baselineReturn([]float64{10, 20}, 1, 0)).To(Equal(0.10000000000000009))
+		g.Expect(baselineReturn([]float64{10, 20}, 1, 49)).To(Equal(0.10000000000000009))
+		g.Expect(baselineReturn([]float64{10, 20}, 1, 50)).To(Equal(0.19999999999999996))
+		g.Expect(baselineReturn([]float64{10, 20}, 1, 99.999)).To(Equal(0.19999999999999996))
+	})
+
+	t.Run("three returns", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+		g.Expect(baselineReturn([]float64{10, 20, 30}, 2, 0)).To(Equal(0.14891252930760568))
+		g.Expect(baselineReturn([]float64{10, 20, 30}, 2, 49)).To(Equal(0.14891252930760568))
+		g.Expect(baselineReturn([]float64{10, 20, 30}, 2, 50)).To(Equal(0.24899959967967966))
+		g.Expect(baselineReturn([]float64{10, 20, 30}, 2, 99.999)).To(Equal(0.24899959967967966))
+
+		t.Run("CAGRs are sorted", func(t *testing.T) {
+			g := NewGomegaWithT(t)
+			g.Expect(baselineReturn([]float64{-10, 20, -30}, 1, 0)).To(Equal(-0.30000000000000004))
+			g.Expect(baselineReturn([]float64{-10, 20, -30}, 1, 33.3)).To(Equal(-0.30000000000000004))
+			g.Expect(baselineReturn([]float64{-10, 20, -30}, 1, 33.4)).To(Equal(-0.09999999999999998))
+			g.Expect(baselineReturn([]float64{-10, 20, -30}, 1, 66.6)).To(Equal(-0.09999999999999998))
+			g.Expect(baselineReturn([]float64{-10, 20, -30}, 1, 66.7)).To(Equal(0.19999999999999996))
+			g.Expect(baselineReturn([]float64{-10, 20, -30}, 1, 99.999)).To(Equal(0.19999999999999996))
+		})
+	})
+}
+
+func Test_baselineLongTermReturn(t *testing.T) {
+	g := NewGomegaWithT(t)
+	g.Expect(baselineLongTermReturn(TSM)).To(Equal(0.030599414622012988))
+	g.Expect(baselineLongTermReturn(SCV)).To(Equal(0.05925630873497112))
+	g.Expect(baselineLongTermReturn(LTT)).To(Equal(0.022152065956750455))
+	g.Expect(baselineLongTermReturn(STT)).To(Equal(0.00723320636734659))
+	g.Expect(baselineLongTermReturn(STB)).To(Equal(0.013932133854550166))
+	g.Expect(baselineLongTermReturn(GLD)).To(Equal(-0.052036901573972894))
+	g.Expect(baselineLongTermReturn(GoldenButterfly)).To(Equal(0.05240715018337849))
+}
+
+func Test_baselineShortTermReturn(t *testing.T) {
+	g := NewGomegaWithT(t)
+	g.Expect(baselineShortTermReturn(TSM)).To(Equal(-0.02905140217935165))
+	g.Expect(baselineShortTermReturn(SCV)).To(Equal(0.019349617074645886))
+	g.Expect(baselineShortTermReturn(LTT)).To(Equal(0.006370681347895868))
+	g.Expect(baselineShortTermReturn(STT)).To(Equal(-0.013333955977865353))
+	g.Expect(baselineShortTermReturn(STB)).To(Equal(-0.006417877051557608))
+	g.Expect(baselineShortTermReturn(GLD)).To(Equal(-0.11357718226127445))
+	g.Expect(baselineShortTermReturn(GoldenButterfly)).To(Equal(0.02848353512272328))
+}

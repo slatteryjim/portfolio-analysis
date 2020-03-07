@@ -130,6 +130,8 @@ func TestPortfolioPermutations(t *testing.T) {
 
 	fmt.Println("\nBest by each ranking:")
 	fmt.Println("Best AvgReturn:", FindOne(results, func(p *PortfolioStat) bool { return p.AvgReturnRank.Ordinal == 1 }))
+	fmt.Println("Best BaselineLTReturn:", FindOne(results, func(p *PortfolioStat) bool { return p.BaselineLTReturnRank.Ordinal == 1 }))
+	fmt.Println("Best BaselineSTReturn:", FindOne(results, func(p *PortfolioStat) bool { return p.BaselineSTReturnRank.Ordinal == 1 }))
 	fmt.Println("Best PWR30:", FindOne(results, func(p *PortfolioStat) bool { return p.PWR30Rank.Ordinal == 1 }))
 	fmt.Println("Best SWR30:", FindOne(results, func(p *PortfolioStat) bool { return p.SWR30Rank.Ordinal == 1 }))
 	fmt.Println("Best UlcerScore:", FindOne(results, func(p *PortfolioStat) bool { return p.UlcerScoreRank.Ordinal == 1 }))
@@ -144,6 +146,8 @@ func TestPortfolioPermutations(t *testing.T) {
 	// find as good or better than GoldenButterfly
 	betterThanGB := CopyAll(FindMany(results, func(p *PortfolioStat) bool {
 		return p.AvgReturnRank.Ordinal <= gbStat.AvgReturnRank.Ordinal &&
+			p.BaselineLTReturnRank.Ordinal <= gbStat.BaselineLTReturnRank.Ordinal &&
+			p.BaselineSTReturnRank.Ordinal <= gbStat.BaselineSTReturnRank.Ordinal &&
 			p.PWR30Rank.Ordinal <= gbStat.PWR30Rank.Ordinal &&
 			p.SWR30Rank.Ordinal <= gbStat.SWR30Rank.Ordinal &&
 			p.UlcerScoreRank.Ordinal <= gbStat.UlcerScoreRank.Ordinal &&
@@ -154,6 +158,8 @@ func TestPortfolioPermutations(t *testing.T) {
 	RankPortfoliosInPlace(betterThanGB)
 	fmt.Println("As good or better than GoldenButterfly:", len(betterThanGB))
 	fmt.Println("Best AvgReturn:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.AvgReturnRank.Ordinal == 1 }))
+	fmt.Println("Best BaselineLTReturn:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.BaselineLTReturnRank.Ordinal == 1 }))
+	fmt.Println("Best BaselineSTReturn:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.BaselineSTReturnRank.Ordinal == 1 }))
 	fmt.Println("Best PWR30:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.PWR30Rank.Ordinal == 1 }))
 	fmt.Println("Best SWR30:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.SWR30Rank.Ordinal == 1 }))
 	fmt.Println("Best UlcerScore:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.UlcerScoreRank.Ordinal == 1 }))

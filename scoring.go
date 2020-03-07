@@ -28,6 +28,8 @@ type (
 
 		// stats on the portfolio performance
 		AvgReturn            float64
+		BaselineLTReturn     float64
+		BaselineSTReturn     float64
 		PWR30                float64
 		SWR30                float64
 		UlcerScore           float64
@@ -37,6 +39,8 @@ type (
 
 		// This portfolio's rank on various stats
 		AvgReturnRank            Rank
+		BaselineLTReturnRank     Rank
+		BaselineSTReturnRank     Rank
 		PWR30Rank                Rank
 		SWR30Rank                Rank
 		UlcerScoreRank           Rank
@@ -58,12 +62,16 @@ type (
 )
 
 func (p PortfolioStat) String() string {
-	return fmt.Sprintf("%v %v (%d) AvgReturn:%0.3f%%(%d) PWR:%0.3f%%(%d) SWR:%0.3f%%(%d) Ulcer:%0.1f(%d) DeepestDrawdown:%0.2f%%(%d) LongestDrawdown:%d(%d), StartDateSensitivity:%0.2f%%(%d)",
+	return fmt.Sprintf("%v %v (%d) AvgReturn:%0.3f%%(%d) BLT:%0.3f%%(%d) BST:%0.3f%%(%d) PWR:%0.3f%%(%d) SWR:%0.3f%%(%d) Ulcer:%0.1f(%d) DeepestDrawdown:%0.2f%%(%d) LongestDrawdown:%d(%d), StartDateSensitivity:%0.2f%%(%d)",
 		p.Assets,
 		p.Percentages,
 		p.OverallRankScoreRank.Ordinal,
 		p.AvgReturn*100,
 		p.AvgReturnRank.Ordinal,
+		p.BaselineLTReturn*100,
+		p.BaselineLTReturnRank.Ordinal,
+		p.BaselineSTReturn*100,
+		p.BaselineSTReturnRank.Ordinal,
 		p.PWR30*100,
 		p.PWR30Rank.Ordinal,
 		p.SWR30*100,
@@ -82,6 +90,8 @@ func (p PortfolioStat) String() string {
 func (p PortfolioStat) ComparePerformance(other PortfolioStat) PortfolioStat {
 	copied := *p.Clone()
 	copied.AvgReturn -= other.AvgReturn
+	copied.BaselineLTReturn -= other.BaselineLTReturn
+	copied.BaselineSTReturn -= other.BaselineSTReturn
 	copied.PWR30 -= other.PWR30
 	copied.SWR30 -= other.SWR30
 	copied.UlcerScore -= other.UlcerScore
@@ -103,6 +113,8 @@ func (p PortfolioStat) Clone() *PortfolioStat {
 		Assets:                   assets,
 		Percentages:              percentages,
 		AvgReturn:                p.AvgReturn,
+		BaselineLTReturn:         p.BaselineLTReturn,
+		BaselineSTReturn:         p.BaselineSTReturn,
 		PWR30:                    p.PWR30,
 		SWR30:                    p.SWR30,
 		UlcerScore:               p.UlcerScore,
@@ -197,6 +209,8 @@ func evaluatePortfolios(perms []Permutation, assetMap map[string][]float64) ([]*
 			Assets:               p.Assets,
 			Percentages:          p.Percentages,
 			AvgReturn:            averageReturn(portfolioReturns),
+			BaselineLTReturn:     baselineLongTermReturn(portfolioReturns),
+			BaselineSTReturn:     baselineShortTermReturn(portfolioReturns),
 			PWR30:                minPWR30,
 			SWR30:                minSWR30,
 			UlcerScore:           maxUlcerScore,
@@ -219,6 +233,18 @@ func RankPortfoliosInPlace(results []*PortfolioStat) {
 			Metric:       func(stat *PortfolioStat) float64 { return stat.AvgReturn },
 			LessIsBetter: false,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.AvgReturnRank = rank },
+		})
+		// rank by BaselineLTReturn
+		RankAll(results, RankAllParams{
+			Metric:       func(stat *PortfolioStat) float64 { return stat.BaselineLTReturn },
+			LessIsBetter: false,
+			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.BaselineLTReturnRank = rank },
+		})
+		// rank by BaselineSTReturn
+		RankAll(results, RankAllParams{
+			Metric:       func(stat *PortfolioStat) float64 { return stat.BaselineSTReturn },
+			LessIsBetter: false,
+			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.BaselineSTReturnRank = rank },
 		})
 		// rank by PWR30
 		RankAll(results, RankAllParams{
@@ -260,19 +286,11 @@ func RankPortfoliosInPlace(results []*PortfolioStat) {
 
 	fmt.Println("rank by all their ranks (equally weighted)")
 	{
-		// with simply summing up the ranks:
-		// #1: [TSM SCV LTT STT GLD] [30 5  5 40 20] PWR30: 3.958% (1483) Ulcer:2.4(316) DeepestDrawdown:-11.73%(199) LongestDrawdown:3(199)
-		// #2: [TSM SCV LTT STT GLD] [25 10 5 40 20] PWR30: 4.035% (1259) Ulcer:2.5(427) DeepestDrawdown:-12.24%(263) LongestDrawdown:3(263)
-		// #3: [TSM SCV LTT STT GLD] [25 5  5 45 20] PWR30: 3.862% (1762) Ulcer:2.1(205) DeepestDrawdown:-11.07%(128) LongestDrawdown:3(128)
-
-		// with sum of (each rank^2)
-		// #1: [TSM SCV LTT STT GLD] [35 5 5 30 25] PWR30: 4.232% (790) Ulcer:3.0(730) DeepestDrawdown:-13.32%(420) LongestDrawdown:3(420)
-		// #2: [TSM SCV LTT STT GLD] [15 20 5 40 20] PWR30: 4.180% (894) Ulcer:2.9(658) DeepestDrawdown:-13.28%(412) LongestDrawdown:3(412)
-		// #3: [TSM SCV LTT STT GLD] [30 5 10 30 25] PWR30: 4.142% (985) Ulcer:2.8(596) DeepestDrawdown:-13.13%(386) LongestDrawdown:3(386)
-
 		// populate the OverallRankScore for all
 		for _, p := range results {
 			p.OverallRankScore = math.Pow(p.AvgReturnRank.Percentage, 2) +
+				math.Pow(p.BaselineLTReturnRank.Percentage, 2) +
+				math.Pow(p.BaselineSTReturnRank.Percentage, 2) +
 				math.Pow(p.PWR30Rank.Percentage, 2) +
 				math.Pow(p.SWR30Rank.Percentage, 2) +
 				math.Pow(p.UlcerScoreRank.Percentage, 2) +

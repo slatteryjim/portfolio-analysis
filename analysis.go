@@ -3,6 +3,7 @@ package portfolio_analysis
 import (
 	"fmt"
 	"math"
+	"sort"
 )
 
 // some data from Boglehead's "Simba Spreadsheet"
@@ -79,6 +80,37 @@ func cagr(returns []float64) float64 {
 // See: https://portfoliocharts.com/portfolio/annual-returns/
 func averageReturn(returns []float64) float64 {
 	return sum(returns) / float64(len(returns)) / 100
+}
+
+// baselineLongTermReturn returns the:
+// "Conservative practical long-term compound return excluding
+// the worst outliers (15th percentile 15-year real CAGR)"
+// See: https://portfoliocharts.com/portfolio/long-term-returns/
+func baselineLongTermReturn(returns []float64) float64 {
+	return baselineReturn(returns, 15, 15)
+}
+
+// baselineShortTermReturn returns the:
+// "Conservative practical short-term compound return excluding
+// the worst outliers (15th percentile 3-year real CAGR)"
+// See: https://portfoliocharts.com/portfolio/long-term-returns/
+func baselineShortTermReturn(returns []float64) float64 {
+	return baselineReturn(returns, 3, 15)
+}
+
+func baselineReturn(returns []float64, nYears int, percentile float64) float64 {
+	if len(returns) == 0 {
+		return 0
+	}
+	if percentile < 0 || percentile >= 100 {
+		panic(fmt.Sprintf("percentile must be in the range [0,100) but got %f", percentile))
+	}
+	cagrs := make([]float64, 0, len(returns)-nYears)
+	for _, slice := range subSlices(returns, nYears) {
+		cagrs = append(cagrs, cagr(slice))
+	}
+	sort.Sort(sort.Float64Slice(cagrs))
+	return cagrs[int(float64(len(cagrs))*percentile/100)]
 }
 
 // swr returns the Safe-withdrawal rate
