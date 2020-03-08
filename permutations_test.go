@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	. "github.com/onsi/gomega"
 )
@@ -92,10 +93,17 @@ func TestPortfolioPermutations(t *testing.T) {
 	// Using 5% increments:
 	// MaxPWR:   [TSM SCV LTT STT GLD] [5 55 5  5 30] PWR30: 5.221% Ulcer:5.9 DeepestDrawdown:-23.66% LongestDrawdown:3
 	// MinUlcer: [TSM SCV LTT STT GLD] [5  5 5 75 10] PWR30: 2.740% Ulcer:0.8 DeepestDrawdown: -6.58% LongestDrawdown:3
-
+	//
+	// Timing/log for GoldenButterfly assets, 1% step permutations:
+	//   Generated 4,598,126 permutations in 10.9s
+	//   ...culled down to 81.9% permutations in 82ms
+	//   ...Evaluating 3,764,376 permutations.
+	//   Done evaluating portfolios in 2m40s
+	//   Ranked portfolios in 50.4s
+	startAt := time.Now()
 	perms := Permutations([]string{"TSM", "SCV", "LTT", "STT", "GLD"}, percentageRange(5))
 	// g.Expect(len(perms)).To(Equal(10_626)) // only 3,876 include all five.
-	fmt.Println("Generated", len(perms), "permutations.")
+	fmt.Println("Generated", len(perms), "permutations in", time.Since(startAt))
 
 	// filter to only include permutations where all 5 assets are used/
 	// (See: https://github.com/golang/go/wiki/SliceTricks#filtering-without-allocating)
@@ -115,12 +123,16 @@ func TestPortfolioPermutations(t *testing.T) {
 	}
 	//g.Expect(len(perms)).To(Equal(3_876))
 	fmt.Println("...Culled down. Evaluating", len(perms), "permutations.")
+	startAt = time.Now()
+	fmt.Println("...Evaluating", len(perms), "permutations.")
 
 	results, err := EvaluatePortfolios(perms, assetMap)
 	g.Expect(err).ToNot(HaveOccurred())
-	fmt.Println("Done evaluating portfolios.")
+	fmt.Println("Done evaluating portfolios in", time.Since(startAt))
 
+	startAt = time.Now()
 	RankPortfoliosInPlace(results)
+	fmt.Println("Ranked portfolios in", time.Since(startAt))
 
 	// print best:
 	fmt.Println("Best combined overall ranks:")
@@ -140,6 +152,7 @@ func TestPortfolioPermutations(t *testing.T) {
 	fmt.Println("Best LongestDrawdown:", FindOne(results, func(p *PortfolioStat) bool { return p.LongestDrawdownRank.Ordinal == 1 }))
 	fmt.Println("Best StartDateSensitivity:", FindOne(results, func(p *PortfolioStat) bool { return p.StartDateSensitivityRank.Ordinal == 1 }))
 
+	startAt = time.Now()
 	gbStat := FindOne(results, func(p *PortfolioStat) bool {
 		return reflect.DeepEqual(p.Percentages, []float64{20, 20, 20, 20, 20})
 	})
@@ -173,6 +186,7 @@ func TestPortfolioPermutations(t *testing.T) {
 	for i, p := range betterThanGB[:min(len(betterThanGB), 5)] {
 		fmt.Println(" ", i, p.ComparePerformance(*gbStat))
 	}
+	fmt.Println("Finished GB analysis in", time.Since(startAt))
 }
 
 func Test_percentageRange(t *testing.T) {
