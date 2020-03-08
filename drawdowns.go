@@ -2,13 +2,13 @@ package portfolio_analysis
 
 type drawdownSequence struct {
 	startIndex        int
-	cumulativeReturns []float64
+	cumulativeReturns []GrowthMultiplier
 	// did the sequence recover by the end?
 	recovered bool
 }
 
 // drawdowns returns a list of all the sequences of negative cumulative returns.
-func drawdowns(returns []float64) []drawdownSequence {
+func drawdowns(returns []Percent) []drawdownSequence {
 	if len(returns) == 0 {
 		return nil
 	}
@@ -29,7 +29,7 @@ func drawdowns(returns []float64) []drawdownSequence {
 // leadingDrawdownSequence returns the drawdown sequence, if this list starts with one.
 // Also returns a boolean indicating whether the drawdown sequence ended in the end,
 // or false if it never ended.
-func leadingDrawdownSequence(returns []float64) ([]float64, bool) {
+func leadingDrawdownSequence(returns []Percent) ([]GrowthMultiplier, bool) {
 	end := -1
 	cumulativeReturns := cumulativeList(returns)
 	for i, value := range cumulativeReturns {
@@ -44,13 +44,13 @@ func leadingDrawdownSequence(returns []float64) ([]float64, bool) {
 	return cumulativeReturns[0:end], true
 }
 
-func ulcerScore(cumulativeReturns []float64, recovered bool) float64 {
+func ulcerScore(cumulativeReturns []GrowthMultiplier, recovered bool) float64 {
 	if len(cumulativeReturns) == 0 {
 		return 0
 	}
 	score := 0.0
 	for _, x := range cumulativeReturns {
-		score += (1 - x) * 10
+		score += (1 - x.Float()) * 10
 	}
 	if !recovered {
 		// that's scary, we ended without a recovery, let's increase the score
@@ -59,7 +59,7 @@ func ulcerScore(cumulativeReturns []float64, recovered bool) float64 {
 	return score
 }
 
-func drawdownScores(returns []float64) (maxUlcerScore, deepestDrawdown float64, longestDrawdown int) {
+func drawdownScores(returns []Percent) (maxUlcerScore float64, deepestDrawdown Percent, longestDrawdown int) {
 	maxUlcerScore = 0.0
 	deepestDrawdown = 0.0
 	longestDrawdown = 0
@@ -68,7 +68,7 @@ func drawdownScores(returns []float64) (maxUlcerScore, deepestDrawdown float64, 
 		if score > maxUlcerScore {
 			maxUlcerScore = score
 		}
-		lowestPoint := minFloats(dd.cumulativeReturns) - 1
+		lowestPoint := Percent(minFloats(dd.cumulativeReturns) - 1)
 		if lowestPoint < deepestDrawdown {
 			deepestDrawdown = lowestPoint
 		}

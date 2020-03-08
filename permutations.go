@@ -2,10 +2,10 @@ package portfolio_analysis
 
 type Permutation struct {
 	Assets      []string
-	Percentages []float64
+	Percentages []Percent
 }
 
-func Permutations(assets []string, percentages []float64) []Permutation {
+func Permutations(assets []string, percentages []Percent) []Permutation {
 	perms := generatePermutations(assets, percentages)
 	// fix up the percentages as a last step, translating them into allocation amounts for each asset
 	for _, p := range perms {
@@ -14,7 +14,7 @@ func Permutations(assets []string, percentages []float64) []Permutation {
 	return perms
 }
 
-func generatePermutations(assets []string, percentages []float64) []Permutation {
+func generatePermutations(assets []string, percentages []Percent) []Permutation {
 	if len(assets) == 0 || len(percentages) == 0 {
 		return nil
 	}
@@ -27,14 +27,14 @@ func generatePermutations(assets []string, percentages []float64) []Permutation 
 			// if this is the last percentage, add one permutation where this asset takes it all
 			res = append(res, Permutation{
 				Assets:      []string{thisAsset},
-				Percentages: []float64{percentages[i]},
+				Percentages: []Percent{percentages[i]},
 			})
 		}
 		// add on this asset and percentage to all of the other downstream permutations
 		for _, remainingPermutation := range generatePermutations(remainingAssets, percentages[i+1:]) {
 			res = append(res, Permutation{
 				Assets:      append([]string{thisAsset}, remainingPermutation.Assets...),
-				Percentages: append([]float64{percentages[i]}, remainingPermutation.Percentages...),
+				Percentages: append([]Percent{percentages[i]}, remainingPermutation.Percentages...),
 			})
 		}
 	}
@@ -43,8 +43,8 @@ func generatePermutations(assets []string, percentages []float64) []Permutation 
 
 // translatePercentages mutates the given slice of percentages, making them represent allocation sizes
 // of each asset. So a sequence like [25, 50, 75, 100] would be translated into [25, 25, 25, 25].
-func translatePercentages(ps []float64) {
-	prev := 0.0
+func translatePercentages(ps []Percent) {
+	var prev Percent = 0
 	for i, p := range ps {
 		prev, ps[i] = p, p-prev
 	}

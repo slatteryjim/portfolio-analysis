@@ -2,7 +2,7 @@ package portfolio_analysis
 
 import (
 	"fmt"
-	"reflect"
+	"math"
 	"testing"
 	"time"
 
@@ -18,43 +18,43 @@ func TestPermutations(t *testing.T) {
 		}
 	}
 
-	perms := Permutations([]string{"A"}, []float64{100})
+	perms := Permutations([]string{"A"}, readablePercents(100))
 	dumpAll(perms)
 	g.Expect(perms).To(Equal([]Permutation{
-		{[]string{"A"}, []float64{100}},
+		{[]string{"A"}, readablePercents(100)},
 	}))
 
-	perms = Permutations([]string{"A", "B"}, []float64{50, 100})
+	perms = Permutations([]string{"A", "B"}, readablePercents(50, 100))
 	g.Expect(perms).To(ConsistOf([]Permutation{
-		{[]string{"A"}, []float64{100}},
-		{[]string{"A", "B"}, []float64{50, 50}},
-		{[]string{"B"}, []float64{100}},
+		{[]string{"A"}, readablePercents(100)},
+		{[]string{"A", "B"}, readablePercents(50, 50)},
+		{[]string{"B"}, readablePercents(100)},
 	}))
 
-	perms = Permutations([]string{"A", "B", "C"}, []float64{33, 66, 100})
+	perms = Permutations([]string{"A", "B", "C"}, readablePercents(33, 66, 100))
 	g.Expect(perms).To(ConsistOf([]Permutation{
-		{[]string{"A"}, []float64{100}},
-		{[]string{"A", "B"}, []float64{66, 34}},
-		{[]string{"A", "C"}, []float64{66, 34}},
-		{[]string{"A", "B"}, []float64{33, 67}},
-		{[]string{"A", "B", "C"}, []float64{33, 33, 34}},
-		{[]string{"A", "C"}, []float64{33, 67}},
-		{[]string{"B"}, []float64{100}},
-		{[]string{"B", "C"}, []float64{66, 34}},
-		{[]string{"B", "C"}, []float64{33, 67}},
-		{[]string{"C"}, []float64{100}},
+		{[]string{"A"}, []Percent{1.00}},
+		{[]string{"A", "B"}, []Percent{0.66, 0.33999999999999997}},
+		{[]string{"A", "C"}, []Percent{0.66, 0.33999999999999997}},
+		{[]string{"A", "B"}, []Percent{0.33, 0.6699999999999999}},
+		{[]string{"A", "B", "C"}, []Percent{0.33, 0.33, 0.33999999999999997}},
+		{[]string{"A", "C"}, []Percent{0.33, 0.6699999999999999}},
+		{[]string{"B"}, []Percent{1.00}},
+		{[]string{"B", "C"}, []Percent{0.66, 0.33999999999999997}},
+		{[]string{"B", "C"}, []Percent{0.33, 0.6699999999999999}},
+		{[]string{"C"}, []Percent{1.00}},
 	}))
 
-	perms = Permutations([]string{"A", "B", "C"}, floats(1, 100, 1))
+	perms = Permutations([]string{"A", "B", "C"}, readablePercents(series(1, 100, 1)...))
 	g.Expect(len(perms)).To(Equal(5151))
 
-	perms = Permutations([]string{"A", "B", "C", "D"}, floats(1, 100, 1))
+	perms = Permutations([]string{"A", "B", "C", "D"}, readablePercents(series(1, 100, 1)...))
 	g.Expect(len(perms)).To(Equal(176_851))
 
 	// perms = Permutations([]string{"A", "B", "C", "D", "E"}, floats(1, 100, 1))
 	// g.Expect(len(perms)).To(Equal(4_598_126))
 
-	perms = Permutations([]string{"A", "B", "C", "D", "E"}, floats(2.5, 100, 2.5))
+	perms = Permutations([]string{"A", "B", "C", "D", "E"}, readablePercents(series(2.5, 100, 2.5)...))
 	g.Expect(len(perms)).To(Equal(135_751))
 
 	// perms = Permutations([]string{"A", "B", "C", "D", "E", "F"}, floats(2.5, 100, 2.5))
@@ -67,20 +67,20 @@ func TestPermutations(t *testing.T) {
 func Test_translatePercentages(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	verify := func(ps, expected []float64) {
+	verify := func(ps, expected []Percent) {
 		t.Helper()
 		translatePercentages(ps)
 		g.Expect(ps).To(Equal(expected))
 	}
 
 	verify(nil, nil)
-	verify([]float64{}, []float64{})
+	verify([]Percent{}, []Percent{})
 
-	verify([]float64{25}, []float64{25})
+	verify([]Percent{25}, []Percent{25})
 
-	verify([]float64{25, 100}, []float64{25, 75})
+	verify([]Percent{25, 100}, []Percent{25, 75})
 
-	verify([]float64{25, 50, 75, 100}, []float64{25, 25, 25, 25})
+	verify([]Percent{25, 50, 75, 100}, []Percent{25, 25, 25, 25})
 }
 
 func TestPortfolioPermutations(t *testing.T) {
@@ -101,28 +101,29 @@ func TestPortfolioPermutations(t *testing.T) {
 	//   Done evaluating portfolios in 2m40s
 	//   Ranked portfolios in 50.4s
 	startAt := time.Now()
-	perms := Permutations([]string{"TSM", "SCV", "LTT", "STT", "GLD"}, percentageRange(5))
+	perms := Permutations([]string{"TSM", "SCV", "LTT", "STT", "GLD"}, readablePercents(seriesRange(5)...))
 	// g.Expect(len(perms)).To(Equal(10_626)) // only 3,876 include all five.
 	fmt.Println("Generated", len(perms), "permutations in", time.Since(startAt))
 
 	// filter to only include permutations where all 5 assets are used/
 	// (See: https://github.com/golang/go/wiki/SliceTricks#filtering-without-allocating)
-	{
-		numberOfAssets := 5
-		filtered := perms[:0]
-		for _, p := range perms {
-			// this cuts 10,626 permutations down to 3,876
-			if len(p.Assets) == numberOfAssets {
-				filtered = append(filtered, p)
-			}
-		}
-		for i := len(filtered); i < len(perms); i++ {
-			perms[i] = Permutation{}
-		}
-		perms = filtered
-	}
+	// {
+	// 	startAt := time.Now()
+	// 	numberOfAssets := 5
+	// 	filtered := perms[:0]
+	// 	for _, p := range perms {
+	// 		// this cuts 10,626 permutations down to 3,876
+	// 		if len(p.Assets) == numberOfAssets {
+	// 			filtered = append(filtered, p)
+	// 		}
+	// 	}
+	// 	for i := len(filtered); i < len(perms); i++ {
+	// 		perms[i] = Permutation{}
+	// 	}
+	// 	fmt.Printf("...culled down to %0.1f%% permutations in %s\n", float64(len(filtered))/float64(len(perms))*100, time.Since(startAt))
+	// 	perms = filtered
+	// }
 	//g.Expect(len(perms)).To(Equal(3_876))
-	fmt.Println("...Culled down. Evaluating", len(perms), "permutations.")
 	startAt = time.Now()
 	fmt.Println("...Evaluating", len(perms), "permutations.")
 
@@ -154,8 +155,17 @@ func TestPortfolioPermutations(t *testing.T) {
 
 	startAt = time.Now()
 	gbStat := FindOne(results, func(p *PortfolioStat) bool {
-		return reflect.DeepEqual(p.Percentages, []float64{20, 20, 20, 20, 20})
+		if len(p.Percentages) != 5 {
+			return false
+		}
+		for _, pct := range p.Percentages {
+			if !approxEqual(pct.Float(), 0.20, 0.001) {
+				return false
+			}
+		}
+		return true
 	})
+	g.Expect(gbStat).ToNot(BeNil())
 	fmt.Println("\nGoldenButterfly:", gbStat)
 	// find as good or better than GoldenButterfly
 	betterThanGB := CopyAll(FindMany(results, func(p *PortfolioStat) bool {
@@ -189,26 +199,30 @@ func TestPortfolioPermutations(t *testing.T) {
 	fmt.Println("Finished GB analysis in", time.Since(startAt))
 }
 
-func Test_percentageRange(t *testing.T) {
+func approxEqual(x, y, tolerance float64) bool {
+	return math.Abs(x-y) < tolerance
+}
+
+func Test_seriesRange(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	g.Expect(percentageRange(25)).To(Equal([]float64{25, 50, 75, 100}))
-	g.Expect(percentageRange(10)).To(Equal([]float64{10, 20, 30, 40, 50, 60, 70, 80, 90, 100}))
-	g.Expect(percentageRange(33.333333333333333)).To(Equal([]float64{33.333333333333336, 66.66666666666667, 100}))
+	g.Expect(seriesRange(25)).To(Equal([]float64{25, 50, 75, 100}))
+	g.Expect(seriesRange(10)).To(Equal([]float64{10, 20, 30, 40, 50, 60, 70, 80, 90, 100}))
+	g.Expect(seriesRange(33.333333333333333)).To(Equal([]float64{33.333333333333336, 66.66666666666667, 100}))
 }
 
-func Test_floats(t *testing.T) {
+func Test_series(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	g.Expect(floats(25, 100, 25)).To(Equal([]float64{25, 50, 75, 100}))
-	g.Expect(floats(12.5, 100, 12.5)).To(Equal([]float64{12.5, 25, 37.5, 50, 62.5, 75, 87.5, 100}))
+	g.Expect(series(25, 100, 25)).To(Equal([]float64{25, 50, 75, 100}))
+	g.Expect(series(12.5, 100, 12.5)).To(Equal([]float64{12.5, 25, 37.5, 50, 62.5, 75, 87.5, 100}))
 }
 
-func percentageRange(step float64) []float64 {
-	return floats(step, 100, step)
+func seriesRange(step float64) []float64 {
+	return series(step, 100, step)
 }
 
-func floats(start, end, step float64) []float64 {
+func series(start, end, step float64) []float64 {
 	var res []float64
 	for i := start; i <= end; i += step {
 		res = append(res, i)

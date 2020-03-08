@@ -68,47 +68,56 @@ func TestEvaluatePortfolios(t *testing.T) {
 	g.Expect(EvaluatePortfolios([]Permutation{}, nil)).To(BeEmpty())
 
 	g.Expect(EvaluatePortfolios([]Permutation{
-		{Assets: []string{"TSM"}, Percentages: []float64{100}},
+		{Assets: []string{"TSM"}, Percentages: readablePercents(100)},
 	}, assetMap)).To(Equal([]*PortfolioStat{
 		{
 			Assets:               []string{"TSM"},
-			Percentages:          []float64{100},
-			AvgReturn:            0.07452352941176471,
+			Percentages:          readablePercents(100),
+			AvgReturn:            0.0745235294117647,
+			BaselineLTReturn:     0.030599414622012988,
+			BaselineSTReturn:     -0.02905140217935165,
 			PWR30:                0.03237620200614041,
 			SWR30:                0.037860676066939845,
-			UlcerScore:           26.98911264363915,
+			StdDev:               0.17165685399889558,
+			UlcerScore:           26.989112643639167,
 			DeepestDrawdown:      -0.5225460399999999,
 			LongestDrawdown:      13,
-			StartDateSensitivity: 0.31644688577480373,
+			StartDateSensitivity: 0.3164468857748042,
 		},
 	}))
 
 	// two permutations will exercise two goroutines
 	g.Expect(EvaluatePortfolios([]Permutation{
-		{Assets: []string{"TSM"}, Percentages: []float64{100}},
-		{Assets: []string{"TSM", "GLD"}, Percentages: []float64{50, 50}},
+		{Assets: []string{"TSM"}, Percentages: readablePercents(100)},
+		{Assets: []string{"TSM", "GLD"}, Percentages: readablePercents(50, 50)},
 	}, assetMap)).To(Equal([]*PortfolioStat{
 		{
 			Assets:               []string{"TSM"},
-			Percentages:          []float64{100},
-			AvgReturn:            0.07452352941176471,
+			Percentages:          readablePercents(100),
+			AvgReturn:            0.0745235294117647,
+			BaselineLTReturn:     0.030599414622012988,
+			BaselineSTReturn:     -0.02905140217935165,
 			PWR30:                0.03237620200614041,
 			SWR30:                0.037860676066939845,
-			UlcerScore:           26.98911264363915,
+			StdDev:               0.17165685399889558,
+			UlcerScore:           26.989112643639167,
 			DeepestDrawdown:      -0.5225460399999999,
 			LongestDrawdown:      13,
-			StartDateSensitivity: 0.31644688577480373,
+			StartDateSensitivity: 0.3164468857748042,
 		},
 		{
 			Assets:               []string{"TSM", "GLD"},
-			Percentages:          []float64{50, 50},
-			AvgReturn:            0.06387058823529412,
-			PWR30:                0.028200924227015436,
-			SWR30:                0.0406623859534676,
-			UlcerScore:           9.965815083766605,
-			DeepestDrawdown:      -0.25932097437400503,
+			Percentages:          readablePercents(50, 50),
+			AvgReturn:            0.06387058823529411,
+			BaselineLTReturn:     0.03547746755212633,
+			BaselineSTReturn:     -0.00519786860232474,
+			PWR30:                0.028200924227015447,
+			SWR30:                0.04066238595346762,
+			StdDev:               0.13238467721907654,
+			UlcerScore:           9.965815083766593,
+			DeepestDrawdown:      -0.2593209743740048,
 			LongestDrawdown:      6,
-			StartDateSensitivity: 0.2160978598353418,
+			StartDateSensitivity: 0.21609785983534202,
 		},
 	}))
 }

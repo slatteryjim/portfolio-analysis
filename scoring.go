@@ -11,7 +11,7 @@ import (
 var (
 	// TODO: use an enum for the assets, so it's just an int under the covers, but has a nice String method,
 	//  and maybe even a Returns() method that returns the appropriate []float64?
-	assetMap = map[string][]float64{
+	assetMap = map[string][]Percent{
 		"TSM": TSM,
 		"SCV": SCV,
 		"LTT": LTT,
@@ -24,19 +24,19 @@ type (
 	PortfolioStat struct {
 		// describe portfolio assets and percentages
 		Assets      []string
-		Percentages []float64
+		Percentages []Percent
 
 		// stats on the portfolio performance
-		AvgReturn            float64
-		BaselineLTReturn     float64
-		BaselineSTReturn     float64
-		PWR30                float64
-		SWR30                float64
-		StdDev               float64
+		AvgReturn            Percent
+		BaselineLTReturn     Percent
+		BaselineSTReturn     Percent
+		PWR30                Percent
+		SWR30                Percent
+		StdDev               Percent
 		UlcerScore           float64
-		DeepestDrawdown      float64
+		DeepestDrawdown      Percent
 		LongestDrawdown      int
-		StartDateSensitivity float64
+		StartDateSensitivity Percent
 
 		// This portfolio's rank on various stats
 		AvgReturnRank            Rank
@@ -78,7 +78,7 @@ func (p PortfolioStat) String() string {
 		p.PWR30Rank.Ordinal,
 		p.SWR30*100,
 		p.SWR30Rank.Ordinal,
-		p.StdDev,
+		p.StdDev*100,
 		p.StdDevRank.Ordinal,
 		p.UlcerScore,
 		p.UlcerScoreRank.Ordinal,
@@ -111,7 +111,7 @@ func (p PortfolioStat) Clone() *PortfolioStat {
 	// deep copy the slices
 	assets := make([]string, len(p.Assets))
 	copy(assets, p.Assets)
-	percentages := make([]float64, len(p.Percentages))
+	percentages := make([]Percent, len(p.Percentages))
 	copy(percentages, p.Percentages)
 
 	return &PortfolioStat{
@@ -150,7 +150,7 @@ func CopyAll(ps []*PortfolioStat) []*PortfolioStat {
 
 // EvaluatePortfolios evaluates the portfolio for each of the given permutations, returning a slice of stats.
 // It processes in parallel using multiple CPUs as needed.
-func EvaluatePortfolios(perms []Permutation, assetMap map[string][]float64) ([]*PortfolioStat, error) {
+func EvaluatePortfolios(perms []Permutation, assetMap map[string][]Percent) ([]*PortfolioStat, error) {
 	res := make([]*PortfolioStat, len(perms))
 	var (
 		wg sync.WaitGroup
@@ -186,15 +186,16 @@ func EvaluatePortfolios(perms []Permutation, assetMap map[string][]float64) ([]*
 }
 
 // evaluatePortfolios evaluates the portfolio for each of the given permutations, returning a slice of stats.
-func evaluatePortfolios(perms []Permutation, assetMap map[string][]float64) ([]*PortfolioStat, error) {
+func evaluatePortfolios(perms []Permutation, assetMap map[string][]Percent) ([]*PortfolioStat, error) {
 	// define this array to be reused
-	var returnsList [][]float64
+	var returnsList [][]Percent
 
 	results := make([]*PortfolioStat, 0, len(perms))
 	for i, p := range perms {
 		// populate returnsList from p.Assets and assetMap
 		{
-			returnsList = returnsList[:0] // zero out cached returnsList
+			// zero out cached returnsList
+			returnsList = returnsList[:0]
 			for _, a := range p.Assets {
 				returns, ok := assetMap[a]
 				if !ok {
@@ -238,37 +239,37 @@ func RankPortfoliosInPlace(results []*PortfolioStat) {
 	{
 		// rank by AvgReturn
 		RankAll(results, RankAllParams{
-			Metric:       func(stat *PortfolioStat) float64 { return stat.AvgReturn },
+			Metric:       func(stat *PortfolioStat) float64 { return stat.AvgReturn.Float() },
 			LessIsBetter: false,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.AvgReturnRank = rank },
 		})
 		// rank by BaselineLTReturn
 		RankAll(results, RankAllParams{
-			Metric:       func(stat *PortfolioStat) float64 { return stat.BaselineLTReturn },
+			Metric:       func(stat *PortfolioStat) float64 { return stat.BaselineLTReturn.Float() },
 			LessIsBetter: false,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.BaselineLTReturnRank = rank },
 		})
 		// rank by BaselineSTReturn
 		RankAll(results, RankAllParams{
-			Metric:       func(stat *PortfolioStat) float64 { return stat.BaselineSTReturn },
+			Metric:       func(stat *PortfolioStat) float64 { return stat.BaselineSTReturn.Float() },
 			LessIsBetter: false,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.BaselineSTReturnRank = rank },
 		})
 		// rank by PWR30
 		RankAll(results, RankAllParams{
-			Metric:       func(stat *PortfolioStat) float64 { return stat.PWR30 },
+			Metric:       func(stat *PortfolioStat) float64 { return stat.PWR30.Float() },
 			LessIsBetter: false,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.PWR30Rank = rank },
 		})
 		// rank by SWR30
 		RankAll(results, RankAllParams{
-			Metric:       func(stat *PortfolioStat) float64 { return stat.SWR30 },
+			Metric:       func(stat *PortfolioStat) float64 { return stat.SWR30.Float() },
 			LessIsBetter: false,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.SWR30Rank = rank },
 		})
 		// rank by StdDev
 		RankAll(results, RankAllParams{
-			Metric:       func(stat *PortfolioStat) float64 { return stat.StdDev },
+			Metric:       func(stat *PortfolioStat) float64 { return stat.StdDev.Float() },
 			LessIsBetter: true,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.StdDevRank = rank },
 		})
@@ -280,7 +281,7 @@ func RankPortfoliosInPlace(results []*PortfolioStat) {
 		})
 		// rank by DeepestDrawdown
 		RankAll(results, RankAllParams{
-			Metric:       func(stat *PortfolioStat) float64 { return stat.DeepestDrawdown },
+			Metric:       func(stat *PortfolioStat) float64 { return stat.DeepestDrawdown.Float() },
 			LessIsBetter: false,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.DeepestDrawdownRank = rank },
 		})
@@ -292,7 +293,7 @@ func RankPortfoliosInPlace(results []*PortfolioStat) {
 		})
 		// rank by StartDateSensitivity
 		RankAll(results, RankAllParams{
-			Metric:       func(stat *PortfolioStat) float64 { return stat.StartDateSensitivity },
+			Metric:       func(stat *PortfolioStat) float64 { return stat.StartDateSensitivity.Float() },
 			LessIsBetter: true,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.StartDateSensitivityRank = rank },
 		})
