@@ -121,3 +121,38 @@ func TestEvaluatePortfolios(t *testing.T) {
 		},
 	}))
 }
+
+var (
+	permutationsGoldenButterfly = []Permutation{
+		{
+			Assets:      []string{"TSM", "SCV", "LTT", "STT", "GLD"},
+			Percentages: []Percent{0.2, 0.2, 0.2, 0.2, 0.2},
+		},
+	}
+
+	permutationsTSM = []Permutation{{Assets: []string{"TSM"}, Percentages: []Percent{1}}}
+)
+
+// go test -run=^$ -bench=Benchmark_evaluatePortfolios_GoldenButterfly$ --benchtime=10s
+//
+// Benchmark_evaluatePortfolios_GoldenButterfly-12           451842             26348 ns/op
+func Benchmark_evaluatePortfolios_GoldenButterfly(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, err := evaluatePortfolios(permutationsGoldenButterfly, assetMap)
+		if err != nil {
+			b.Fatal(err.Error())
+		}
+	}
+}
+
+// go test -run=^$ -bench=Benchmark_evaluatePortfolios_TSM$ --benchtime=
+//
+// Benchmark_evaluatePortfolios_TSM-12       446212             26280 ns/op
+func Benchmark_evaluatePortfolios_TSM(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, err := evaluatePortfolios(permutationsTSM, assetMap)
+		if err != nil {
+			b.Fatal(err.Error())
+		}
+	}
+}

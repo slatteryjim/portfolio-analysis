@@ -31,7 +31,7 @@ func drawdowns(returns []Percent) []drawdownSequence {
 // or false if it never ended.
 func leadingDrawdownSequence(returns []Percent) ([]GrowthMultiplier, bool) {
 	end := -1
-	cumulativeReturns := cumulativeList(returns)
+	cumulativeReturns := cumulativeList(returns)[1:]
 	for i, value := range cumulativeReturns {
 		if value >= 1 {
 			end = i

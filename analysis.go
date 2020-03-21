@@ -74,24 +74,77 @@ var (
 // take a list of multiple asset returns, and the percentage to rebalance each year. Returns the resultant set of returns.
 // Example:
 //     portfolio_returns([TSM, ITB], [60, 40])
-func portfolioReturns(returnsList [][]Percent, percentages []Percent) ([]Percent, error) {
-	if math.Abs(sum(percentages).Float()-1.00) > 0.00000000000001 {
-		return nil, fmt.Errorf("percentages must sum to 100%%, got %v", sum(percentages))
+func portfolioReturns(returnsList [][]Percent, targetAllocations []Percent) ([]Percent, error) {
+	if math.Abs(sum(targetAllocations).Float()-1.00) > 0.00000000000001 {
+		return nil, fmt.Errorf("targetAllocations must sum to 100%%, got %v", sum(targetAllocations))
 	}
-	if len(percentages) != len(returnsList) {
-		return nil, fmt.Errorf("lists must have the same length: percentages (%d), returnsList (%d)", len(percentages), len(returnsList))
+	if len(targetAllocations) != len(returnsList) {
+		return nil, fmt.Errorf("lists must have the same length: targetAllocations (%d), returnsList (%d)", len(targetAllocations), len(returnsList))
 	}
-
 	res := make([]Percent, 0, len(returnsList[0]))
 	zipWalk(returnsList, func(yearsReturns []Percent) {
 		var sum Percent
 		for i := range yearsReturns {
-			sum += yearsReturns[i] * percentages[i]
+			sum += yearsReturns[i] * targetAllocations[i]
 		}
 		res = append(res, sum)
 	})
 
 	return res, nil
+}
+
+// PortfolioTradingSimulation takes a list of multiple asset returns, and the percentage to rebalance each year.
+// Returns the resultant set of returns.
+// I want to play with rebalance_factor. Instead of rebalancing exactly, we can overshoot or undershoot the
+// transactions, to "juice" it up.
+// I want to see how that tweak in rebalancing strategy affects the performance of various portfolios.
+// Example:
+//     portfolio_trading_simulation([TSM, ITB], [60, 40])
+func PortfolioTradingSimulation(returnsList [][]Percent, targetAllocations []Percent, rebalanceFactor float64) ([]Percent, error) {
+	if math.Abs(sum(targetAllocations).Float()-1.00) > 0.00000000000001 {
+		return nil, fmt.Errorf("targetAllocations must sum to 100%%, got %v", sum(targetAllocations))
+	}
+	if len(targetAllocations) != len(returnsList) {
+		return nil, fmt.Errorf("lists must have the same length: targetAllocations (%d), returnsList (%d)", len(targetAllocations), len(returnsList))
+	}
+	var cumulativeReturnsL = make([]Percent, 0, len(returnsList[0]))
+	{
+		var (
+			// our initial allocation of 1.000 will simply be according to the target allocations.
+			// Shorthand to clone targetAllocations. See: https://github.com/go101/go101/wiki/How-to-efficiently-clone-a-slice%3F
+			allocations = append(targetAllocations[:0:0], targetAllocations...)
+			// slice to reuse for calculations in each iteration
+			eoyAllocation = make([]Percent, len(targetAllocations))
+		)
+		zipWalk(returnsList, func(oneReturnSet []Percent) {
+			// fmt.Println("\noneReturnSet", fmt.Sprintf("%v", oneReturnSet))
+			// apply the returns to the current allocation
+			startSum := sum(allocations)
+			var eoySum Percent
+			for i := range allocations {
+				value := allocations[i] * (oneReturnSet[i] + 1)
+				eoyAllocation[i] = value
+				eoySum += value
+			}
+			cumulativeReturnsL = append(cumulativeReturnsL, (eoySum/startSum)-1)
+			// fmt.Println("eoyAllocation", fmt.Sprintf("%v", eoyAllocation), "eoySum", eoySum)
+
+			// update allocations -- calculate the transactions to perform, and apply
+			for i := range targetAllocations {
+				target := targetAllocations[i] * eoySum
+				transaction := (target - eoyAllocation[i]) * Percent(rebalanceFactor)
+				// fmt.Println("transaction", i+1, transaction)
+				allocation := eoyAllocation[i] + transaction
+				if allocation < 0 {
+					panic("no allocation can go below zero! maybe rebalanceFactor is too extreme?")
+				}
+				allocations[i] = allocation
+			}
+			// fmt.Println("post-transaction allocation", fmt.Sprintf("%v", allocations))
+			return
+		})
+	}
+	return cumulativeReturnsL, nil
 }
 
 // calculates the cumulative growth of the returns
@@ -103,13 +156,15 @@ func cumulative(returns []Percent) GrowthMultiplier {
 	return product
 }
 
-// # calculates the cumulative growth of the returns
+// cumulativeList calculates the cumulative growth of the returns.
+// It returns a list that always starts with `1`.
 func cumulativeList(returns []Percent) []GrowthMultiplier {
-	res := make([]GrowthMultiplier, len(returns))
+	res := make([]GrowthMultiplier, 0, len(returns)+1)
 	var acc GrowthMultiplier = 1
-	for i, r := range returns {
+	res = append(res, acc)
+	for _, r := range returns {
 		acc *= r.GrowthMultiplier()
-		res[i] = acc
+		res = append(res, acc)
 	}
 	return res
 }
@@ -176,11 +231,7 @@ func standardDeviation(xs []Percent) Percent {
 
 // swr returns the Safe-withdrawal rate
 func swr(returns []Percent) Percent {
-	// prepend 1.0 to the list of returns
-	cumulativeGrowth := make([]GrowthMultiplier, 0, len(returns)+1)
-	cumulativeGrowth = append(cumulativeGrowth, 1.0)
-	cumulativeGrowth = append(cumulativeGrowth, cumulativeList(returns)...)
-
+	cumulativeGrowth := cumulativeList(returns)
 	return harmonicMean(cumulativeGrowth) / Percent(len(cumulativeGrowth))
 }
 
@@ -215,17 +266,51 @@ func minSWR(returns []Percent, nYears int) (rate Percent, startAtIndex int) {
 	if nYears == 0 {
 		return 0, 0
 	}
-
 	rate = Percent(math.MaxFloat64)
 	startAtIndex = math.MaxInt64
 	for i, slice := range subSlices(returns, nYears) {
-		thisPWR := swr(slice)
-		if thisPWR < rate {
-			rate = thisPWR
+		thisSWR := swr(slice)
+		if thisSWR < rate {
+			rate = thisSWR
 			startAtIndex = i
 		}
 	}
 	return rate, startAtIndex
+}
+
+// minPWRAndSWR calculates both PWR and SWR at the same time, for efficiency.
+func minPWRAndSWR(returns []Percent, nYears int) (Percent, Percent) {
+	if nYears == 0 {
+		return 0, 0
+	}
+	var (
+		minPerpetual = Percent(math.MaxFloat64)
+		minSafe      = Percent(math.MaxFloat64)
+	)
+	for _, slice := range subSlices(returns, nYears) {
+		thisPWR, thisSWR := pwrAndSWR(slice)
+		if thisSWR < minSafe {
+			minSafe = thisSWR
+		}
+		if thisPWR < minPerpetual {
+			minPerpetual = thisPWR
+		}
+	}
+	return minPerpetual, minSafe
+}
+
+// pwrAndSWR calculates both PWR and SWR at the same time, for efficiency.
+func pwrAndSWR(returns []Percent) (Percent, Percent) {
+	cumulativeGrowth := cumulativeList(returns)
+	var swr = harmonicMean(cumulativeGrowth) / Percent(len(cumulativeGrowth))
+
+	var pwr Percent
+	{
+		const preservationPercent = 1.00
+		cumulativeReturn := cumulativeGrowth[len(cumulativeGrowth)-1]
+		pwr = swr * Percent(preservationPercent-1/cumulativeReturn.Float())
+	}
+	return pwr, swr
 }
 
 // startDateSensitivity is a simple quantitative way to measure the dependability of a portfolio.

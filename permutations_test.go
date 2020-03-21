@@ -129,7 +129,8 @@ func TestPortfolioPermutations(t *testing.T) {
 
 	results, err := EvaluatePortfolios(perms, assetMap)
 	g.Expect(err).ToNot(HaveOccurred())
-	fmt.Println("Done evaluating portfolios in", time.Since(startAt))
+	elapsed := time.Since(startAt)
+	fmt.Println("Done evaluating portfolios in", elapsed, "or", int(float64(len(results))/elapsed.Seconds()), "portfolios/second")
 
 	startAt = time.Now()
 	RankPortfoliosInPlace(results)

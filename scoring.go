@@ -209,8 +209,7 @@ func evaluatePortfolios(perms []Permutation, assetMap map[string][]Percent) ([]*
 			return nil, fmt.Errorf("perm #%d, error calculating portfolio returns for %+v: %w", i+1, p, err)
 		}
 
-		minPWR30, _ := minPWR(portfolioReturns, 30)
-		minSWR30, _ := minSWR(portfolioReturns, 30)
+		minPWR30, minSWR30 := minPWRAndSWR(portfolioReturns, 30)
 		maxUlcerScore, deepestDrawdown, longestDrawdown := drawdownScores(portfolioReturns)
 
 		results = append(results, &PortfolioStat{

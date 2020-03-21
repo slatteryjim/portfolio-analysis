@@ -2,28 +2,47 @@ package portfolio_analysis
 
 import (
 	"math"
+	"strconv"
 	"testing"
 
 	. "github.com/onsi/gomega"
 )
 
 func Test_portfolioReturns(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// portfolioReturns and PortfolioTradingSimulation should always return identical results, for rebalanceFactor=1
+	portfolioReturnsProxy := func(returnsList [][]Percent, targetAllocations []Percent) ([]Percent, error) {
+		t.Helper()
+		a, errA := portfolioReturns(returnsList, targetAllocations)
+		b, errB := PortfolioTradingSimulation(returnsList, targetAllocations, 1)
+		g.Expect(len(a)).To(Equal(len(b)), "returns length")
+		for i := range a {
+			g.Expect(a[i]).To(BeNumerically("~", b[i], 0.000000000000001), "returns element "+strconv.Itoa(i))
+		}
+		if errA == nil {
+			g.Expect(errB).To(BeNil(), "returned error is nil")
+		} else {
+			g.Expect(errA).To(Equal(errB), "returned error")
+		}
+		return a, errA
+	}
 
 	t.Run("errors", func(t *testing.T) {
 		g := NewGomegaWithT(t)
 
-		_, err := portfolioReturns(nil, nil)
-		g.Expect(err).To(MatchError("percentages must sum to 100%, got 0.00%"))
+		_, err := portfolioReturnsProxy(nil, nil)
+		g.Expect(err).To(MatchError("targetAllocations must sum to 100%, got 0%"))
 
-		_, err = portfolioReturns(nil, readablePercents(100))
-		g.Expect(err).To(MatchError("lists must have the same length: percentages (1), returnsList (0)"))
+		_, err = portfolioReturnsProxy(nil, readablePercents(100))
+		g.Expect(err).To(MatchError("lists must have the same length: targetAllocations (1), returnsList (0)"))
 	})
 
 	t.Run("success", func(t *testing.T) {
 		g := NewGomegaWithT(t)
 
 		// simply one asset, one year
-		g.Expect(portfolioReturns(
+		g.Expect(portfolioReturnsProxy(
 			[][]Percent{
 				readablePercents(1),
 			},
@@ -33,7 +52,7 @@ func Test_portfolioReturns(t *testing.T) {
 		))
 
 		// two assets, two years, 50%/50%
-		g.Expect(portfolioReturns(
+		g.Expect(portfolioReturnsProxy(
 			[][]Percent{
 				readablePercents(10, 20),
 				readablePercents(5, 10),
@@ -44,7 +63,7 @@ func Test_portfolioReturns(t *testing.T) {
 		))
 
 		// TSM asset, 100%, yields itself
-		g.Expect(portfolioReturns(
+		g.Expect(portfolioReturnsProxy(
 			[][]Percent{
 				TSM,
 			},
@@ -54,9 +73,68 @@ func Test_portfolioReturns(t *testing.T) {
 		))
 
 		// GoldenButterfly
-		g.Expect(portfolioReturns([][]Percent{TSM, SCV, LTT, STT, GLD}, readablePercents(20, 20, 20, 20, 20))).To(Equal(
+		g.Expect(portfolioReturnsProxy([][]Percent{TSM, SCV, LTT, STT, GLD}, readablePercents(20, 20, 20, 20, 20))).To(Equal(
 			[]Percent{-0.15334, 0.017320000000000002, 0.10070000000000001, 0.11374000000000001, -0.01721999999999997, -0.06462000000000001, 0.09359999999999999, 0.14, 0.009680000000000005, 0.03404, 0.23724000000000003, 0.025920000000000012, -0.0971, 0.19734, 0.07496000000000001, -0.010419999999999999, 0.18338000000000004, 0.14079999999999998, 0.00018000000000000654, 0.04668, 0.08674000000000001, -0.08571999999999999, 0.15636, 0.06130000000000001, 0.10984000000000001, -0.0465, 0.17900000000000002, 0.05256, 0.11162000000000002, 0.05815999999999999, 0.016940000000000004, 0.03108, 0.017060000000000006, -0.0017199999999999924, 0.16666, 0.06406, 0.03846000000000001, 0.09778, 0.04998, -0.06696000000000002, 0.11048000000000002, 0.14606000000000002, 0.04112000000000001, 0.07602, 0.04372000000000001, 0.08816000000000002, -0.0405, 0.07442000000000001, 0.08438000000000001, -0.05602, 0.15345999999999999},
 		))
+	})
+}
+
+func TestPortfolioTradingSimulation(t *testing.T) {
+	var (
+		assets = [][]Percent{
+			readablePercents(20, 20, 20), // first asset greatly outperforms second
+			readablePercents(0, 0, 0),
+		}
+		targetAllocations = readablePercents(50, 50)
+
+		// first year's returns is always the same
+		firstReturn Percent = 0.10000000000000009
+	)
+	t.Run("rebalanceFactor = 0, so no rebalancing -- the first asset can grow faster untouched", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+		g.Expect(PortfolioTradingSimulation(assets, targetAllocations, 0)).To(Equal(
+			[]Percent{firstReturn, 0.1090909090909089, 0.11803278688524577},
+		))
+	})
+	t.Run("rebalanceFactor = 0.5", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+		g.Expect(PortfolioTradingSimulation(assets, targetAllocations, 0.5)).To(Equal(
+			[]Percent{firstReturn, 0.10454545454545427, 0.10679012345679006},
+		))
+	})
+	t.Run("rebalanceFactor = 1", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+		g.Expect(PortfolioTradingSimulation(assets, targetAllocations, 1)).To(Equal(
+			[]Percent{firstReturn, 0.09999999999999987, 0.10000000000000009},
+		))
+		// just a sanity check, this matches portfolioReturns, minus some float weirdness
+		g.Expect(portfolioReturns(assets, targetAllocations)).To(Equal(
+			[]Percent{0.1, 0.1, 0.1},
+		))
+	})
+	t.Run("rebalanceFactor = 1.5", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+		g.Expect(PortfolioTradingSimulation(assets, targetAllocations, 1.5)).To(Equal(
+			[]Percent{firstReturn, 0.09545454545454546, 0.09771784232365155},
+		))
+	})
+	t.Run("rebalanceFactor = 2.0", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+		g.Expect(PortfolioTradingSimulation(assets, targetAllocations, 2.0)).To(Equal(
+			[]Percent{firstReturn, 0.09090909090909105, 0.10000000000000009},
+		))
+	})
+	t.Run("rebalanceFactor = 3.0", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+		g.Expect(PortfolioTradingSimulation(assets, targetAllocations, 3.0)).To(Equal(
+			[]Percent{firstReturn, 0.08181818181818179, 0.11848739495798322},
+		))
+	})
+	t.Run("rebalanceFactor = 4.00 -- too extreme, panic as allocation goes below zero", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+		g.Expect(func() {
+			PortfolioTradingSimulation(assets, targetAllocations, 4.0)
+		}).To(Panic()) //
 	})
 }
 
@@ -92,12 +170,21 @@ var (
 func Test_swr(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	g.Expect(swr([]Percent{})).To(Equal(Percent(1.0)))
+	// swrProxy calls both swr and pwrAndSWR, making sure they both calculate an identical value.
+	swrProxy := func(returns []Percent) Percent {
+		t.Helper()
+		a := swr(returns)
+		_, b := pwrAndSWR(returns)
+		g.Expect(a).To(Equal(b), "swr equal pwrAndSWR")
+		return a
+	}
+
+	g.Expect(swrProxy([]Percent{})).To(Equal(Percent(1.0)))
 
 	// briefly prove SWR for a 1 year 10% return
 	{
 		fixedWithdrawal := 0.5238095238095238
-		g.Expect(swr(readablePercents(10))).To(Equal(Percent(fixedWithdrawal)))
+		g.Expect(swrProxy(readablePercents(10))).To(Equal(Percent(fixedWithdrawal)))
 		initial := 1.0
 		remaining := initial - fixedWithdrawal // withdraw first year's amount
 		remaining *= 1.10                      // apply first year's growth
@@ -105,18 +192,27 @@ func Test_swr(t *testing.T) {
 		g.Expect(remaining).To(Equal(0.0))     // we exactly exhausted the account
 	}
 
-	g.Expect(swr(sampleReturns)).To(Equal(Percent(0.06622907313022616)))
+	g.Expect(swrProxy(sampleReturns)).To(Equal(Percent(0.06622907313022616)))
 }
 
 func Test_pwr(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	g.Expect(pwr([]Percent{})).To(Equal(Percent(0.0)))
+	// pwrProxy calls both swr and pwrAndSWR, making sure they both calculate an identical value.
+	pwrProxy := func(returns []Percent) Percent {
+		t.Helper()
+		a := pwr(returns)
+		b, _ := pwrAndSWR(returns)
+		g.Expect(a).To(Equal(b), "pwr equal pwrAndSWR")
+		return a
+	}
+
+	g.Expect(pwrProxy([]Percent{})).To(Equal(Percent(0.0)))
 
 	// briefly prove PWR for a 1 year 10% return
 	{
 		fixedWithdrawal := 0.04761904761904764
-		g.Expect(pwr(readablePercents(10))).To(Equal(Percent(fixedWithdrawal)))
+		g.Expect(pwrProxy(readablePercents(10))).To(Equal(Percent(fixedWithdrawal)))
 		initial := 1.0
 		remaining := initial - fixedWithdrawal // withdraw first year's amount
 		remaining *= 1.10                      // apply first year's growth
@@ -124,21 +220,33 @@ func Test_pwr(t *testing.T) {
 		g.Expect(remaining).To(Equal(initial)) // we exactly exhausted the account
 	}
 
-	g.Expect(pwr(sampleReturns)).To(Equal(Percent(0.06574303881824274)))
+	g.Expect(pwrProxy(sampleReturns)).To(Equal(Percent(0.06574303881824274)))
 }
 
 func Test_minPWR(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	// minPWRProxy calls both minPWR and minPWRAndSWR, making sure they both calculate an identical value.
+	minPWRProxy := func(returns []Percent, nYears int) (Percent, int) {
+		t.Helper()
+		a, n := minPWR(returns, nYears)
+		b, _ := minPWRAndSWR(returns, nYears)
+		g.Expect(a).To(Equal(b), "minPWR equal minPWRAndSWR")
+		return a, n
+	}
+
 	verify := func(returns []Percent, nYears int, expectedPWR Percent, expectedIndex int) {
 		t.Helper()
-		rate, n := minPWR(returns, nYears)
+		rate, n := minPWRProxy(returns, nYears)
 		g.Expect(rate).To(Equal(expectedPWR), "rate")
 		g.Expect(n).To(Equal(expectedIndex), "index")
 	}
 
 	g.Expect(func() {
 		minPWR(nil, 1)
+	}).To(Panic())
+	g.Expect(func() {
+		minPWRAndSWR(nil, 1)
 	}).To(Panic())
 
 	verify(nil, 0, 0, 0)
@@ -179,15 +287,27 @@ func Test_minPWR(t *testing.T) {
 func Test_minSWR(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	// minSWRProxy calls both minSWR and minPWRAndSWR, making sure they both calculate an identical value.
+	minSWRProxy := func(returns []Percent, nYears int) (Percent, int) {
+		t.Helper()
+		a, n := minSWR(returns, nYears)
+		_, b := minPWRAndSWR(returns, nYears)
+		g.Expect(a).To(Equal(b), "minSWR equal minPWRAndSWR")
+		return a, n
+	}
+
 	verify := func(returns []Percent, nYears int, expectedSWR Percent, expectedIndex int) {
 		t.Helper()
-		rate, n := minSWR(returns, nYears)
+		rate, n := minSWRProxy(returns, nYears)
 		g.Expect(rate).To(Equal(expectedSWR), "rate")
 		g.Expect(n).To(Equal(expectedIndex), "index")
 	}
 
 	g.Expect(func() {
 		minSWR(nil, 1)
+	}).To(Panic())
+	g.Expect(func() {
+		minPWRAndSWR(nil, 1)
 	}).To(Panic())
 
 	verify(nil, 0, 0, 0)
@@ -421,4 +541,19 @@ func Test_readablePercent(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	g.Expect(float64(readablePercent(33))).To(Equal(0.33))
+}
+
+func Test_cumulative_and_cumulativeList(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// The last item returned by cumulativeList should always equal what cumulative returns for the same input.
+	verify := func(returns []Percent, expectedList []GrowthMultiplier) {
+		t.Helper()
+		g.Expect(cumulative(returns)).To(Equal(expectedList[len(expectedList)-1]), "cumulative")
+		g.Expect(cumulativeList(returns)).To(Equal(expectedList), "cumulativeList")
+	}
+
+	verify([]Percent{}, []GrowthMultiplier{1})
+	verify([]Percent{0.2}, []GrowthMultiplier{1, 1.2})
+	verify([]Percent{0.2, -0.2}, []GrowthMultiplier{1, 1.2, 0.96})
 }
