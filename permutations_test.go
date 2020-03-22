@@ -169,18 +169,7 @@ func TestPortfolioPermutations(t *testing.T) {
 	g.Expect(gbStat).ToNot(BeNil())
 	fmt.Println("\nGoldenButterfly:", gbStat)
 	// find as good or better than GoldenButterfly
-	betterThanGB := CopyAll(FindMany(results, func(p *PortfolioStat) bool {
-		return p.AvgReturnRank.Ordinal <= gbStat.AvgReturnRank.Ordinal &&
-			p.BaselineLTReturnRank.Ordinal <= gbStat.BaselineLTReturnRank.Ordinal &&
-			p.BaselineSTReturnRank.Ordinal <= gbStat.BaselineSTReturnRank.Ordinal &&
-			p.PWR30Rank.Ordinal <= gbStat.PWR30Rank.Ordinal &&
-			p.SWR30Rank.Ordinal <= gbStat.SWR30Rank.Ordinal &&
-			p.StdDevRank.Ordinal <= gbStat.StdDevRank.Ordinal &&
-			p.UlcerScoreRank.Ordinal <= gbStat.UlcerScoreRank.Ordinal &&
-			p.DeepestDrawdownRank.Ordinal <= gbStat.DeepestDrawdownRank.Ordinal &&
-			p.LongestDrawdownRank.Ordinal <= gbStat.LongestDrawdownRank.Ordinal &&
-			p.StartDateSensitivityRank.Ordinal <= gbStat.StartDateSensitivityRank.Ordinal
-	}))
+	betterThanGB := CopyAll(FindMany(results, AsGoodOrBetterThan(gbStat)))
 	RankPortfoliosInPlace(betterThanGB)
 	fmt.Println("As good or better than GoldenButterfly:", len(betterThanGB))
 	fmt.Println("Best AvgReturn:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.AvgReturnRank.Ordinal == 1 }))

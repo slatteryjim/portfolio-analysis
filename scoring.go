@@ -26,6 +26,8 @@ type (
 		Assets      []string
 		Percentages []Percent
 
+		RebalanceFactor float64
+
 		// stats on the portfolio performance
 		AvgReturn            Percent
 		BaselineLTReturn     Percent
@@ -64,10 +66,11 @@ type (
 )
 
 func (p PortfolioStat) String() string {
-	return fmt.Sprintf("%v %v (%d) AvgReturn:%0.3f%%(%d) BLT:%0.3f%%(%d) BST:%0.3f%%(%d) PWR:%0.3f%%(%d) SWR:%0.3f%%(%d) StdDev:%0.3f%%(%d) Ulcer:%0.1f(%d) DeepestDrawdown:%0.2f%%(%d) LongestDrawdown:%d(%d), StartDateSensitivity:%0.2f%%(%d)",
+	return fmt.Sprintf("%v %v (%d) RF:%0.2f AvgReturn:%0.3f%%(%d) BLT:%0.3f%%(%d) BST:%0.3f%%(%d) PWR:%0.3f%%(%d) SWR:%0.3f%%(%d) StdDev:%0.3f%%(%d) Ulcer:%0.1f(%d) DeepestDrawdown:%0.2f%%(%d) LongestDrawdown:%d(%d), StartDateSensitivity:%0.2f%%(%d)",
 		p.Assets,
 		p.Percentages,
 		p.OverallRankScoreRank.Ordinal,
+		p.RebalanceFactor,
 		p.AvgReturn*100,
 		p.AvgReturnRank.Ordinal,
 		p.BaselineLTReturn*100,
@@ -117,6 +120,7 @@ func (p PortfolioStat) Clone() *PortfolioStat {
 	return &PortfolioStat{
 		Assets:                   assets,
 		Percentages:              percentages,
+		RebalanceFactor:          p.RebalanceFactor,
 		AvgReturn:                p.AvgReturn,
 		BaselineLTReturn:         p.BaselineLTReturn,
 		BaselineSTReturn:         p.BaselineSTReturn,
@@ -208,26 +212,29 @@ func evaluatePortfolios(perms []Permutation, assetMap map[string][]Percent) ([]*
 		if err != nil {
 			return nil, fmt.Errorf("perm #%d, error calculating portfolio returns for %+v: %w", i+1, p, err)
 		}
-
-		minPWR30, minSWR30 := minPWRAndSWR(portfolioReturns, 30)
-		maxUlcerScore, deepestDrawdown, longestDrawdown := drawdownScores(portfolioReturns)
-
-		results = append(results, &PortfolioStat{
-			Assets:               p.Assets,
-			Percentages:          p.Percentages,
-			AvgReturn:            averageReturn(portfolioReturns),
-			BaselineLTReturn:     baselineLongTermReturn(portfolioReturns),
-			BaselineSTReturn:     baselineShortTermReturn(portfolioReturns),
-			PWR30:                minPWR30,
-			SWR30:                minSWR30,
-			StdDev:               standardDeviation(portfolioReturns),
-			UlcerScore:           maxUlcerScore,
-			DeepestDrawdown:      deepestDrawdown,
-			LongestDrawdown:      longestDrawdown,
-			StartDateSensitivity: startDateSensitivity(portfolioReturns),
-		})
+		results = append(results, evaluatePortfolio(portfolioReturns, p))
 	}
 	return results, nil
+}
+
+func evaluatePortfolio(portfolioReturns []Percent, p Permutation) *PortfolioStat {
+	minPWR30, minSWR30 := minPWRAndSWR(portfolioReturns, 30)
+	maxUlcerScore, deepestDrawdown, longestDrawdown := drawdownScores(portfolioReturns)
+
+	return &PortfolioStat{
+		Assets:               p.Assets,
+		Percentages:          p.Percentages,
+		AvgReturn:            averageReturn(portfolioReturns),
+		BaselineLTReturn:     baselineLongTermReturn(portfolioReturns),
+		BaselineSTReturn:     baselineShortTermReturn(portfolioReturns),
+		PWR30:                minPWR30,
+		SWR30:                minSWR30,
+		StdDev:               standardDeviation(portfolioReturns),
+		UlcerScore:           maxUlcerScore,
+		DeepestDrawdown:      deepestDrawdown,
+		LongestDrawdown:      longestDrawdown,
+		StartDateSensitivity: startDateSensitivity(portfolioReturns),
+	}
 }
 
 // RankPortfoliosInPlace this is a "destructive" operation, reordering the list and mutating the ***Rank fields.
@@ -375,6 +382,24 @@ func FindMany(results []*PortfolioStat, pred func(p *PortfolioStat) bool) []*Por
 		}
 	}
 	return res
+}
+
+// AsGoodOrBetterThan returns a function that returns true if p is as good or better
+// than the model, in all ranking ordinals.
+// Assumes that the model and all tested inputs have already been ranked against one another.
+func AsGoodOrBetterThan(model *PortfolioStat) func(p *PortfolioStat) bool {
+	return func(p *PortfolioStat) bool {
+		return p.AvgReturnRank.Ordinal <= model.AvgReturnRank.Ordinal &&
+			p.BaselineLTReturnRank.Ordinal <= model.BaselineLTReturnRank.Ordinal &&
+			p.BaselineSTReturnRank.Ordinal <= model.BaselineSTReturnRank.Ordinal &&
+			p.PWR30Rank.Ordinal <= model.PWR30Rank.Ordinal &&
+			p.SWR30Rank.Ordinal <= model.SWR30Rank.Ordinal &&
+			p.StdDevRank.Ordinal <= model.StdDevRank.Ordinal &&
+			p.UlcerScoreRank.Ordinal <= model.UlcerScoreRank.Ordinal &&
+			p.DeepestDrawdownRank.Ordinal <= model.DeepestDrawdownRank.Ordinal &&
+			p.LongestDrawdownRank.Ordinal <= model.LongestDrawdownRank.Ordinal &&
+			p.StartDateSensitivityRank.Ordinal <= model.StartDateSensitivityRank.Ordinal
+	}
 }
 
 // segmentIndexes splits the `count` number of items into the given number of segments.

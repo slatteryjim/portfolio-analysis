@@ -135,7 +135,7 @@ var (
 
 // go test -run=^$ -bench=Benchmark_evaluatePortfolios_GoldenButterfly$ --benchtime=10s
 //
-// Benchmark_evaluatePortfolios_GoldenButterfly-12           451842             26348 ns/op
+// Benchmark_evaluatePortfolios_GoldenButterfly-12           448040             26299 ns/op
 func Benchmark_evaluatePortfolios_GoldenButterfly(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, err := evaluatePortfolios(permutationsGoldenButterfly, assetMap)
@@ -145,9 +145,9 @@ func Benchmark_evaluatePortfolios_GoldenButterfly(b *testing.B) {
 	}
 }
 
-// go test -run=^$ -bench=Benchmark_evaluatePortfolios_TSM$ --benchtime=
+// go test -run=^$ -bench=Benchmark_evaluatePortfolios_TSM$ --benchtime=10s
 //
-// Benchmark_evaluatePortfolios_TSM-12       446212             26280 ns/op
+// Benchmark_evaluatePortfolios_TSM-12       423140             26658 ns/op
 func Benchmark_evaluatePortfolios_TSM(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, err := evaluatePortfolios(permutationsTSM, assetMap)
