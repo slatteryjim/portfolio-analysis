@@ -83,7 +83,7 @@ func Test_translatePercentages(t *testing.T) {
 	verify([]Percent{25, 50, 75, 100}, []Percent{25, 25, 25, 25})
 }
 
-func TestPortfolioPermutations(t *testing.T) {
+func TestPortfolioPermutations_GoldenButterflyAssets(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// Check out the results using 1% increments:
@@ -142,17 +142,7 @@ func TestPortfolioPermutations(t *testing.T) {
 	fmt.Println("#2:", results[1])
 	fmt.Println("#3:", results[2])
 
-	fmt.Println("\nBest by each ranking:")
-	fmt.Println("Best AvgReturn:", FindOne(results, func(p *PortfolioStat) bool { return p.AvgReturnRank.Ordinal == 1 }))
-	fmt.Println("Best BaselineLTReturn:", FindOne(results, func(p *PortfolioStat) bool { return p.BaselineLTReturnRank.Ordinal == 1 }))
-	fmt.Println("Best BaselineSTReturn:", FindOne(results, func(p *PortfolioStat) bool { return p.BaselineSTReturnRank.Ordinal == 1 }))
-	fmt.Println("Best PWR30:", FindOne(results, func(p *PortfolioStat) bool { return p.PWR30Rank.Ordinal == 1 }))
-	fmt.Println("Best SWR30:", FindOne(results, func(p *PortfolioStat) bool { return p.SWR30Rank.Ordinal == 1 }))
-	fmt.Println("Best StdDev:", FindOne(results, func(p *PortfolioStat) bool { return p.StdDevRank.Ordinal == 1 }))
-	fmt.Println("Best UlcerScore:", FindOne(results, func(p *PortfolioStat) bool { return p.UlcerScoreRank.Ordinal == 1 }))
-	fmt.Println("Best DeepestDrawdown:", FindOne(results, func(p *PortfolioStat) bool { return p.DeepestDrawdownRank.Ordinal == 1 }))
-	fmt.Println("Best LongestDrawdown:", FindOne(results, func(p *PortfolioStat) bool { return p.LongestDrawdownRank.Ordinal == 1 }))
-	fmt.Println("Best StartDateSensitivity:", FindOne(results, func(p *PortfolioStat) bool { return p.StartDateSensitivityRank.Ordinal == 1 }))
+	PrintBestByEachRanking(results)
 
 	startAt = time.Now()
 	gbStat := FindOne(results, func(p *PortfolioStat) bool {
@@ -172,21 +162,26 @@ func TestPortfolioPermutations(t *testing.T) {
 	betterThanGB := CopyAll(FindMany(results, AsGoodOrBetterThan(gbStat)))
 	RankPortfoliosInPlace(betterThanGB)
 	fmt.Println("As good or better than GoldenButterfly:", len(betterThanGB))
-	fmt.Println("Best AvgReturn:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.AvgReturnRank.Ordinal == 1 }))
-	fmt.Println("Best BaselineLTReturn:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.BaselineLTReturnRank.Ordinal == 1 }))
-	fmt.Println("Best BaselineSTReturn:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.BaselineSTReturnRank.Ordinal == 1 }))
-	fmt.Println("Best PWR30:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.PWR30Rank.Ordinal == 1 }))
-	fmt.Println("Best SWR30:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.SWR30Rank.Ordinal == 1 }))
-	fmt.Println("Best StdDev:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.StdDevRank.Ordinal == 1 }))
-	fmt.Println("Best UlcerScore:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.UlcerScoreRank.Ordinal == 1 }))
-	fmt.Println("Best DeepestDrawdown:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.DeepestDrawdownRank.Ordinal == 1 }))
-	fmt.Println("Best LongestDrawdown:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.LongestDrawdownRank.Ordinal == 1 }))
-	fmt.Println("Best StartDateSensitivity:", FindOne(betterThanGB, func(p *PortfolioStat) bool { return p.StartDateSensitivityRank.Ordinal == 1 }))
+	PrintBestByEachRanking(betterThanGB)
 	fmt.Println("\nAll as good or better:")
 	for i, p := range betterThanGB[:min(len(betterThanGB), 5)] {
 		fmt.Println(" ", i, p.ComparePerformance(*gbStat))
 	}
 	fmt.Println("Finished GB analysis in", time.Since(startAt))
+}
+
+func PrintBestByEachRanking(results []*PortfolioStat) {
+	fmt.Println("\nBest by each ranking:")
+	fmt.Println("Best AvgReturn:", FindOne(results, func(p *PortfolioStat) bool { return p.AvgReturnRank.Ordinal == 1 }))
+	fmt.Println("Best BaselineLTReturn:", FindOne(results, func(p *PortfolioStat) bool { return p.BaselineLTReturnRank.Ordinal == 1 }))
+	fmt.Println("Best BaselineSTReturn:", FindOne(results, func(p *PortfolioStat) bool { return p.BaselineSTReturnRank.Ordinal == 1 }))
+	fmt.Println("Best PWR30:", FindOne(results, func(p *PortfolioStat) bool { return p.PWR30Rank.Ordinal == 1 }))
+	fmt.Println("Best SWR30:", FindOne(results, func(p *PortfolioStat) bool { return p.SWR30Rank.Ordinal == 1 }))
+	fmt.Println("Best StdDev:", FindOne(results, func(p *PortfolioStat) bool { return p.StdDevRank.Ordinal == 1 }))
+	fmt.Println("Best UlcerScore:", FindOne(results, func(p *PortfolioStat) bool { return p.UlcerScoreRank.Ordinal == 1 }))
+	fmt.Println("Best DeepestDrawdown:", FindOne(results, func(p *PortfolioStat) bool { return p.DeepestDrawdownRank.Ordinal == 1 }))
+	fmt.Println("Best LongestDrawdown:", FindOne(results, func(p *PortfolioStat) bool { return p.LongestDrawdownRank.Ordinal == 1 }))
+	fmt.Println("Best StartDateSensitivity:", FindOne(results, func(p *PortfolioStat) bool { return p.StartDateSensitivityRank.Ordinal == 1 }))
 }
 
 func approxEqual(x, y, tolerance float64) bool {
