@@ -86,13 +86,16 @@ func Test_translatePercentages(t *testing.T) {
 func TestPortfolioPermutations_GoldenButterflyAssets(t *testing.T) {
 	g := NewGomegaWithT(t)
 
+	// GoldenButterfly advertised on: https://portfoliocharts.com/portfolio/golden-butterfly/
+	// Standard: [TSM SCV LTT STT GLD] [20% 20% 20% 20% 20%] (66) RF:0.00 AvgReturn:5.668%(5300) BLT:5.241%(2449) BST:2.848%(929) PWR:4.224%(1853) SWR:5.305%(1699) StdDev:8.103%(2383) Ulcer:3.4(2258) DeepestDrawdown:-15.33%(1835) LongestDrawdown:3(2), StartDateSensitivity:7.71%(756)
+	//
 	// Check out the results using 1% increments:
 	// MaxPWR:   [TSM SCV LTT STT GLD] [1 65 1  1 32] PWR30: 5.404% Ulcer:8.1 DeepestDrawdown:-26.24% LongestDrawdown:6
 	// MinUlcer: [TSM SCV LTT STT GLD] [7  1 3 80  9] PWR30: 2.470% Ulcer:0.6 DeepestDrawdown: -5.53% LongestDrawdown:4
 	//
 	// Using 5% increments:
-	// MaxPWR:   [TSM SCV LTT STT GLD] [5 55 5  5 30] PWR30: 5.221% Ulcer:5.9 DeepestDrawdown:-23.66% LongestDrawdown:3
-	// MinUlcer: [TSM SCV LTT STT GLD] [5  5 5 75 10] PWR30: 2.740% Ulcer:0.8 DeepestDrawdown: -6.58% LongestDrawdown:3
+	// Best PWR30: [SCV GLD] [70% 30%] (4281) RF:0.00 AvgReturn:8.068%(178) BLT:5.896%(810) BST:2.385%(2518) PWR:5.364%(1) SWR:6.148%(8) StdDev:13.709%(9495) Ulcer:9.5(6975) DeepestDrawdown:-27.10%(7168) LongestDrawdown:6(5), StartDateSensitivity:16.21%(6723)
+	// Best UlcerScore: [TSM STT GLD] [10% 80% 10%] (6679) RF:0.00 AvgReturn:2.809%(10564) BLT:2.069%(9640) BST:0.385%(8246) PWR:2.477%(9484) SWR:4.582%(5739) StdDev:3.929%(7) Ulcer:0.6(1) DeepestDrawdown:-5.59%(4) LongestDrawdown:2(1), StartDateSensitivity:8.44%(1193)
 	//
 	// Timing/log for GoldenButterfly assets, 1% step permutations:
 	//   Generated 4,598,126 permutations in 10.9s
