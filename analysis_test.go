@@ -602,3 +602,19 @@ func Test_rebalanceFactor_effect(t *testing.T) {
 	fmt.Println("As good or better than GoldenButterfly:", len(betterThanGB))
 	PrintBestByEachRanking(betterThanGB)
 }
+
+func TestTSMPerformance(t *testing.T) {
+	tsmPermutation := Permutation{Assets: []string{"TSM"}, Percentages: readablePercents(100)}
+
+	// 1969 start date
+	stat := evaluatePortfolio(TSM, tsmPermutation)
+	fmt.Println(stat)
+
+	// 1871 start date
+	stat = evaluatePortfolio(readablePercents(_seriesByName["TSM"].AnnualReturns...), tsmPermutation)
+	fmt.Println(stat)
+
+	// Output:
+	// [TSM] [100%] (0) RF:0.00 AvgReturn:7.452%(0) BLT:3.060%(0) BST:-2.905%(0) PWR:3.238%(0) SWR:3.786%(0) StdDev:17.166%(0) Ulcer:27.0(0) DeepestDrawdown:-52.25%(0) LongestDrawdown:13(0), StartDateSensitivity:31.64%(0)
+	// [TSM] [100%] (0) RF:0.00 AvgReturn:8.481%(0) BLT:2.363%(0) BST:-1.339%(0) PWR:2.715%(0) SWR:3.578%(0) StdDev:18.115%(0) Ulcer:27.0(0) DeepestDrawdown:-57.56%(0) LongestDrawdown:13(0), StartDateSensitivity:36.48%(0)
+}
