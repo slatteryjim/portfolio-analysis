@@ -1,8 +1,9 @@
-package portfolio_analysis
+package data
 
 import (
 	"encoding/csv"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"testing"
@@ -118,4 +119,35 @@ func TestData(t *testing.T) {
 		seriesByName[s.Name] = s
 	}
 	g.Expect(seriesByName).To(HaveLen(len(series)), "no duplicate IDs")
+}
+
+func TestSeries_AnnualReturnsStartingIn(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	s := Series{
+		FirstYear:     2010,
+		LastYear:      2013,
+		AnnualReturns: []float64{0, 1, 2, 3},
+	}
+	g.Expect(s.AnnualReturnsStartingIn(math.MinInt64)).To(Equal([]float64{0, 1, 2, 3}))
+	g.Expect(s.AnnualReturnsStartingIn(0)).To(Equal([]float64{0, 1, 2, 3}))
+	g.Expect(s.AnnualReturnsStartingIn(2009)).To(Equal([]float64{0, 1, 2, 3}))
+	g.Expect(s.AnnualReturnsStartingIn(2010)).To(Equal([]float64{0, 1, 2, 3}))
+	g.Expect(s.AnnualReturnsStartingIn(2011)).To(Equal([]float64{1, 2, 3}))
+	g.Expect(s.AnnualReturnsStartingIn(2012)).To(Equal([]float64{2, 3}))
+	g.Expect(s.AnnualReturnsStartingIn(2013)).To(Equal([]float64{3}))
+	g.Expect(s.AnnualReturnsStartingIn(2014)).To(BeNil())
+	g.Expect(s.AnnualReturnsStartingIn(2015)).To(BeNil())
+	g.Expect(s.AnnualReturnsStartingIn(math.MaxInt64)).To(BeNil())
+}
+
+// Wow, 1 millisecond (1 million nanoseconds)
+// Benchmark_parseSimbaTSV-12    	    1117	   1063301 ns/op
+func Benchmark_parseSimbaTSV(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, err := parseSimbaTSV(simbaBacktestingSpreadsheetRev19bTSV)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
 }

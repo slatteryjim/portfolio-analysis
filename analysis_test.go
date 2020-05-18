@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+
+	"github.com/slatteryjim/portfolio-analysis/data"
 )
 
 func Test_portfolioReturns(t *testing.T) {
@@ -75,7 +77,7 @@ func Test_portfolioReturns(t *testing.T) {
 
 		// GoldenButterfly
 		g.Expect(portfolioReturnsProxy([][]Percent{TSM, SCV, LTT, STT, GLD}, readablePercents(20, 20, 20, 20, 20))).To(Equal(
-			[]Percent{-0.15334, 0.017320000000000002, 0.10070000000000001, 0.11374000000000001, -0.01721999999999997, -0.06462000000000001, 0.09359999999999999, 0.14, 0.009680000000000005, 0.03404, 0.23724000000000003, 0.025920000000000012, -0.0971, 0.19734, 0.07496000000000001, -0.010419999999999999, 0.18338000000000004, 0.14079999999999998, 0.00018000000000000654, 0.04668, 0.08674000000000001, -0.08571999999999999, 0.15636, 0.06130000000000001, 0.10984000000000001, -0.0465, 0.17900000000000002, 0.05256, 0.11162000000000002, 0.05815999999999999, 0.016940000000000004, 0.03108, 0.017060000000000006, -0.0017199999999999924, 0.16666, 0.06406, 0.03846000000000001, 0.09778, 0.04998, -0.06696000000000002, 0.11048000000000002, 0.14606000000000002, 0.04112000000000001, 0.07602, 0.04372000000000001, 0.08816000000000002, -0.0405, 0.07442000000000001, 0.08438000000000001, -0.05602, 0.15345999999999999},
+			[]Percent{-0.1533383268282135, 0.017318791285211466, 0.10068425974797353, 0.11372919971053391, -0.0172148539804938, -0.06461024302567049, 0.09360907230753582, 0.139978985084822, 0.009677225905924784, 0.03404942084475439, 0.2372421712101816, 0.025928538460314007, -0.09709304924704815, 0.1973312916341973, 0.07495518258141035, -0.010392136396391902, 0.18336903125620316, 0.14078544233466855, 0.00018309646857563727, 0.04669750085940259, 0.08673884623758171, -0.08572038845018258, 0.1563762834314272, 0.061295238653148135, 0.10983322532725735, -0.0465004614702163, 0.178993634975939, 0.052560744788289336, 0.11162614426521761, 0.05817517787259961, 0.016929554860230407, 0.03104069332156112, 0.017056422822255918, -0.0017220660217116823, 0.16666679718569166, 0.06405102737142347, 0.03846823294327486, 0.09777651111177979, 0.04997737064863614, -0.06695505567337855, 0.11050169878101092, 0.14604978374972077, 0.04114653873382587, 0.07603962935631807, 0.04372680283039169, 0.08816734725542127, -0.04048477144240979, 0.07444466516990281, 0.08438538586983815, -0.05602189725865632, 0.1534744248725398},
 		))
 	})
 }
@@ -271,18 +273,18 @@ func Test_minPWR(t *testing.T) {
 	verify(readablePercents(10, -5, 10, -20), 3, pwr(readablePercents(-5, 10, -20)), 1)
 	verify(readablePercents(10, -5, 10, -20), 4, pwr(readablePercents(10, -5, 10, -20)), 0)
 
-	verify(TSM, 30, 0.03237620200614041, 0)
-	verify(SCV, 30, 0.038033553022899465, 0)
-	verify(GLD, 30, -0.015629074083395443, 6)
-	verify(LTT, 30, 0.02167080631193789, 0)
-	verify(STT, 30, 0.017146827504420623, 21)
-	verify(STB, 30, 0.022664798870331706, 0)
+	verify(TSM, 30, 0.03237787319823412, 0)
+	verify(SCV, 30, 0.03803405103934034, 0)
+	verify(GLD, 30, -0.015630815039841064, 6)
+	verify(LTT, 30, 0.021678521798131487, 0)
+	verify(STT, 30, 0.017145731503677816, 21)
+	verify(STB, 30, 0.022672387011138363, 0)
 
-	verify(GoldenButterfly, 10, 0.01945631963862426, 0)
-	verify(GoldenButterfly, 20, 0.038590835351436564, 0)
-	verify(GoldenButterfly, 30, 0.04224334655073258, 0)
-	verify(GoldenButterfly, 40, 0.042057016507784345, 0)
-	verify(GoldenButterfly, 50, 0.04288283017428213, 0)
+	verify(GoldenButterfly, 10, 0.019455306405833442, 0)
+	verify(GoldenButterfly, 20, 0.038591150235617475, 0)
+	verify(GoldenButterfly, 30, 0.04224373554338784, 0)
+	verify(GoldenButterfly, 40, 0.04205689393031536, 0)
+	verify(GoldenButterfly, 50, 0.042883248739577114, 0)
 }
 
 func Test_minSWR(t *testing.T) {
@@ -332,18 +334,18 @@ func Test_minSWR(t *testing.T) {
 	verify(readablePercents(10, -5, 10, -20), 3, swr(readablePercents(-5, 10, -20)), 1)
 	verify(readablePercents(10, -5, 10, -20), 4, swr(readablePercents(10, -5, 10, -20)), 0)
 
-	verify(TSM, 30, 0.037860676066939845, 0)
-	verify(SCV, 30, 0.04290428968981266, 0)
-	verify(GLD, 30, 0.012375454483082474, 11)
-	verify(LTT, 30, 0.034180844746692515, 0)
-	verify(STT, 30, 0.039744529728239206, 3)
-	verify(STB, 30, 0.0396442756302357, 0)
+	verify(TSM, 30, 0.03786147243197951, 0)
+	verify(SCV, 30, 0.0429043601737704, 0)
+	verify(GLD, 30, 0.012374613192608942, 11)
+	verify(LTT, 30, 0.03418591730792702, 0)
+	verify(STT, 30, 0.039739924674330344, 3)
+	verify(STB, 30, 0.039649617433661334, 0)
 
-	verify(GoldenButterfly, 10, 0.09331636419042066, 0)
-	verify(GoldenButterfly, 20, 0.06261394175862438, 0)
-	verify(GoldenButterfly, 30, 0.05304896125102126, 0)
-	verify(GoldenButterfly, 40, 0.04879022342090543, 0)
-	verify(GoldenButterfly, 50, 0.04665043650688064, 0)
+	verify(GoldenButterfly, 10, 0.09331551382163732, 0)
+	verify(GoldenButterfly, 20, 0.0626136479380333, 0)
+	verify(GoldenButterfly, 30, 0.053048942980622904, 0)
+	verify(GoldenButterfly, 40, 0.048790172577370526, 0)
+	verify(GoldenButterfly, 50, 0.04665049136149236, 0)
 }
 
 func Test_subSlices(t *testing.T) {
@@ -386,13 +388,13 @@ func Test_cagr(t *testing.T) {
 	}
 	g.Expect(cagr(readablePercents(5, 5, 5, 5, 5))).To(Equal(Percent(0.050000000000000044)))
 
-	g.Expect(cagr(TSM)).To(Equal(Percent(0.059240605917942224)))
-	g.Expect(cagr(SCV)).To(Equal(Percent(0.07363836101130472)))
-	g.Expect(cagr(LTT)).To(Equal(Percent(0.036986778393646835)))
-	g.Expect(cagr(STT)).To(Equal(Percent(0.018215249078317397)))
-	g.Expect(cagr(STB)).To(Equal(Percent(0.02224127904840234)))
-	g.Expect(cagr(GLD)).To(Equal(Percent(0.029259375673007515)))
-	g.Expect(cagr(GoldenButterfly)).To(Equal(Percent(0.05352050963712207)))
+	g.Expect(cagr(TSM)).To(Equal(Percent(0.05924856139463475)))
+	g.Expect(cagr(SCV)).To(Equal(Percent(0.07363869666341749)))
+	g.Expect(cagr(LTT)).To(Equal(Percent(0.036995981175477866)))
+	g.Expect(cagr(STT)).To(Equal(Percent(0.01821005315305091)))
+	g.Expect(cagr(STB)).To(Equal(Percent(0.02224589590692516)))
+	g.Expect(cagr(GLD)).To(Equal(Percent(0.029261555900620406)))
+	g.Expect(cagr(GoldenButterfly)).To(Equal(Percent(0.053522786534198286)))
 }
 
 func Test_averageReturn(t *testing.T) {
@@ -494,24 +496,24 @@ func Test_baselineReturn(t *testing.T) {
 
 func Test_baselineLongTermReturn(t *testing.T) {
 	g := NewGomegaWithT(t)
-	g.Expect(baselineLongTermReturn(TSM)).To(Equal(Percent(0.030599414622012988)))
-	g.Expect(baselineLongTermReturn(SCV)).To(Equal(Percent(0.05925630873497112)))
-	g.Expect(baselineLongTermReturn(LTT)).To(Equal(Percent(0.022152065956750455)))
-	g.Expect(baselineLongTermReturn(STT)).To(Equal(Percent(0.007233206367346812)))
-	g.Expect(baselineLongTermReturn(STB)).To(Equal(Percent(0.013932133854550166)))
-	g.Expect(baselineLongTermReturn(GLD)).To(Equal(Percent(-0.052036901573972894)))
-	g.Expect(baselineLongTermReturn(GoldenButterfly)).To(Equal(Percent(0.05240715018337849)))
+	g.Expect(baselineLongTermReturn(TSM)).To(Equal(Percent(0.0306081363792714)))
+	g.Expect(baselineLongTermReturn(SCV)).To(Equal(Percent(0.05925736306162355)))
+	g.Expect(baselineLongTermReturn(LTT)).To(Equal(Percent(0.022165919650537713)))
+	g.Expect(baselineLongTermReturn(STT)).To(Equal(Percent(0.007220749317469188)))
+	g.Expect(baselineLongTermReturn(STB)).To(Equal(Percent(0.013944874877032776)))
+	g.Expect(baselineLongTermReturn(GLD)).To(Equal(Percent(-0.0520425731161559)))
+	g.Expect(baselineLongTermReturn(GoldenButterfly)).To(Equal(Percent(0.05240937633854492)))
 }
 
 func Test_baselineShortTermReturn(t *testing.T) {
 	g := NewGomegaWithT(t)
-	g.Expect(baselineShortTermReturn(TSM)).To(Equal(Percent(-0.02905140217935165)))
-	g.Expect(baselineShortTermReturn(SCV)).To(Equal(Percent(0.019349617074645886)))
-	g.Expect(baselineShortTermReturn(LTT)).To(Equal(Percent(0.006370681347895868)))
-	g.Expect(baselineShortTermReturn(STT)).To(Equal(Percent(-0.013333955977865353)))
-	g.Expect(baselineShortTermReturn(STB)).To(Equal(Percent(-0.006417877051557608)))
-	g.Expect(baselineShortTermReturn(GLD)).To(Equal(Percent(-0.11357718226127445)))
-	g.Expect(baselineShortTermReturn(GoldenButterfly)).To(Equal(Percent(0.028483535122723058)))
+	g.Expect(baselineShortTermReturn(TSM)).To(Equal(Percent(-0.02907904796851324)))
+	g.Expect(baselineShortTermReturn(SCV)).To(Equal(Percent(0.01936917994777443)))
+	g.Expect(baselineShortTermReturn(LTT)).To(Equal(Percent(0.00639165311066181)))
+	g.Expect(baselineShortTermReturn(STT)).To(Equal(Percent(-0.013316758228289038)))
+	g.Expect(baselineShortTermReturn(STB)).To(Equal(Percent(-0.006415578705477043)))
+	g.Expect(baselineShortTermReturn(GLD)).To(Equal(Percent(-0.1135918966323598)))
+	g.Expect(baselineShortTermReturn(GoldenButterfly)).To(Equal(Percent(0.028491192128850873)))
 }
 
 func Test_standardDeviation(t *testing.T) {
@@ -529,13 +531,13 @@ func Test_standardDeviation(t *testing.T) {
 		g.Expect(standardDeviation([]Percent{1, -2, 3, -4})).To(Equal(Percent(2.692582403567252)))
 	})
 
-	g.Expect(standardDeviation(TSM)).To(Equal(readablePercent(17.165685399889558)))
-	g.Expect(standardDeviation(SCV)).To(Equal(readablePercent(19.394760597619787)))
-	g.Expect(standardDeviation(LTT)).To(Equal(Percent(0.12327064319013904)))
-	g.Expect(standardDeviation(STT)).To(Equal(Percent(0.04387180601846474)))
-	g.Expect(standardDeviation(STB)).To(Equal(Percent(0.0482507718671391)))
-	g.Expect(standardDeviation(GLD)).To(Equal(readablePercent(23.857500543433524)))
-	g.Expect(standardDeviation(GoldenButterfly)).To(Equal(Percent(0.08103170495645956)))
+	g.Expect(standardDeviation(TSM)).To(Equal(readablePercent(17.165466213991304)))
+	g.Expect(standardDeviation(SCV)).To(Equal(readablePercent(19.3942212424017)))
+	g.Expect(standardDeviation(LTT)).To(Equal(Percent(0.12326313856389255)))
+	g.Expect(standardDeviation(STT)).To(Equal(Percent(0.043862677714401194)))
+	g.Expect(standardDeviation(STB)).To(Equal(Percent(0.04824512942467834)))
+	g.Expect(standardDeviation(GLD)).To(Equal(readablePercent(23.857120994357875)))
+	g.Expect(standardDeviation(GoldenButterfly)).To(Equal(Percent(0.08102969356581732)))
 }
 
 func Test_readablePercent(t *testing.T) {
@@ -606,15 +608,15 @@ func Test_rebalanceFactor_effect(t *testing.T) {
 func TestTSMPerformance(t *testing.T) {
 	tsmPermutation := Permutation{Assets: []string{"TSM"}, Percentages: readablePercents(100)}
 
-	// 1969 start date
+	// 1969 start date, using new TSV data source
 	stat := evaluatePortfolio(TSM, tsmPermutation)
 	fmt.Println(stat)
 
 	// 1871 start date
-	stat = evaluatePortfolio(readablePercents(_seriesByName["TSM"].AnnualReturns...), tsmPermutation)
+	stat = evaluatePortfolio(readablePercents(data.MustFind("TSM").AnnualReturns...), tsmPermutation)
 	fmt.Println(stat)
 
 	// Output:
-	// [TSM] [100%] (0) RF:0.00 AvgReturn:7.452%(0) BLT:3.060%(0) BST:-2.905%(0) PWR:3.238%(0) SWR:3.786%(0) StdDev:17.166%(0) Ulcer:27.0(0) DeepestDrawdown:-52.25%(0) LongestDrawdown:13(0), StartDateSensitivity:31.64%(0)
+	// [TSM] [100%] (0) RF:0.00 AvgReturn:7.453%(0) BLT:3.061%(0) BST:-2.908%(0) PWR:3.238%(0) SWR:3.786%(0) StdDev:17.165%(0) Ulcer:27.0(0) DeepestDrawdown:-52.25%(0) LongestDrawdown:13(0), StartDateSensitivity:31.65%(0)
 	// [TSM] [100%] (0) RF:0.00 AvgReturn:8.481%(0) BLT:2.363%(0) BST:-1.339%(0) PWR:2.715%(0) SWR:3.578%(0) StdDev:18.115%(0) Ulcer:27.0(0) DeepestDrawdown:-57.56%(0) LongestDrawdown:13(0), StartDateSensitivity:36.48%(0)
 }

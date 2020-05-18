@@ -73,16 +73,16 @@ func TestEvaluatePortfolios(t *testing.T) {
 		{
 			Assets:               []string{"TSM"},
 			Percentages:          readablePercents(100),
-			AvgReturn:            0.0745235294117647,
-			BaselineLTReturn:     0.030599414622012988,
-			BaselineSTReturn:     -0.02905140217935165,
-			PWR30:                0.03237620200614041,
-			SWR30:                0.037860676066939845,
-			StdDev:               0.17165685399889558,
-			UlcerScore:           26.989112643639167,
-			DeepestDrawdown:      -0.5225460399999999,
+			AvgReturn:            0.07453082614598813,
+			BaselineLTReturn:     0.0306081363792714,
+			BaselineSTReturn:     -0.02907904796851324,
+			PWR30:                0.03237787319823412,
+			SWR30:                0.03786147243197951,
+			StdDev:               0.17165466213991304,
+			UlcerScore:           26.990140749914836,
+			DeepestDrawdown:      -0.5225438230658536,
 			LongestDrawdown:      13,
-			StartDateSensitivity: 0.3164468857748042,
+			StartDateSensitivity: 0.3164541256493081,
 		},
 	}))
 
@@ -94,30 +94,30 @@ func TestEvaluatePortfolios(t *testing.T) {
 		{
 			Assets:               []string{"TSM"},
 			Percentages:          readablePercents(100),
-			AvgReturn:            0.0745235294117647,
-			BaselineLTReturn:     0.030599414622012988,
-			BaselineSTReturn:     -0.02905140217935165,
-			PWR30:                0.03237620200614041,
-			SWR30:                0.037860676066939845,
-			StdDev:               0.17165685399889558,
-			UlcerScore:           26.989112643639167,
-			DeepestDrawdown:      -0.5225460399999999,
+			AvgReturn:            0.07453082614598813,
+			BaselineLTReturn:     0.0306081363792714,
+			BaselineSTReturn:     -0.02907904796851324,
+			PWR30:                0.03237787319823412,
+			SWR30:                0.03786147243197951,
+			StdDev:               0.17165466213991304,
+			UlcerScore:           26.990140749914836,
+			DeepestDrawdown:      -0.5225438230658536,
 			LongestDrawdown:      13,
-			StartDateSensitivity: 0.3164468857748042,
+			StartDateSensitivity: 0.3164541256493081,
 		},
 		{
 			Assets:               []string{"TSM", "GLD"},
 			Percentages:          readablePercents(50, 50),
-			AvgReturn:            0.06387058823529411,
-			BaselineLTReturn:     0.03547746755212633,
-			BaselineSTReturn:     -0.00519786860232474,
-			PWR30:                0.028200924227015447,
-			SWR30:                0.04066238595346762,
-			StdDev:               0.13238467721907654,
-			UlcerScore:           9.965815083766593,
-			DeepestDrawdown:      -0.2593209743740048,
+			AvgReturn:            0.06387494536221017,
+			BaselineLTReturn:     0.035477861130724264,
+			BaselineSTReturn:     -0.0051889628058078285,
+			PWR30:                0.028202600645605407,
+			SWR30:                0.04066373587232011,
+			StdDev:               0.13238370526536952,
+			UlcerScore:           9.965222445166578,
+			DeepestDrawdown:      -0.25929582951888575,
 			LongestDrawdown:      6,
-			StartDateSensitivity: 0.21609785983534202,
+			StartDateSensitivity: 0.21610371811517437,
 		},
 	}))
 }
@@ -135,7 +135,7 @@ var (
 
 // go test -run=^$ -bench=Benchmark_evaluatePortfolios_GoldenButterfly$ --benchtime=10s
 //
-// Benchmark_evaluatePortfolios_GoldenButterfly-12           448040             26299 ns/op
+// Benchmark_evaluatePortfolios_GoldenButterfly-12           431221             27260 ns/op
 func Benchmark_evaluatePortfolios_GoldenButterfly(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, err := evaluatePortfolios(permutationsGoldenButterfly, assetMap)
