@@ -1,5 +1,9 @@
 package portfolio_analysis
 
+import (
+	. "github.com/slatteryjim/portfolio-analysis/types"
+)
+
 type Combination struct {
 	Assets      []string
 	Percentages []Percent

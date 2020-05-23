@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/slatteryjim/portfolio-analysis/data"
+	. "github.com/slatteryjim/portfolio-analysis/types"
 )
 
 func TestCombinations(t *testing.T) {
@@ -20,20 +21,20 @@ func TestCombinations(t *testing.T) {
 		}
 	}
 
-	perms := Combinations([]string{"A"}, readablePercents(100))
+	perms := Combinations([]string{"A"}, ReadablePercents(100))
 	dumpAll(perms)
 	g.Expect(perms).To(Equal([]Combination{
-		{[]string{"A"}, readablePercents(100)},
+		{[]string{"A"}, ReadablePercents(100)},
 	}))
 
-	perms = Combinations([]string{"A", "B"}, readablePercents(50, 100))
+	perms = Combinations([]string{"A", "B"}, ReadablePercents(50, 100))
 	g.Expect(perms).To(ConsistOf([]Combination{
-		{[]string{"A"}, readablePercents(100)},
-		{[]string{"A", "B"}, readablePercents(50, 50)},
-		{[]string{"B"}, readablePercents(100)},
+		{[]string{"A"}, ReadablePercents(100)},
+		{[]string{"A", "B"}, ReadablePercents(50, 50)},
+		{[]string{"B"}, ReadablePercents(100)},
 	}))
 
-	perms = Combinations([]string{"A", "B", "C"}, readablePercents(33, 66, 100))
+	perms = Combinations([]string{"A", "B", "C"}, ReadablePercents(33, 66, 100))
 	g.Expect(perms).To(ConsistOf([]Combination{
 		{[]string{"A"}, []Percent{1.00}},
 		{[]string{"A", "B"}, []Percent{0.66, 0.33999999999999997}},
@@ -47,16 +48,16 @@ func TestCombinations(t *testing.T) {
 		{[]string{"C"}, []Percent{1.00}},
 	}))
 
-	perms = Combinations([]string{"A", "B", "C"}, readablePercents(series(1, 100, 1)...))
+	perms = Combinations([]string{"A", "B", "C"}, ReadablePercents(series(1, 100, 1)...))
 	g.Expect(len(perms)).To(Equal(5151))
 
-	perms = Combinations([]string{"A", "B", "C", "D"}, readablePercents(series(1, 100, 1)...))
+	perms = Combinations([]string{"A", "B", "C", "D"}, ReadablePercents(series(1, 100, 1)...))
 	g.Expect(len(perms)).To(Equal(176_851))
 
 	// perms = Combinations([]string{"A", "B", "C", "D", "E"}, floats(1, 100, 1))
 	// g.Expect(len(perms)).To(Equal(4_598_126))
 
-	perms = Combinations([]string{"A", "B", "C", "D", "E"}, readablePercents(series(2.5, 100, 2.5)...))
+	perms = Combinations([]string{"A", "B", "C", "D", "E"}, ReadablePercents(series(2.5, 100, 2.5)...))
 	g.Expect(len(perms)).To(Equal(135_751))
 
 	// perms = Combinations([]string{"A", "B", "C", "D", "E", "F"}, floats(2.5, 100, 2.5))
@@ -107,7 +108,7 @@ func TestPortfolioCombinations_GoldenButterflyAssets(t *testing.T) {
 	//   ...rank by all their ranks (equally weighted)
 	//   Ranked portfolios in 1m8.660651682s
 	startAt := time.Now()
-	perms := Combinations([]string{"TSM", "SCV", "LTT", "STT", "GLD"}, readablePercents(seriesRange(5)...))
+	perms := Combinations([]string{"TSM", "SCV", "LTT", "STT", "GLD"}, ReadablePercents(seriesRange(5)...))
 	// g.Expect(len(perms)).To(Equal(10_626)) // only 3,876 include all five.
 	fmt.Println("Generated", len(perms), "combinations in", time.Since(startAt))
 
@@ -185,9 +186,9 @@ func TestPortfolioCombinations_AnythingBetterThanGoldenButtefly(t *testing.T) {
 	for _, n := range data.Names() {
 		p := Combination{
 			Assets:      []string{n},
-			Percentages: readablePercents(100),
+			Percentages: ReadablePercents(100),
 		}
-		stat := evaluatePortfolio(readablePercents(data.MustFind(n).AnnualReturns...), p)
+		stat := evaluatePortfolio(data.MustFind(n).AnnualReturns, p)
 		results = append(results, stat)
 	}
 	RankPortfoliosInPlace(results)

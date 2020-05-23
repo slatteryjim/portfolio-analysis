@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+
+	. "github.com/slatteryjim/portfolio-analysis/types"
 )
 
 func Test_leadingDrawdownSequence(t *testing.T) {
@@ -21,16 +23,16 @@ func Test_leadingDrawdownSequence(t *testing.T) {
 	verify([]Percent{}, []GrowthMultiplier{}, false)
 
 	// doesn't start with a drawdown
-	verify(readablePercents(1), []GrowthMultiplier{}, true)
-	verify(readablePercents(0, -1, 2), []GrowthMultiplier{}, true)
+	verify(ReadablePercents(1), []GrowthMultiplier{}, true)
+	verify(ReadablePercents(0, -1, 2), []GrowthMultiplier{}, true)
 
 	// starts with a drawdown
-	verify(readablePercents(-1), []GrowthMultiplier{0.99}, false)
-	verify(readablePercents(-1, 2), []GrowthMultiplier{0.99}, true)
-	verify(readablePercents(-1, -1, 3), []GrowthMultiplier{0.99, 0.9801}, true)
-	verify(readablePercents(-1, -1, 3, -5, -50), []GrowthMultiplier{0.99, 0.9801}, true)
+	verify(ReadablePercents(-1), []GrowthMultiplier{0.99}, false)
+	verify(ReadablePercents(-1, 2), []GrowthMultiplier{0.99}, true)
+	verify(ReadablePercents(-1, -1, 3), []GrowthMultiplier{0.99, 0.9801}, true)
+	verify(ReadablePercents(-1, -1, 3, -5, -50), []GrowthMultiplier{0.99, 0.9801}, true)
 
-	verify(readablePercents(-50, 100), []GrowthMultiplier{0.50}, true)
+	verify(ReadablePercents(-50, 100), []GrowthMultiplier{0.50}, true)
 
 }
 
@@ -38,28 +40,28 @@ func Test_drawdowns(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	g.Expect(drawdowns(nil)).To(BeEmpty())
-	g.Expect(drawdowns(readablePercents(0))).To(BeEmpty())
-	g.Expect(drawdowns(readablePercents(1))).To(BeEmpty())
-	g.Expect(drawdowns(readablePercents(-1))).To(Equal([]drawdownSequence{
+	g.Expect(drawdowns(ReadablePercents(0))).To(BeEmpty())
+	g.Expect(drawdowns(ReadablePercents(1))).To(BeEmpty())
+	g.Expect(drawdowns(ReadablePercents(-1))).To(Equal([]drawdownSequence{
 		{startIndex: 0, cumulativeReturns: []GrowthMultiplier{0.99}, recovered: false},
 	}))
-	g.Expect(drawdowns(readablePercents(-1, 2))).To(Equal([]drawdownSequence{
+	g.Expect(drawdowns(ReadablePercents(-1, 2))).To(Equal([]drawdownSequence{
 		{startIndex: 0, cumulativeReturns: []GrowthMultiplier{0.99}, recovered: true},
 	}))
-	g.Expect(drawdowns(readablePercents(-1, -1, 3))).To(Equal([]drawdownSequence{
+	g.Expect(drawdowns(ReadablePercents(-1, -1, 3))).To(Equal([]drawdownSequence{
 		{startIndex: 0, cumulativeReturns: []GrowthMultiplier{0.99, 0.9801}, recovered: true},
 		{startIndex: 1, cumulativeReturns: []GrowthMultiplier{0.99}, recovered: true},
 	}))
-	g.Expect(drawdowns(readablePercents(-1, -1, 1))).To(Equal([]drawdownSequence{
+	g.Expect(drawdowns(ReadablePercents(-1, -1, 1))).To(Equal([]drawdownSequence{
 		{startIndex: 0, cumulativeReturns: []GrowthMultiplier{0.99, 0.9801, 0.989901}, recovered: false},
 		{startIndex: 1, cumulativeReturns: []GrowthMultiplier{0.99, 0.9999}, recovered: false},
 	}))
-	g.Expect(drawdowns(readablePercents(-1, 3, -1, -1, 3))).To(Equal([]drawdownSequence{
+	g.Expect(drawdowns(ReadablePercents(-1, 3, -1, -1, 3))).To(Equal([]drawdownSequence{
 		{startIndex: 0, cumulativeReturns: []GrowthMultiplier{0.99}, recovered: true},
 		{startIndex: 2, cumulativeReturns: []GrowthMultiplier{0.99, 0.9801}, recovered: true},
 		{startIndex: 3, cumulativeReturns: []GrowthMultiplier{0.99}, recovered: true},
 	}))
-	g.Expect(drawdowns(readablePercents(-1, -1, 3, -5, -50, 100))).To(Equal([]drawdownSequence{
+	g.Expect(drawdowns(ReadablePercents(-1, -1, 3, -5, -50, 100))).To(Equal([]drawdownSequence{
 		{startIndex: 0, cumulativeReturns: []GrowthMultiplier{0.99, 0.9801}, recovered: true},
 		{startIndex: 1, cumulativeReturns: []GrowthMultiplier{0.99}, recovered: true},
 		{startIndex: 3, cumulativeReturns: []GrowthMultiplier{0.95, 0.475, 0.95}, recovered: false},
@@ -96,15 +98,15 @@ func Test_drawdownScores(t *testing.T) {
 
 	verify(nil, 0, 0, 0)
 	verify([]Percent{}, 0, 0, 0)
-	verify(readablePercents(-1), 0.20000000000000018, -0.010000000000000009, 1)
-	verify(readablePercents(-1, 2), 0.10000000000000009, -0.010000000000000009, 1)
-	verify(readablePercents(-1, 2, -1, -3), 0.9940000000000015, -0.03970000000000007, 2)
-	verify(readablePercents(-1, 2, -1, -3, 10), 0.4970000000000008, -0.03970000000000007, 2)
+	verify(ReadablePercents(-1), 0.20000000000000018, -0.010000000000000009, 1)
+	verify(ReadablePercents(-1, 2), 0.10000000000000009, -0.010000000000000009, 1)
+	verify(ReadablePercents(-1, 2, -1, -3), 0.9940000000000015, -0.03970000000000007, 2)
+	verify(ReadablePercents(-1, 2, -1, -3, 10), 0.4970000000000008, -0.03970000000000007, 2)
 
-	verify(readablePercents(-10, 30), 0.9999999999999998, -0.09999999999999998, 1)
-	verify(readablePercents(-20, 30), 1.9999999999999996, -0.19999999999999996, 1)
-	verify(readablePercents(-10, -20, 40), 3.799999999999999, -0.2799999999999999, 2)
-	verify(readablePercents(-10, 30, -10, -20, 30), 8.879999999999995, -0.2799999999999999, 3)
+	verify(ReadablePercents(-10, 30), 0.9999999999999998, -0.09999999999999998, 1)
+	verify(ReadablePercents(-20, 30), 1.9999999999999996, -0.19999999999999996, 1)
+	verify(ReadablePercents(-10, -20, 40), 3.799999999999999, -0.2799999999999999, 2)
+	verify(ReadablePercents(-10, 30, -10, -20, 30), 8.879999999999995, -0.2799999999999999, 3)
 
 	verify(TSM, 26.990140749914836, -0.5225438230658536, 13)
 	verify(SCV, 27.53985971540292, -0.6102169347344113, 10)

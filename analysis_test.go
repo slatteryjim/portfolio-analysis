@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/slatteryjim/portfolio-analysis/data"
+	. "github.com/slatteryjim/portfolio-analysis/types"
 )
 
 func Test_portfolioReturns(t *testing.T) {
@@ -37,7 +38,7 @@ func Test_portfolioReturns(t *testing.T) {
 		_, err := portfolioReturnsProxy(nil, nil)
 		g.Expect(err).To(MatchError("targetAllocations must sum to 100%, got 0%"))
 
-		_, err = portfolioReturnsProxy(nil, readablePercents(100))
+		_, err = portfolioReturnsProxy(nil, ReadablePercents(100))
 		g.Expect(err).To(MatchError("lists must have the same length: targetAllocations (1), returnsList (0)"))
 	})
 
@@ -47,20 +48,20 @@ func Test_portfolioReturns(t *testing.T) {
 		// simply one asset, one year
 		g.Expect(portfolioReturnsProxy(
 			[][]Percent{
-				readablePercents(1),
+				ReadablePercents(1),
 			},
-			readablePercents(100)),
+			ReadablePercents(100)),
 		).To(Equal(
-			readablePercents(1),
+			ReadablePercents(1),
 		))
 
 		// two assets, two years, 50%/50%
 		g.Expect(portfolioReturnsProxy(
 			[][]Percent{
-				readablePercents(10, 20),
-				readablePercents(5, 10),
+				ReadablePercents(10, 20),
+				ReadablePercents(5, 10),
 			},
-			readablePercents(50, 50)),
+			ReadablePercents(50, 50)),
 		).To(Equal(
 			[]Percent{0.07500000000000001, 0.15000000000000002},
 		))
@@ -70,13 +71,13 @@ func Test_portfolioReturns(t *testing.T) {
 			[][]Percent{
 				TSM,
 			},
-			readablePercents(100)),
+			ReadablePercents(100)),
 		).To(Equal(
 			TSM,
 		))
 
 		// GoldenButterfly
-		g.Expect(portfolioReturnsProxy([][]Percent{TSM, SCV, LTT, STT, GLD}, readablePercents(20, 20, 20, 20, 20))).To(Equal(
+		g.Expect(portfolioReturnsProxy([][]Percent{TSM, SCV, LTT, STT, GLD}, ReadablePercents(20, 20, 20, 20, 20))).To(Equal(
 			[]Percent{-0.1533383268282135, 0.017318791285211466, 0.10068425974797353, 0.11372919971053391, -0.0172148539804938, -0.06461024302567049, 0.09360907230753582, 0.139978985084822, 0.009677225905924784, 0.03404942084475439, 0.2372421712101816, 0.025928538460314007, -0.09709304924704815, 0.1973312916341973, 0.07495518258141035, -0.010392136396391902, 0.18336903125620316, 0.14078544233466855, 0.00018309646857563727, 0.04669750085940259, 0.08673884623758171, -0.08572038845018258, 0.1563762834314272, 0.061295238653148135, 0.10983322532725735, -0.0465004614702163, 0.178993634975939, 0.052560744788289336, 0.11162614426521761, 0.05817517787259961, 0.016929554860230407, 0.03104069332156112, 0.017056422822255918, -0.0017220660217116823, 0.16666679718569166, 0.06405102737142347, 0.03846823294327486, 0.09777651111177979, 0.04997737064863614, -0.06695505567337855, 0.11050169878101092, 0.14604978374972077, 0.04114653873382587, 0.07603962935631807, 0.04372680283039169, 0.08816734725542127, -0.04048477144240979, 0.07444466516990281, 0.08438538586983815, -0.05602189725865632, 0.1534744248725398},
 		))
 	})
@@ -85,10 +86,10 @@ func Test_portfolioReturns(t *testing.T) {
 func TestPortfolioTradingSimulation(t *testing.T) {
 	var (
 		assets = [][]Percent{
-			readablePercents(20, 20, 20), // first asset greatly outperforms second
-			readablePercents(0, 0, 0),
+			ReadablePercents(20, 20, 20), // first asset greatly outperforms second
+			ReadablePercents(0, 0, 0),
 		}
-		targetAllocations = readablePercents(50, 50)
+		targetAllocations = ReadablePercents(50, 50)
 
 		// first year's returns is always the same
 		firstReturn Percent = 0.10000000000000009
@@ -167,7 +168,7 @@ func Test_harmonicMean(t *testing.T) {
 
 var (
 	// tested in spreadsheet: https://docs.google.com/spreadsheets/d/14bxTQncj8BIUtQghpiQM0ZyeGsNUYQGFtNx2yOIkEEE/edit#gid=1013681666
-	sampleReturns = readablePercents(-10.28, 0.90, 17.63, 17.93, -18.55, -28.42, 38.42, 26.54, -2.68, 9.23, 25.51, 33.62, -3.79, 18.66, 23.42, 3.01, 32.51, 16.05, 2.23, 17.89, 29.12, -6.22, 34.15, 8.92, 10.62, -0.17, 35.79, 20.96, 30.99, 23.26, 23.81, -10.57, -10.89, -20.95, 31.42, 12.61, 6.09, 15.63, 5.57, -36.99, 28.83, 17.26, 1.08, 16.38, 33.52, 12.56, 0.39, 12.66, 21.17, -5.17, 30.80)
+	sampleReturns = ReadablePercents(-10.28, 0.90, 17.63, 17.93, -18.55, -28.42, 38.42, 26.54, -2.68, 9.23, 25.51, 33.62, -3.79, 18.66, 23.42, 3.01, 32.51, 16.05, 2.23, 17.89, 29.12, -6.22, 34.15, 8.92, 10.62, -0.17, 35.79, 20.96, 30.99, 23.26, 23.81, -10.57, -10.89, -20.95, 31.42, 12.61, 6.09, 15.63, 5.57, -36.99, 28.83, 17.26, 1.08, 16.38, 33.52, 12.56, 0.39, 12.66, 21.17, -5.17, 30.80)
 )
 
 func Test_swr(t *testing.T) {
@@ -187,7 +188,7 @@ func Test_swr(t *testing.T) {
 	// briefly prove SWR for a 1 year 10% return
 	{
 		fixedWithdrawal := 0.5238095238095238
-		g.Expect(swrProxy(readablePercents(10))).To(Equal(Percent(fixedWithdrawal)))
+		g.Expect(swrProxy(ReadablePercents(10))).To(Equal(Percent(fixedWithdrawal)))
 		initial := 1.0
 		remaining := initial - fixedWithdrawal // withdraw first year's amount
 		remaining *= 1.10                      // apply first year's growth
@@ -215,7 +216,7 @@ func Test_pwr(t *testing.T) {
 	// briefly prove PWR for a 1 year 10% return
 	{
 		fixedWithdrawal := 0.04761904761904764
-		g.Expect(pwrProxy(readablePercents(10))).To(Equal(Percent(fixedWithdrawal)))
+		g.Expect(pwrProxy(ReadablePercents(10))).To(Equal(Percent(fixedWithdrawal)))
 		initial := 1.0
 		remaining := initial - fixedWithdrawal // withdraw first year's amount
 		remaining *= 1.10                      // apply first year's growth
@@ -255,23 +256,23 @@ func Test_minPWR(t *testing.T) {
 	verify(nil, 0, 0, 0)
 
 	// length 1
-	verify(readablePercents(10), 1, pwr(readablePercents(10)), 0)
-	verify(readablePercents(20), 1, pwr(readablePercents(20)), 0)
+	verify(ReadablePercents(10), 1, pwr(ReadablePercents(10)), 0)
+	verify(ReadablePercents(20), 1, pwr(ReadablePercents(20)), 0)
 
 	// length 2
-	verify(readablePercents(10, 20), 1, pwr(readablePercents(10)), 0)
-	verify(readablePercents(10, 20), 2, pwr(readablePercents(10, 20)), 0)
+	verify(ReadablePercents(10, 20), 1, pwr(ReadablePercents(10)), 0)
+	verify(ReadablePercents(10, 20), 2, pwr(ReadablePercents(10, 20)), 0)
 
 	// length 3
-	verify(readablePercents(10, -5, 30), 1, pwr(readablePercents(-5)), 1)
-	verify(readablePercents(10, -5, 30), 2, pwr(readablePercents(10, -5)), 0)
-	verify(readablePercents(10, -5, 30), 3, pwr(readablePercents(10, -5, 30)), 0)
+	verify(ReadablePercents(10, -5, 30), 1, pwr(ReadablePercents(-5)), 1)
+	verify(ReadablePercents(10, -5, 30), 2, pwr(ReadablePercents(10, -5)), 0)
+	verify(ReadablePercents(10, -5, 30), 3, pwr(ReadablePercents(10, -5, 30)), 0)
 
 	// length 4
-	verify(readablePercents(10, -5, 10, -20), 1, pwr(readablePercents(-20)), 3)
-	verify(readablePercents(10, -5, 10, -20), 2, pwr(readablePercents(10, -20)), 2)
-	verify(readablePercents(10, -5, 10, -20), 3, pwr(readablePercents(-5, 10, -20)), 1)
-	verify(readablePercents(10, -5, 10, -20), 4, pwr(readablePercents(10, -5, 10, -20)), 0)
+	verify(ReadablePercents(10, -5, 10, -20), 1, pwr(ReadablePercents(-20)), 3)
+	verify(ReadablePercents(10, -5, 10, -20), 2, pwr(ReadablePercents(10, -20)), 2)
+	verify(ReadablePercents(10, -5, 10, -20), 3, pwr(ReadablePercents(-5, 10, -20)), 1)
+	verify(ReadablePercents(10, -5, 10, -20), 4, pwr(ReadablePercents(10, -5, 10, -20)), 0)
 
 	verify(TSM, 30, 0.03237787319823412, 0)
 	verify(SCV, 30, 0.03803405103934034, 0)
@@ -316,23 +317,23 @@ func Test_minSWR(t *testing.T) {
 	verify(nil, 0, 0, 0)
 
 	// length 1
-	verify(readablePercents(10), 1, swr(readablePercents(10)), 0)
-	verify(readablePercents(20), 1, swr(readablePercents(20)), 0)
+	verify(ReadablePercents(10), 1, swr(ReadablePercents(10)), 0)
+	verify(ReadablePercents(20), 1, swr(ReadablePercents(20)), 0)
 
 	// length 2
-	verify(readablePercents(10, 20), 1, swr(readablePercents(10)), 0)
-	verify(readablePercents(10, 20), 2, swr(readablePercents(10, 20)), 0)
+	verify(ReadablePercents(10, 20), 1, swr(ReadablePercents(10)), 0)
+	verify(ReadablePercents(10, 20), 2, swr(ReadablePercents(10, 20)), 0)
 
 	// length 3
-	verify(readablePercents(10, -5, 30), 1, swr(readablePercents(-5)), 1)
-	verify(readablePercents(10, -5, 30), 2, swr(readablePercents(10, -5)), 0)
-	verify(readablePercents(10, -5, 30), 3, swr(readablePercents(10, -5, 30)), 0)
+	verify(ReadablePercents(10, -5, 30), 1, swr(ReadablePercents(-5)), 1)
+	verify(ReadablePercents(10, -5, 30), 2, swr(ReadablePercents(10, -5)), 0)
+	verify(ReadablePercents(10, -5, 30), 3, swr(ReadablePercents(10, -5, 30)), 0)
 
 	// length 4
-	verify(readablePercents(10, -5, 10, -20), 1, swr(readablePercents(-20)), 3)
-	verify(readablePercents(10, -5, 10, -20), 2, swr(readablePercents(10, -20)), 2)
-	verify(readablePercents(10, -5, 10, -20), 3, swr(readablePercents(-5, 10, -20)), 1)
-	verify(readablePercents(10, -5, 10, -20), 4, swr(readablePercents(10, -5, 10, -20)), 0)
+	verify(ReadablePercents(10, -5, 10, -20), 1, swr(ReadablePercents(-20)), 3)
+	verify(ReadablePercents(10, -5, 10, -20), 2, swr(ReadablePercents(10, -20)), 2)
+	verify(ReadablePercents(10, -5, 10, -20), 3, swr(ReadablePercents(-5, 10, -20)), 1)
+	verify(ReadablePercents(10, -5, 10, -20), 4, swr(ReadablePercents(10, -5, 10, -20)), 0)
 
 	verify(TSM, 30, 0.03786147243197951, 0)
 	verify(SCV, 30, 0.0429043601737704, 0)
@@ -375,18 +376,18 @@ func Test_cagr(t *testing.T) {
 
 	g.Expect(cagr(nil)).To(Equal(Percent(0.0)))
 	g.Expect(cagr([]Percent{})).To(Equal(Percent(0.0)))
-	g.Expect(cagr(readablePercents(1))).To(Equal(Percent(0.010000000000000009)))
+	g.Expect(cagr(ReadablePercents(1))).To(Equal(Percent(0.010000000000000009)))
 	// prove it's correct
 	{
 		cagrValue := Percent(0.029805806936433976)
-		g.Expect(cagr(readablePercents(1, 5))).To(Equal(cagrValue))
+		g.Expect(cagr(ReadablePercents(1, 5))).To(Equal(cagrValue))
 		cumulativeTwoYears := Percent(1.0605)
 		// compound the CAGR value
 		g.Expect((1 + cagrValue) * (1 + cagrValue)).To(Equal(cumulativeTwoYears))
 		// compound the original returns, arrive at the same cumulative value
 		g.Expect(1.01 * 1.05).To(Equal(cumulativeTwoYears.Float()))
 	}
-	g.Expect(cagr(readablePercents(5, 5, 5, 5, 5))).To(Equal(Percent(0.050000000000000044)))
+	g.Expect(cagr(ReadablePercents(5, 5, 5, 5, 5))).To(Equal(Percent(0.050000000000000044)))
 
 	g.Expect(cagr(TSM)).To(Equal(Percent(0.05924856139463475)))
 	g.Expect(cagr(SCV)).To(Equal(Percent(0.07363869666341749)))
@@ -402,10 +403,10 @@ func Test_averageReturn(t *testing.T) {
 
 	g.Expect(math.IsNaN(averageReturn(nil).Float())).To(BeTrue())
 	g.Expect(math.IsNaN(averageReturn([]Percent{}).Float())).To(BeTrue())
-	g.Expect(averageReturn(readablePercents(1))).To(Equal(Percent(0.01)))
-	g.Expect(averageReturn(readablePercents(1, 2))).To(Equal(Percent(0.015)))
-	g.Expect(averageReturn(readablePercents(1, 2, -3))).To(BeNumerically("~", 0))
-	g.Expect(averageReturn(readablePercents(series(0, 100, 1)...))).To(Equal(Percent(0.50)))
+	g.Expect(averageReturn(ReadablePercents(1))).To(Equal(Percent(0.01)))
+	g.Expect(averageReturn(ReadablePercents(1, 2))).To(Equal(Percent(0.015)))
+	g.Expect(averageReturn(ReadablePercents(1, 2, -3))).To(BeNumerically("~", 0))
+	g.Expect(averageReturn(ReadablePercents(series(0, 100, 1)...))).To(Equal(Percent(0.50)))
 }
 
 func Test_startDateSensitivity(t *testing.T) {
@@ -418,19 +419,19 @@ func Test_startDateSensitivity(t *testing.T) {
 
 		// 5% improvment
 		returns := append(
-			repeat(readablePercent(5), 10),
-			repeat(readablePercent(10), 10)...)
+			repeat(ReadablePercent(5), 10),
+			repeat(ReadablePercent(10), 10)...)
 		g.Expect(startDateSensitivity(returns)).To(Equal(Percent(0.050000000000000044)))
 
 		// 5% shortfall
 		returns = append(
-			repeat(readablePercent(10), 10),
-			repeat(readablePercent(5), 10)...)
+			repeat(ReadablePercent(10), 10),
+			repeat(ReadablePercent(5), 10)...)
 		g.Expect(startDateSensitivity(returns)).To(Equal(Percent(0.050000000000000044)))
 	})
 
 	// long steadily increasing set of returns
-	returns := readablePercents(series(0, 100, 1)...)
+	returns := ReadablePercents(series(0, 100, 1)...)
 	g.Expect(startDateSensitivity(returns)).To(Equal(Percent(0.10003452051664796)))
 }
 
@@ -447,49 +448,49 @@ func Test_baselineReturn(t *testing.T) {
 	t.Run("percentile out of range", func(t *testing.T) {
 		g := NewGomegaWithT(t)
 		g.Expect(func() {
-			baselineReturn(readablePercents(10), 1, -0.0001)
+			baselineReturn(ReadablePercents(10), 1, -0.0001)
 		}).To(Panic())
 		g.Expect(func() {
-			baselineReturn(readablePercents(10), 1, 100)
+			baselineReturn(ReadablePercents(10), 1, 100)
 		}).To(Panic())
 	})
 
 	t.Run("empty returns ok", func(t *testing.T) {
 		g := NewGomegaWithT(t)
-		g.Expect(baselineReturn(nil, 0, readablePercent(0))).To(Equal(Percent(0.0)))
-		g.Expect(baselineReturn(nil, 1, readablePercent(50))).To(Equal(Percent(0.0)))
+		g.Expect(baselineReturn(nil, 0, ReadablePercent(0))).To(Equal(Percent(0.0)))
+		g.Expect(baselineReturn(nil, 1, ReadablePercent(50))).To(Equal(Percent(0.0)))
 	})
 
 	t.Run("one return", func(t *testing.T) {
 		g := NewGomegaWithT(t)
-		g.Expect(baselineReturn(readablePercents(10), 1, readablePercent(0))).To(Equal(Percent(0.10000000000000009)))
-		g.Expect(baselineReturn(readablePercents(10), 1, readablePercent(50))).To(Equal(Percent(0.10000000000000009)))
-		g.Expect(baselineReturn(readablePercents(10), 1, readablePercent(99.999))).To(Equal(Percent(0.10000000000000009)))
+		g.Expect(baselineReturn(ReadablePercents(10), 1, ReadablePercent(0))).To(Equal(Percent(0.10000000000000009)))
+		g.Expect(baselineReturn(ReadablePercents(10), 1, ReadablePercent(50))).To(Equal(Percent(0.10000000000000009)))
+		g.Expect(baselineReturn(ReadablePercents(10), 1, ReadablePercent(99.999))).To(Equal(Percent(0.10000000000000009)))
 	})
 
 	t.Run("two returns", func(t *testing.T) {
 		g := NewGomegaWithT(t)
-		g.Expect(baselineReturn(readablePercents(10, 20), 1, readablePercent(0))).To(Equal(Percent(0.10000000000000009)))
-		g.Expect(baselineReturn(readablePercents(10, 20), 1, readablePercent(49))).To(Equal(Percent(0.10000000000000009)))
-		g.Expect(baselineReturn(readablePercents(10, 20), 1, readablePercent(50))).To(Equal(Percent(0.19999999999999996)))
-		g.Expect(baselineReturn(readablePercents(10, 20), 1, readablePercent(99.999))).To(Equal(Percent(0.19999999999999996)))
+		g.Expect(baselineReturn(ReadablePercents(10, 20), 1, ReadablePercent(0))).To(Equal(Percent(0.10000000000000009)))
+		g.Expect(baselineReturn(ReadablePercents(10, 20), 1, ReadablePercent(49))).To(Equal(Percent(0.10000000000000009)))
+		g.Expect(baselineReturn(ReadablePercents(10, 20), 1, ReadablePercent(50))).To(Equal(Percent(0.19999999999999996)))
+		g.Expect(baselineReturn(ReadablePercents(10, 20), 1, ReadablePercent(99.999))).To(Equal(Percent(0.19999999999999996)))
 	})
 
 	t.Run("three returns", func(t *testing.T) {
 		g := NewGomegaWithT(t)
-		g.Expect(baselineReturn(readablePercents(10, 20, 30), 2, readablePercent(0))).To(Equal(Percent(0.14891252930760568)))
-		g.Expect(baselineReturn(readablePercents(10, 20, 30), 2, readablePercent(49))).To(Equal(Percent(0.14891252930760568)))
-		g.Expect(baselineReturn(readablePercents(10, 20, 30), 2, readablePercent(50))).To(Equal(Percent(0.24899959967967966)))
-		g.Expect(baselineReturn(readablePercents(10, 20, 30), 2, readablePercent(99.999))).To(Equal(Percent(0.24899959967967966)))
+		g.Expect(baselineReturn(ReadablePercents(10, 20, 30), 2, ReadablePercent(0))).To(Equal(Percent(0.14891252930760568)))
+		g.Expect(baselineReturn(ReadablePercents(10, 20, 30), 2, ReadablePercent(49))).To(Equal(Percent(0.14891252930760568)))
+		g.Expect(baselineReturn(ReadablePercents(10, 20, 30), 2, ReadablePercent(50))).To(Equal(Percent(0.24899959967967966)))
+		g.Expect(baselineReturn(ReadablePercents(10, 20, 30), 2, ReadablePercent(99.999))).To(Equal(Percent(0.24899959967967966)))
 
 		t.Run("CAGRs are sorted", func(t *testing.T) {
 			g := NewGomegaWithT(t)
-			g.Expect(baselineReturn(readablePercents(-10, 20, -30), 1, readablePercent(0))).To(Equal(Percent(-0.30000000000000004)))
-			g.Expect(baselineReturn(readablePercents(-10, 20, -30), 1, readablePercent(33.3))).To(Equal(Percent(-0.30000000000000004)))
-			g.Expect(baselineReturn(readablePercents(-10, 20, -30), 1, readablePercent(33.4))).To(Equal(Percent(-0.09999999999999998)))
-			g.Expect(baselineReturn(readablePercents(-10, 20, -30), 1, readablePercent(66.6))).To(Equal(Percent(-0.09999999999999998)))
-			g.Expect(baselineReturn(readablePercents(-10, 20, -30), 1, readablePercent(66.7))).To(Equal(Percent(0.19999999999999996)))
-			g.Expect(baselineReturn(readablePercents(-10, 20, -30), 1, readablePercent(99.999))).To(Equal(Percent(0.19999999999999996)))
+			g.Expect(baselineReturn(ReadablePercents(-10, 20, -30), 1, ReadablePercent(0))).To(Equal(Percent(-0.30000000000000004)))
+			g.Expect(baselineReturn(ReadablePercents(-10, 20, -30), 1, ReadablePercent(33.3))).To(Equal(Percent(-0.30000000000000004)))
+			g.Expect(baselineReturn(ReadablePercents(-10, 20, -30), 1, ReadablePercent(33.4))).To(Equal(Percent(-0.09999999999999998)))
+			g.Expect(baselineReturn(ReadablePercents(-10, 20, -30), 1, ReadablePercent(66.6))).To(Equal(Percent(-0.09999999999999998)))
+			g.Expect(baselineReturn(ReadablePercents(-10, 20, -30), 1, ReadablePercent(66.7))).To(Equal(Percent(0.19999999999999996)))
+			g.Expect(baselineReturn(ReadablePercents(-10, 20, -30), 1, ReadablePercent(99.999))).To(Equal(Percent(0.19999999999999996)))
 		})
 	})
 }
@@ -525,25 +526,25 @@ func Test_standardDeviation(t *testing.T) {
 
 	t.Run("matches STDEVP function in google spreadsheet", func(t *testing.T) {
 		g := NewGomegaWithT(t)
-		g.Expect(standardDeviation([]Percent{1})).To(Equal(readablePercent(0.0)))
+		g.Expect(standardDeviation([]Percent{1})).To(Equal(ReadablePercent(0.0)))
 		g.Expect(standardDeviation([]Percent{1, 2})).To(Equal(Percent(0.5)))
 		g.Expect(standardDeviation([]Percent{1, 2, 3, 4})).To(Equal(Percent(1.118033988749895)))
 		g.Expect(standardDeviation([]Percent{1, -2, 3, -4})).To(Equal(Percent(2.692582403567252)))
 	})
 
-	g.Expect(standardDeviation(TSM)).To(Equal(readablePercent(17.165466213991304)))
-	g.Expect(standardDeviation(SCV)).To(Equal(readablePercent(19.3942212424017)))
+	g.Expect(standardDeviation(TSM)).To(Equal(ReadablePercent(17.165466213991304)))
+	g.Expect(standardDeviation(SCV)).To(Equal(ReadablePercent(19.3942212424017)))
 	g.Expect(standardDeviation(LTT)).To(Equal(Percent(0.12326313856389255)))
 	g.Expect(standardDeviation(STT)).To(Equal(Percent(0.043862677714401194)))
 	g.Expect(standardDeviation(STB)).To(Equal(Percent(0.04824512942467834)))
-	g.Expect(standardDeviation(GLD)).To(Equal(readablePercent(23.857120994357875)))
+	g.Expect(standardDeviation(GLD)).To(Equal(ReadablePercent(23.857120994357875)))
 	g.Expect(standardDeviation(GoldenButterfly)).To(Equal(Percent(0.08102969356581732)))
 }
 
 func Test_readablePercent(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	g.Expect(float64(readablePercent(33))).To(Equal(0.33))
+	g.Expect(float64(ReadablePercent(33))).To(Equal(0.33))
 }
 
 func Test_cumulative_and_cumulativeList(t *testing.T) {
@@ -570,7 +571,7 @@ func Test_rebalanceFactor_effect(t *testing.T) {
 		gbAssets      = [][]Percent{TSM, SCV, LTT, STT, GLD}
 		gbCombination = Combination{
 			Assets:      []string{"TSM", "SCV", "LTT", "STT", "GLD"},
-			Percentages: readablePercents(20, 20, 20, 20, 20),
+			Percentages: ReadablePercents(20, 20, 20, 20, 20),
 		}
 	)
 
@@ -606,14 +607,14 @@ func Test_rebalanceFactor_effect(t *testing.T) {
 }
 
 func TestTSMPerformance(t *testing.T) {
-	tsmCombination := Combination{Assets: []string{"TSM"}, Percentages: readablePercents(100)}
+	tsmCombination := Combination{Assets: []string{"TSM"}, Percentages: ReadablePercents(100)}
 
 	// 1969 start date, using new TSV data source
 	stat := evaluatePortfolio(TSM, tsmCombination)
 	fmt.Println(stat)
 
 	// 1871 start date
-	stat = evaluatePortfolio(readablePercents(data.MustFind("TSM").AnnualReturns...), tsmCombination)
+	stat = evaluatePortfolio(data.MustFind("TSM").AnnualReturns, tsmCombination)
 	fmt.Println(stat)
 
 	// Output:

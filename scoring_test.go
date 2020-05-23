@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+
+	. "github.com/slatteryjim/portfolio-analysis/types"
 )
 
 func Test_segmentIndexes(t *testing.T) {
@@ -68,11 +70,11 @@ func TestEvaluatePortfolios(t *testing.T) {
 	g.Expect(EvaluatePortfolios([]Combination{}, nil)).To(BeEmpty())
 
 	g.Expect(EvaluatePortfolios([]Combination{
-		{Assets: []string{"TSM"}, Percentages: readablePercents(100)},
+		{Assets: []string{"TSM"}, Percentages: ReadablePercents(100)},
 	}, assetMap)).To(Equal([]*PortfolioStat{
 		{
 			Assets:               []string{"TSM"},
-			Percentages:          readablePercents(100),
+			Percentages:          ReadablePercents(100),
 			AvgReturn:            0.07453082614598813,
 			BaselineLTReturn:     0.0306081363792714,
 			BaselineSTReturn:     -0.02907904796851324,
@@ -88,12 +90,12 @@ func TestEvaluatePortfolios(t *testing.T) {
 
 	// two combinations will exercise two goroutines
 	g.Expect(EvaluatePortfolios([]Combination{
-		{Assets: []string{"TSM"}, Percentages: readablePercents(100)},
-		{Assets: []string{"TSM", "GLD"}, Percentages: readablePercents(50, 50)},
+		{Assets: []string{"TSM"}, Percentages: ReadablePercents(100)},
+		{Assets: []string{"TSM", "GLD"}, Percentages: ReadablePercents(50, 50)},
 	}, assetMap)).To(Equal([]*PortfolioStat{
 		{
 			Assets:               []string{"TSM"},
-			Percentages:          readablePercents(100),
+			Percentages:          ReadablePercents(100),
 			AvgReturn:            0.07453082614598813,
 			BaselineLTReturn:     0.0306081363792714,
 			BaselineSTReturn:     -0.02907904796851324,
@@ -107,7 +109,7 @@ func TestEvaluatePortfolios(t *testing.T) {
 		},
 		{
 			Assets:               []string{"TSM", "GLD"},
-			Percentages:          readablePercents(50, 50),
+			Percentages:          ReadablePercents(50, 50),
 			AvgReturn:            0.06387494536221017,
 			BaselineLTReturn:     0.035477861130724264,
 			BaselineSTReturn:     -0.0051889628058078285,

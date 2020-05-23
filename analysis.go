@@ -4,72 +4,22 @@ import (
 	"fmt"
 	"math"
 	"sort"
-	"strconv"
-	"strings"
 
 	"github.com/slatteryjim/portfolio-analysis/data"
+	. "github.com/slatteryjim/portfolio-analysis/types"
 )
-
-type (
-	// Percent is a percentage using the range 0.00 - 1.00.
-	Percent float64
-
-	// GrowthMultiplier is a focused around 1.00. So a 5% return would be represented
-	// as a 1.05 GrowthMultiplier.
-	GrowthMultiplier float64
-)
-
-func (p Percent) String() string {
-	return formatFloat(p.Float()*100, 12) + "%"
-}
-
-// readablePercents takes easy-to-read percentages using the range 0 - 100, and returns
-// a slice of Percent (each using the range 0.00 - 1.00).
-func readablePercents(xs ...float64) []Percent {
-	res := make([]Percent, len(xs))
-	for i, x := range xs {
-		res[i] = readablePercent(x)
-	}
-	return res
-}
-
-// readablePercent takes an easy-to-read percentage using the range 0 - 100, and returns
-// a Percent (using the range 0.00 - 1.00).
-func readablePercent(x float64) Percent {
-	return Percent(x / 100)
-}
-
-func (g GrowthMultiplier) Float() float64 { return float64(g) }
-
-// GrowthMultiplier is a focused around 1.00. So a 5% return would be represented
-// as a 1.05 GrowthMultiplier.
-func (p Percent) GrowthMultiplier() GrowthMultiplier {
-	return GrowthMultiplier(p + 1)
-}
-
-func (p Percent) Float() float64 { return float64(p) }
-
-// PercentSlice attaches the methods of Interface to []PercentSlice, sorting in increasing order
-// (not-a-number values are treated as less than other values).
-type PercentSlice []Percent
-
-func (p PercentSlice) Len() int { return len(p) }
-func (p PercentSlice) Less(i, j int) bool {
-	return p[i] < p[j] || math.IsNaN(p[i].Float()) && !math.IsNaN(p[j].Float())
-}
-func (p PercentSlice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 
 // some data from Boglehead's "Simba Spreadsheet"
 // 1969 start date - returns (percentage as a float, 100.0 == 100%)
 var (
-	TSM = readablePercents(data.MustFind("TSM").AnnualReturnsStartingIn(1969)...)
-	SCV = readablePercents(data.MustFind("SCV").AnnualReturnsStartingIn(1969)...)
-	LTT = readablePercents(data.MustFind("LTT").AnnualReturnsStartingIn(1969)...)
-	STT = readablePercents(data.MustFind("STT").AnnualReturnsStartingIn(1969)...)
-	STB = readablePercents(data.MustFind("STB").AnnualReturnsStartingIn(1969)...)
-	GLD = readablePercents(data.MustFind("Gold").AnnualReturnsStartingIn(1969)...)
+	TSM = data.MustFind("TSM").AnnualReturnsStartingIn(1969)
+	SCV = data.MustFind("SCV").AnnualReturnsStartingIn(1969)
+	LTT = data.MustFind("LTT").AnnualReturnsStartingIn(1969)
+	STT = data.MustFind("STT").AnnualReturnsStartingIn(1969)
+	STB = data.MustFind("STB").AnnualReturnsStartingIn(1969)
+	GLD = data.MustFind("Gold").AnnualReturnsStartingIn(1969)
 
-	GoldenButterfly, _ = portfolioReturns([][]Percent{TSM, SCV, LTT, STT, GLD}, readablePercents(20, 20, 20, 20, 20))
+	GoldenButterfly, _ = portfolioReturns([][]Percent{TSM, SCV, LTT, STT, GLD}, ReadablePercents(20, 20, 20, 20, 20))
 )
 
 // take a list of multiple asset returns, and the percentage to rebalance each year. Returns the resultant set of returns.
@@ -187,7 +137,7 @@ func averageReturn(returns []Percent) Percent {
 // the worst outliers (15th percentile 15-year real CAGR)"
 // See: https://portfoliocharts.com/portfolio/long-term-returns/
 func baselineLongTermReturn(returns []Percent) Percent {
-	return baselineReturn(returns, 15, readablePercent(15))
+	return baselineReturn(returns, 15, ReadablePercent(15))
 }
 
 // baselineShortTermReturn returns the:
@@ -195,7 +145,7 @@ func baselineLongTermReturn(returns []Percent) Percent {
 // the worst outliers (15th percentile 3-year real CAGR)"
 // See: https://portfoliocharts.com/portfolio/long-term-returns/
 func baselineShortTermReturn(returns []Percent) Percent {
-	return baselineReturn(returns, 3, readablePercent(15))
+	return baselineReturn(returns, 3, ReadablePercent(15))
 }
 
 func baselineReturn(returns []Percent, nYears int, percentile Percent) Percent {
@@ -425,10 +375,4 @@ func minFloats(xs []GrowthMultiplier) GrowthMultiplier {
 		}
 	}
 	return min
-}
-
-func formatFloat(f float64, prec int) string {
-	s := strconv.FormatFloat(f, 'f', prec, 64)
-	s = strings.TrimRight(strings.TrimRight(s, "0"), ".")
-	return s
 }

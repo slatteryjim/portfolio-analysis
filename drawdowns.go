@@ -1,5 +1,9 @@
 package portfolio_analysis
 
+import (
+	. "github.com/slatteryjim/portfolio-analysis/types"
+)
+
 type drawdownSequence struct {
 	startIndex        int
 	cumulativeReturns []GrowthMultiplier

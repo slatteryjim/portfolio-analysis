@@ -6,6 +6,8 @@ import (
 	"runtime"
 	"sort"
 	"sync"
+
+	. "github.com/slatteryjim/portfolio-analysis/types"
 )
 
 var (

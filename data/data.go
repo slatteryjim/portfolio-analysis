@@ -5,16 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-)
 
-type (
-	Series struct {
-		Name          string
-		Symbol        string
-		FirstYear     int
-		LastYear      int
-		AnnualReturns []float64
-	}
+	. "github.com/slatteryjim/portfolio-analysis/types"
 )
 
 // MustFind returns the Series for the given asset name, or panics if it is not found.
@@ -108,7 +100,7 @@ func parseSimbaTSV(tsv string) (map[string]Series, error) {
 			return nil, fmt.Errorf("name or symbol should not be empty in row #%d", i+1)
 		}
 		var (
-			annualReturns []float64
+			annualReturns []Percent
 			firstYear     *int
 			lastYear      int
 		)
@@ -125,7 +117,7 @@ func parseSimbaTSV(tsv string) (map[string]Series, error) {
 			if err != nil {
 				return nil, err
 			}
-			annualReturns = append(annualReturns, returnThisYearFloat)
+			annualReturns = append(annualReturns, ReadablePercent(returnThisYearFloat))
 			// update firstYear/lastYear as appropriate
 			thisYear := yearNumbers[j]
 			if firstYear == nil {
@@ -160,16 +152,6 @@ func parseSimbaTSV(tsv string) (map[string]Series, error) {
 		return nil, fmt.Errorf("shouldn't have any duplicate IDs")
 	}
 	return seriesByName, nil
-}
-
-func (s Series) AnnualReturnsStartingIn(year int) []float64 {
-	if year < s.FirstYear {
-		year = s.FirstYear
-	}
-	if year > s.LastYear {
-		return nil
-	}
-	return s.AnnualReturns[year-s.FirstYear:]
 }
 
 // transpose returns a transposed version of the two-dimensional slice.
