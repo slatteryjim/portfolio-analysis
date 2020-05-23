@@ -7,6 +7,8 @@ import (
 	"time"
 
 	. "github.com/onsi/gomega"
+
+	"github.com/slatteryjim/portfolio-analysis/data"
 )
 
 func TestPermutations(t *testing.T) {
@@ -87,22 +89,23 @@ func TestPortfolioPermutations_GoldenButterflyAssets(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// GoldenButterfly advertised on: https://portfoliocharts.com/portfolio/golden-butterfly/
-	// Standard: [TSM SCV LTT STT GLD] [20% 20% 20% 20% 20%] (66) RF:0.00 AvgReturn:5.668%(5300) BLT:5.241%(2449) BST:2.848%(929) PWR:4.224%(1853) SWR:5.305%(1699) StdDev:8.103%(2383) Ulcer:3.4(2258) DeepestDrawdown:-15.33%(1835) LongestDrawdown:3(2), StartDateSensitivity:7.71%(756)
+	// GoldenButterfly: [TSM SCV LTT STT GLD] [20% 20% 20% 20% 20%] (64) RF:0.00 AvgReturn:5.669%(5299) BLT:5.241%(2450) BST:2.849%(927) PWR:4.224%(1853) SWR:5.305%(1699) StdDev:8.103%(2383) Ulcer:3.4(2258) DeepestDrawdown:-15.33%(1862) LongestDrawdown:3(2), StartDateSensitivity:7.71%(756)
 	//
 	// Check out the results using 1% increments:
-	// MaxPWR:   [TSM SCV LTT STT GLD] [1 65 1  1 32] PWR30: 5.404% Ulcer:8.1 DeepestDrawdown:-26.24% LongestDrawdown:6
-	// MinUlcer: [TSM SCV LTT STT GLD] [7  1 3 80  9] PWR30: 2.470% Ulcer:0.6 DeepestDrawdown: -5.53% LongestDrawdown:4
+	// Best PWR30: [TSM SCV GLD] [1% 66% 33%] (2042098) RF:0.00 AvgReturn:7.932%(64438) BLT:5.536%(704794) BST:2.885%(431554) PWR:5.450%(1) SWR:6.284%(38) StdDev:13.397%(4192102) Ulcer:8.2(3097695) DeepestDrawdown:-26.73%(3323261) LongestDrawdown:6(5), StartDateSensitivity:16.97%(3381664)
+	// Best UlcerScore: [TSM LTT STT GLD] [8% 3% 80% 9%] (3209303) RF:0.00 AvgReturn:2.738%(4589590) BLT:1.948%(4292822) BST:0.194%(3917744) PWR:2.456%(4228073) SWR:4.504%(2983311) StdDev:3.976%(1530) Ulcer:0.6(1) DeepestDrawdown:-5.43%(798) LongestDrawdown:4(3), StartDateSensitivity:9.10%(803328)
 	//
 	// Using 5% increments:
-	// Best PWR30: [SCV GLD] [70% 30%] (4281) RF:0.00 AvgReturn:8.068%(178) BLT:5.896%(810) BST:2.385%(2518) PWR:5.364%(1) SWR:6.148%(8) StdDev:13.709%(9495) Ulcer:9.5(6975) DeepestDrawdown:-27.10%(7168) LongestDrawdown:6(5), StartDateSensitivity:16.21%(6723)
-	// Best UlcerScore: [TSM STT GLD] [10% 80% 10%] (6679) RF:0.00 AvgReturn:2.809%(10564) BLT:2.069%(9640) BST:0.385%(8246) PWR:2.477%(9484) SWR:4.582%(5739) StdDev:3.929%(7) Ulcer:0.6(1) DeepestDrawdown:-5.59%(4) LongestDrawdown:2(1), StartDateSensitivity:8.44%(1193)
+	// Best PWR30: [SCV GLD] [70% 30%] (4285) RF:0.00 AvgReturn:8.068%(178) BLT:5.896%(811) BST:2.386%(2517) PWR:5.364%(1) SWR:6.148%(8) StdDev:13.708%(9495) Ulcer:9.5(6975) DeepestDrawdown:-27.10%(7246) LongestDrawdown:6(5), StartDateSensitivity:16.20%(6723)
+	// Best UlcerScore: [TSM STT GLD] [10% 80% 10%] (6678) RF:0.00 AvgReturn:2.808%(10564) BLT:2.070%(9640) BST:0.386%(8245) PWR:2.477%(9484) SWR:4.581%(5745) StdDev:3.928%(7) Ulcer:0.6(1) DeepestDrawdown:-5.60%(4) LongestDrawdown:2(1), StartDateSensitivity:8.44%(1191)
 	//
 	// Timing/log for GoldenButterfly assets, 1% step permutations:
-	//   Generated 4,598,126 permutations in 10.9s
-	//   ...culled down to 81.9% permutations in 82ms
-	//   ...Evaluating 3,764,376 permutations.
-	//   Done evaluating portfolios in 2m40s
-	//   Ranked portfolios in 50.4s
+	//   Generated 4598126 permutations in 6.551823599s
+	//   ...Evaluating 4598126 permutations.
+	//   Done evaluating portfolios in 53.007350212s or 86745 portfolios/second
+	//   ...Calculate rank scores for the portfolios
+	//   ...rank by all their ranks (equally weighted)
+	//   Ranked portfolios in 1m8.660651682s
 	startAt := time.Now()
 	perms := Permutations([]string{"TSM", "SCV", "LTT", "STT", "GLD"}, readablePercents(seriesRange(5)...))
 	// g.Expect(len(perms)).To(Equal(10_626)) // only 3,876 include all five.
@@ -171,6 +174,31 @@ func TestPortfolioPermutations_GoldenButterflyAssets(t *testing.T) {
 		fmt.Println(" ", i, p.ComparePerformance(*gbStat))
 	}
 	fmt.Println("Finished GB analysis in", time.Since(startAt))
+}
+
+func TestPortfolioPermutations_AnythingBetterThanGoldenButtefly(t *testing.T) {
+	// g := NewGomegaWithT(t)
+
+	// need an n-choose-r algorithm
+	// we'll just do an "n-choose-1" for the moment
+	var results []*PortfolioStat
+	for _, n := range data.Names() {
+		p := Permutation{
+			Assets:      []string{n},
+			Percentages: readablePercents(100),
+		}
+		stat := evaluatePortfolio(readablePercents(data.MustFind(n).AnnualReturns...), p)
+		results = append(results, stat)
+	}
+	RankPortfoliosInPlace(results)
+
+	// print best:
+	fmt.Println("Best combined overall ranks:")
+	for i := 0; i < 10; i++ {
+		fmt.Printf("#%d: %s\n", i+1, results[i])
+	}
+
+	PrintBestByEachRanking(results)
 }
 
 func PrintBestByEachRanking(results []*PortfolioStat) {

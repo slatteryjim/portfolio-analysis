@@ -17,12 +17,22 @@ type (
 	}
 )
 
+// MustFind returns the Series for the given asset name, or panics if it is not found.
 func MustFind(name string) Series {
 	s, ok := _seriesByName[name]
 	if !ok {
 		panic(fmt.Sprintf("Did not find series with name %q", name))
 	}
 	return s
+}
+
+// Assets returns a list of all the available asset names.
+func Names() []string {
+	res := make([]string, 0, len(_seriesByName))
+	for k := range _seriesByName {
+		res = append(res, k)
+	}
+	return res
 }
 
 // _seriesByName has all of the Series organized by asset name
