@@ -11,30 +11,30 @@ import (
 	"github.com/slatteryjim/portfolio-analysis/data"
 )
 
-func TestPermutations(t *testing.T) {
+func TestCombinations(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	dumpAll := func(perms []Permutation) {
+	dumpAll := func(perms []Combination) {
 		for _, p := range perms {
 			fmt.Println(p.Assets, p.Percentages)
 		}
 	}
 
-	perms := Permutations([]string{"A"}, readablePercents(100))
+	perms := Combinations([]string{"A"}, readablePercents(100))
 	dumpAll(perms)
-	g.Expect(perms).To(Equal([]Permutation{
+	g.Expect(perms).To(Equal([]Combination{
 		{[]string{"A"}, readablePercents(100)},
 	}))
 
-	perms = Permutations([]string{"A", "B"}, readablePercents(50, 100))
-	g.Expect(perms).To(ConsistOf([]Permutation{
+	perms = Combinations([]string{"A", "B"}, readablePercents(50, 100))
+	g.Expect(perms).To(ConsistOf([]Combination{
 		{[]string{"A"}, readablePercents(100)},
 		{[]string{"A", "B"}, readablePercents(50, 50)},
 		{[]string{"B"}, readablePercents(100)},
 	}))
 
-	perms = Permutations([]string{"A", "B", "C"}, readablePercents(33, 66, 100))
-	g.Expect(perms).To(ConsistOf([]Permutation{
+	perms = Combinations([]string{"A", "B", "C"}, readablePercents(33, 66, 100))
+	g.Expect(perms).To(ConsistOf([]Combination{
 		{[]string{"A"}, []Percent{1.00}},
 		{[]string{"A", "B"}, []Percent{0.66, 0.33999999999999997}},
 		{[]string{"A", "C"}, []Percent{0.66, 0.33999999999999997}},
@@ -47,22 +47,22 @@ func TestPermutations(t *testing.T) {
 		{[]string{"C"}, []Percent{1.00}},
 	}))
 
-	perms = Permutations([]string{"A", "B", "C"}, readablePercents(series(1, 100, 1)...))
+	perms = Combinations([]string{"A", "B", "C"}, readablePercents(series(1, 100, 1)...))
 	g.Expect(len(perms)).To(Equal(5151))
 
-	perms = Permutations([]string{"A", "B", "C", "D"}, readablePercents(series(1, 100, 1)...))
+	perms = Combinations([]string{"A", "B", "C", "D"}, readablePercents(series(1, 100, 1)...))
 	g.Expect(len(perms)).To(Equal(176_851))
 
-	// perms = Permutations([]string{"A", "B", "C", "D", "E"}, floats(1, 100, 1))
+	// perms = Combinations([]string{"A", "B", "C", "D", "E"}, floats(1, 100, 1))
 	// g.Expect(len(perms)).To(Equal(4_598_126))
 
-	perms = Permutations([]string{"A", "B", "C", "D", "E"}, readablePercents(series(2.5, 100, 2.5)...))
+	perms = Combinations([]string{"A", "B", "C", "D", "E"}, readablePercents(series(2.5, 100, 2.5)...))
 	g.Expect(len(perms)).To(Equal(135_751))
 
-	// perms = Permutations([]string{"A", "B", "C", "D", "E", "F"}, floats(2.5, 100, 2.5))
+	// perms = Combinations([]string{"A", "B", "C", "D", "E", "F"}, floats(2.5, 100, 2.5))
 	// g.Expect(len(perms)).To(Equal(1_221_759))
 
-	// perms = Permutations([]string{"A", "B", "C", "D", "E", "F", "G"}, floats(2.5, 100, 2.5))
+	// perms = Combinations([]string{"A", "B", "C", "D", "E", "F", "G"}, floats(2.5, 100, 2.5))
 	// g.Expect(len(perms)).To(Equal(9_366_819))
 }
 
@@ -85,7 +85,7 @@ func Test_translatePercentages(t *testing.T) {
 	verify([]Percent{25, 50, 75, 100}, []Percent{25, 25, 25, 25})
 }
 
-func TestPortfolioPermutations_GoldenButterflyAssets(t *testing.T) {
+func TestPortfolioCombinations_GoldenButterflyAssets(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	// GoldenButterfly advertised on: https://portfoliocharts.com/portfolio/golden-butterfly/
@@ -99,39 +99,39 @@ func TestPortfolioPermutations_GoldenButterflyAssets(t *testing.T) {
 	// Best PWR30: [SCV GLD] [70% 30%] (4285) RF:0.00 AvgReturn:8.068%(178) BLT:5.896%(811) BST:2.386%(2517) PWR:5.364%(1) SWR:6.148%(8) StdDev:13.708%(9495) Ulcer:9.5(6975) DeepestDrawdown:-27.10%(7246) LongestDrawdown:6(5), StartDateSensitivity:16.20%(6723)
 	// Best UlcerScore: [TSM STT GLD] [10% 80% 10%] (6678) RF:0.00 AvgReturn:2.808%(10564) BLT:2.070%(9640) BST:0.386%(8245) PWR:2.477%(9484) SWR:4.581%(5745) StdDev:3.928%(7) Ulcer:0.6(1) DeepestDrawdown:-5.60%(4) LongestDrawdown:2(1), StartDateSensitivity:8.44%(1191)
 	//
-	// Timing/log for GoldenButterfly assets, 1% step permutations:
-	//   Generated 4598126 permutations in 6.551823599s
-	//   ...Evaluating 4598126 permutations.
+	// Timing/log for GoldenButterfly assets, 1% step combinations:
+	//   Generated 4598126 combinations in 6.551823599s
+	//   ...Evaluating 4598126 combinations.
 	//   Done evaluating portfolios in 53.007350212s or 86745 portfolios/second
 	//   ...Calculate rank scores for the portfolios
 	//   ...rank by all their ranks (equally weighted)
 	//   Ranked portfolios in 1m8.660651682s
 	startAt := time.Now()
-	perms := Permutations([]string{"TSM", "SCV", "LTT", "STT", "GLD"}, readablePercents(seriesRange(5)...))
+	perms := Combinations([]string{"TSM", "SCV", "LTT", "STT", "GLD"}, readablePercents(seriesRange(5)...))
 	// g.Expect(len(perms)).To(Equal(10_626)) // only 3,876 include all five.
-	fmt.Println("Generated", len(perms), "permutations in", time.Since(startAt))
+	fmt.Println("Generated", len(perms), "combinations in", time.Since(startAt))
 
-	// filter to only include permutations where all 5 assets are used/
+	// filter to only include combinations where all 5 assets are used/
 	// (See: https://github.com/golang/go/wiki/SliceTricks#filtering-without-allocating)
 	// {
 	// 	startAt := time.Now()
 	// 	numberOfAssets := 5
 	// 	filtered := perms[:0]
 	// 	for _, p := range perms {
-	// 		// this cuts 10,626 permutations down to 3,876
+	// 		// this cuts 10,626 combinations down to 3,876
 	// 		if len(p.Assets) == numberOfAssets {
 	// 			filtered = append(filtered, p)
 	// 		}
 	// 	}
 	// 	for i := len(filtered); i < len(perms); i++ {
-	// 		perms[i] = Permutation{}
+	// 		perms[i] = Combination{}
 	// 	}
-	// 	fmt.Printf("...culled down to %0.1f%% permutations in %s\n", float64(len(filtered))/float64(len(perms))*100, time.Since(startAt))
+	// 	fmt.Printf("...culled down to %0.1f%% combinations in %s\n", float64(len(filtered))/float64(len(perms))*100, time.Since(startAt))
 	// 	perms = filtered
 	// }
 	//g.Expect(len(perms)).To(Equal(3_876))
 	startAt = time.Now()
-	fmt.Println("...Evaluating", len(perms), "permutations.")
+	fmt.Println("...Evaluating", len(perms), "combinations.")
 
 	results, err := EvaluatePortfolios(perms, assetMap)
 	g.Expect(err).ToNot(HaveOccurred())
@@ -176,14 +176,14 @@ func TestPortfolioPermutations_GoldenButterflyAssets(t *testing.T) {
 	fmt.Println("Finished GB analysis in", time.Since(startAt))
 }
 
-func TestPortfolioPermutations_AnythingBetterThanGoldenButtefly(t *testing.T) {
+func TestPortfolioCombinations_AnythingBetterThanGoldenButtefly(t *testing.T) {
 	// g := NewGomegaWithT(t)
 
 	// need an n-choose-r algorithm
 	// we'll just do an "n-choose-1" for the moment
 	var results []*PortfolioStat
 	for _, n := range data.Names() {
-		p := Permutation{
+		p := Combination{
 			Assets:      []string{n},
 			Percentages: readablePercents(100),
 		}

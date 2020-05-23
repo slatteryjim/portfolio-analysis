@@ -152,9 +152,9 @@ func CopyAll(ps []*PortfolioStat) []*PortfolioStat {
 	return res
 }
 
-// EvaluatePortfolios evaluates the portfolio for each of the given permutations, returning a slice of stats.
+// EvaluatePortfolios evaluates the portfolio for each of the given combinations, returning a slice of stats.
 // It processes in parallel using multiple CPUs as needed.
-func EvaluatePortfolios(perms []Permutation, assetMap map[string][]Percent) ([]*PortfolioStat, error) {
+func EvaluatePortfolios(perms []Combination, assetMap map[string][]Percent) ([]*PortfolioStat, error) {
 	res := make([]*PortfolioStat, len(perms))
 	var (
 		wg sync.WaitGroup
@@ -189,8 +189,8 @@ func EvaluatePortfolios(perms []Permutation, assetMap map[string][]Percent) ([]*
 	return res, nil
 }
 
-// evaluatePortfolios evaluates the portfolio for each of the given permutations, returning a slice of stats.
-func evaluatePortfolios(perms []Permutation, assetMap map[string][]Percent) ([]*PortfolioStat, error) {
+// evaluatePortfolios evaluates the portfolio for each of the given combinations, returning a slice of stats.
+func evaluatePortfolios(perms []Combination, assetMap map[string][]Percent) ([]*PortfolioStat, error) {
 	// define this array to be reused
 	var returnsList [][]Percent
 
@@ -217,7 +217,7 @@ func evaluatePortfolios(perms []Permutation, assetMap map[string][]Percent) ([]*
 	return results, nil
 }
 
-func evaluatePortfolio(portfolioReturns []Percent, p Permutation) *PortfolioStat {
+func evaluatePortfolio(portfolioReturns []Percent, p Combination) *PortfolioStat {
 	minPWR30, minSWR30 := minPWRAndSWR(portfolioReturns, 30)
 	maxUlcerScore, deepestDrawdown, longestDrawdown := drawdownScores(portfolioReturns)
 

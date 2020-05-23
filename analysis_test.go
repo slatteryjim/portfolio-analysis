@@ -568,7 +568,7 @@ func Test_rebalanceFactor_effect(t *testing.T) {
 
 	var (
 		gbAssets      = [][]Percent{TSM, SCV, LTT, STT, GLD}
-		gbPermutation = Permutation{
+		gbCombination = Combination{
 			Assets:      []string{"TSM", "SCV", "LTT", "STT", "GLD"},
 			Percentages: readablePercents(20, 20, 20, 20, 20),
 		}
@@ -577,10 +577,10 @@ func Test_rebalanceFactor_effect(t *testing.T) {
 	// see how the rebalanceFactor can affect the GoldenButterfly portfolio results.
 	var results []*PortfolioStat
 	for rebalanceFactor := 0.0; rebalanceFactor <= 1.975; rebalanceFactor += 0.001 {
-		returns, err := PortfolioTradingSimulation(gbAssets, gbPermutation.Percentages, rebalanceFactor)
+		returns, err := PortfolioTradingSimulation(gbAssets, gbCombination.Percentages, rebalanceFactor)
 		g.Expect(err).To(Succeed())
 
-		stat := evaluatePortfolio(returns, gbPermutation)
+		stat := evaluatePortfolio(returns, gbCombination)
 		stat.RebalanceFactor = rebalanceFactor
 		results = append(results, stat)
 	}
@@ -606,14 +606,14 @@ func Test_rebalanceFactor_effect(t *testing.T) {
 }
 
 func TestTSMPerformance(t *testing.T) {
-	tsmPermutation := Permutation{Assets: []string{"TSM"}, Percentages: readablePercents(100)}
+	tsmCombination := Combination{Assets: []string{"TSM"}, Percentages: readablePercents(100)}
 
 	// 1969 start date, using new TSV data source
-	stat := evaluatePortfolio(TSM, tsmPermutation)
+	stat := evaluatePortfolio(TSM, tsmCombination)
 	fmt.Println(stat)
 
 	// 1871 start date
-	stat = evaluatePortfolio(readablePercents(data.MustFind("TSM").AnnualReturns...), tsmPermutation)
+	stat = evaluatePortfolio(readablePercents(data.MustFind("TSM").AnnualReturns...), tsmCombination)
 	fmt.Println(stat)
 
 	// Output:

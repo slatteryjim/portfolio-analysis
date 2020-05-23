@@ -65,9 +65,9 @@ func TestEvaluatePortfolios(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	g.Expect(EvaluatePortfolios(nil, nil)).To(BeEmpty())
-	g.Expect(EvaluatePortfolios([]Permutation{}, nil)).To(BeEmpty())
+	g.Expect(EvaluatePortfolios([]Combination{}, nil)).To(BeEmpty())
 
-	g.Expect(EvaluatePortfolios([]Permutation{
+	g.Expect(EvaluatePortfolios([]Combination{
 		{Assets: []string{"TSM"}, Percentages: readablePercents(100)},
 	}, assetMap)).To(Equal([]*PortfolioStat{
 		{
@@ -86,8 +86,8 @@ func TestEvaluatePortfolios(t *testing.T) {
 		},
 	}))
 
-	// two permutations will exercise two goroutines
-	g.Expect(EvaluatePortfolios([]Permutation{
+	// two combinations will exercise two goroutines
+	g.Expect(EvaluatePortfolios([]Combination{
 		{Assets: []string{"TSM"}, Percentages: readablePercents(100)},
 		{Assets: []string{"TSM", "GLD"}, Percentages: readablePercents(50, 50)},
 	}, assetMap)).To(Equal([]*PortfolioStat{
@@ -123,14 +123,14 @@ func TestEvaluatePortfolios(t *testing.T) {
 }
 
 var (
-	permutationsGoldenButterfly = []Permutation{
+	combinationsGoldenButterfly = []Combination{
 		{
 			Assets:      []string{"TSM", "SCV", "LTT", "STT", "GLD"},
 			Percentages: []Percent{0.2, 0.2, 0.2, 0.2, 0.2},
 		},
 	}
 
-	permutationsTSM = []Permutation{{Assets: []string{"TSM"}, Percentages: []Percent{1}}}
+	combinationsTSM = []Combination{{Assets: []string{"TSM"}, Percentages: []Percent{1}}}
 )
 
 // go test -run=^$ -bench=Benchmark_evaluatePortfolios_GoldenButterfly$ --benchtime=10s
@@ -138,7 +138,7 @@ var (
 // Benchmark_evaluatePortfolios_GoldenButterfly-12           431221             27260 ns/op
 func Benchmark_evaluatePortfolios_GoldenButterfly(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_, err := evaluatePortfolios(permutationsGoldenButterfly, assetMap)
+		_, err := evaluatePortfolios(combinationsGoldenButterfly, assetMap)
 		if err != nil {
 			b.Fatal(err.Error())
 		}
@@ -150,7 +150,7 @@ func Benchmark_evaluatePortfolios_GoldenButterfly(b *testing.B) {
 // Benchmark_evaluatePortfolios_TSM-12       423140             26658 ns/op
 func Benchmark_evaluatePortfolios_TSM(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_, err := evaluatePortfolios(permutationsTSM, assetMap)
+		_, err := evaluatePortfolios(combinationsTSM, assetMap)
 		if err != nil {
 			b.Fatal(err.Error())
 		}
