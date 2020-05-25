@@ -1,6 +1,8 @@
 package portfolio_analysis
 
 import (
+	"errors"
+
 	. "github.com/slatteryjim/portfolio-analysis/types"
 )
 
@@ -52,4 +54,64 @@ func translatePercentages(ps []Percent) {
 	for i, p := range ps {
 		prev, ps[i] = p, p-prev
 	}
+}
+
+var ErrEndEnumeration = errors.New("end enumeration")
+
+// EnumerateCombinations will enumerate all combinations of k values of xs.
+// Trying to make this function screaming fast by not doing any allocations.
+// It calls the callback for each enumeration that is available, and the enumerated
+// value will be populated in kBuffer each time.
+// The callback function may return ErrEndEnumeration to stop enumerations.
+func EnumerateCombinations(xs []string, k int, kBuffer []string, combination func() error) error {
+	if len(xs) == 0 || k <= 0 {
+		return nil
+	}
+	if len(xs) < k {
+		return nil
+	}
+	if len(xs) == k {
+		copy(kBuffer, xs)
+		if err := combination(); err != nil {
+			if err == ErrEndEnumeration {
+				return nil
+			}
+			return err
+		}
+		return nil
+	}
+	// so len(xs) must be > k; we'll have results to return
+	var (
+		first, rest = xs[0], xs[1:]
+		kBufferRest = kBuffer[1:]
+	)
+	// return cases that include `first`
+	kBuffer[0] = first
+	// setup a function we might use twice; slight speedup to factor it out
+	passThroughAllCombinations := func() error {
+		if err := combination(); err != nil {
+			if err == ErrEndEnumeration {
+				return nil
+			}
+			return err
+		}
+		return nil
+	}
+	if k == 1 {
+		// publish this entry
+		if err := combination(); err != nil {
+			if err == ErrEndEnumeration {
+				return nil
+			}
+			return err
+		}
+	} else {
+		err := EnumerateCombinations(rest, k-1, kBufferRest, passThroughAllCombinations)
+		if err != nil {
+			return err
+		}
+	}
+
+	// return cases that don't include `first`
+	return EnumerateCombinations(rest, k, kBuffer, passThroughAllCombinations)
 }

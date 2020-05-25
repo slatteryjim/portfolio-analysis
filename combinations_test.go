@@ -177,7 +177,7 @@ func TestPortfolioCombinations_GoldenButterflyAssets(t *testing.T) {
 	fmt.Println("Finished GB analysis in", time.Since(startAt))
 }
 
-func TestPortfolioCombinations_AnythingBetterThanGoldenButtefly(t *testing.T) {
+func TestPortfolioCombinations_AnythingBetterThanGoldenButterfly(t *testing.T) {
 	// g := NewGomegaWithT(t)
 
 	// need an n-choose-r algorithm
@@ -252,4 +252,205 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func TestEnumerateCombinations(t *testing.T) {
+
+	makeAccumulateAllFn := func(buffer []string) (*[][]string, func() error) {
+		var result [][]string
+		return &result, func() error {
+			fmt.Println(buffer)
+			copyBuffer := make([]string, len(buffer))
+			copy(copyBuffer, buffer)
+			result = append(result, copyBuffer)
+			return nil
+		}
+	}
+
+	t.Run("no combinations", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+		var nilBuffer []string
+		result, fn := makeAccumulateAllFn(nilBuffer)
+		g.Expect(EnumerateCombinations(nil, 0, nilBuffer, fn)).To(Succeed())
+		g.Expect(*result).To(HaveLen(0))
+	})
+
+	t.Run("k=1", func(t *testing.T) {
+		var (
+			kOne      = 1
+			bufferOne = make([]string, kOne)
+		)
+		t.Run("one combination", func(t *testing.T) {
+			g := NewGomegaWithT(t)
+			result, fn := makeAccumulateAllFn(bufferOne)
+			g.Expect(EnumerateCombinations([]string{"1"}, kOne, bufferOne, fn)).To(Succeed())
+			g.Expect(*result).To(Equal([][]string{{"1"}}))
+		})
+		t.Run("two combinations", func(t *testing.T) {
+			g := NewGomegaWithT(t)
+			result, fn := makeAccumulateAllFn(bufferOne)
+			g.Expect(EnumerateCombinations([]string{"1", "2"}, kOne, bufferOne, fn)).To(Succeed())
+			g.Expect(*result).To(Equal([][]string{{"1"}, {"2"}}))
+		})
+		t.Run("three combinations", func(t *testing.T) {
+			g := NewGomegaWithT(t)
+			result, fn := makeAccumulateAllFn(bufferOne)
+			g.Expect(EnumerateCombinations([]string{"1", "2", "3"}, kOne, bufferOne, fn)).To(Succeed())
+			g.Expect(*result).To(Equal([][]string{{"1"}, {"2"}, {"3"}}))
+		})
+	})
+
+	t.Run("k=2", func(t *testing.T) {
+		var (
+			kTwo      = 2
+			bufferTwo = make([]string, kTwo)
+		)
+		t.Run("one combination", func(t *testing.T) {
+			g := NewGomegaWithT(t)
+			result, fn := makeAccumulateAllFn(bufferTwo)
+			g.Expect(EnumerateCombinations([]string{"1", "2"}, kTwo, bufferTwo, fn)).To(Succeed())
+			g.Expect(*result).To(Equal([][]string{{"1", "2"}}))
+		})
+		t.Run("three combinations", func(t *testing.T) {
+			g := NewGomegaWithT(t)
+			result, fn := makeAccumulateAllFn(bufferTwo)
+			g.Expect(EnumerateCombinations([]string{"1", "2", "3"}, kTwo, bufferTwo, fn)).To(Succeed())
+			g.Expect(*result).To(Equal([][]string{
+				{"1", "2"}, {"1", "3"},
+				{"2", "3"}}))
+		})
+		t.Run("six combinations", func(t *testing.T) {
+			g := NewGomegaWithT(t)
+			result, fn := makeAccumulateAllFn(bufferTwo)
+			g.Expect(EnumerateCombinations([]string{"1", "2", "3", "4"}, kTwo, bufferTwo, fn)).To(Succeed())
+			g.Expect(*result).To(Equal([][]string{
+				{"1", "2"}, {"1", "3"}, {"1", "4"},
+				{"2", "3"}, {"2", "4"},
+				{"3", "4"}}))
+		})
+	})
+	t.Run("k=3", func(t *testing.T) {
+		var (
+			kThree      = 3
+			bufferThree = make([]string, kThree)
+		)
+		t.Run("one combination", func(t *testing.T) {
+			g := NewGomegaWithT(t)
+			result, fn := makeAccumulateAllFn(bufferThree)
+			g.Expect(EnumerateCombinations([]string{"1", "2", "3"}, kThree, bufferThree, fn)).To(Succeed())
+			g.Expect(*result).To(Equal([][]string{{"1", "2", "3"}}))
+		})
+		t.Run("four combination", func(t *testing.T) {
+			g := NewGomegaWithT(t)
+			result, fn := makeAccumulateAllFn(bufferThree)
+			g.Expect(EnumerateCombinations([]string{"1", "2", "3", "4"}, kThree, bufferThree, fn)).To(Succeed())
+			g.Expect(*result).To(Equal([][]string{
+				{"1", "2", "3"}, {"1", "2", "4"},
+				{"1", "3", "4"}, {"2", "3", "4"}}))
+		})
+		t.Run("ten combination", func(t *testing.T) {
+			g := NewGomegaWithT(t)
+			result, fn := makeAccumulateAllFn(bufferThree)
+			g.Expect(EnumerateCombinations([]string{"1", "2", "3", "4", "5"}, kThree, bufferThree, fn)).To(Succeed())
+			g.Expect(*result).To(Equal([][]string{
+				{"1", "2", "3"}, {"1", "2", "4"}, {"1", "2", "5"},
+				{"1", "3", "4"}, {"1", "3", "5"}, {"1", "4", "5"},
+				{"2", "3", "4"}, {"2", "3", "5"}, {"2", "4", "5"},
+				{"3", "4", "5"}}))
+		})
+	})
+	t.Run("validate some counts", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+
+		makeCounterFn := func() (*int, func() error) {
+			var count int
+			return &count, func() error {
+				count++
+				return nil
+			}
+		}
+
+		verify := func(n, r, expectedCount int) {
+			var (
+				xs        = make([]string, n)
+				buffer    = make([]string, r)
+				count, fn = makeCounterFn()
+			)
+			g.Expect(EnumerateCombinations(xs, r, buffer, fn)).To(Succeed())
+			g.Expect(*count).To(Equal(expectedCount))
+		}
+		// expectedCount=0
+		verify(0, 0, 0)
+		verify(0, 1, 0)
+		verify(1, 2, 0)
+		// n=1
+		verify(1, 1, 1)
+		// n=2
+		verify(2, 1, 2)
+		verify(2, 2, 1)
+		// n=3
+		verify(3, 1, 3)
+		verify(3, 2, 3)
+		verify(3, 3, 1)
+		// n=10, see the nice symetric curve
+		verify(10, 1, 10)
+		verify(10, 2, 45)
+		verify(10, 3, 120)
+		verify(10, 4, 210)
+		verify(10, 5, 252) // peak
+		verify(10, 6, 210)
+		verify(10, 7, 120)
+		verify(10, 8, 45)
+		verify(10, 9, 10)
+		// sample a few larger-size results
+		verify(100, 2, 4_950)
+		verify(100, 3, 161_700)
+		verify(50, 4, 230_300)
+		verify(25, 6, 177_100)
+	})
+	t.Run("can end early", func(t *testing.T) {
+		// TODO: verify we can end at any point by returning ErrEndEnumeration from our callback
+	})
+}
+
+// BenchmarkEnumerateCombinations/100_choose_2-12         	1000000000	         0.00119 ns/op
+// BenchmarkEnumerateCombinations/100_choose_3-12         	1000000000	         0.0298 ns/op
+// BenchmarkEnumerateCombinations/50_choose_4-12          	1000000000	         0.0303 ns/op
+// BenchmarkEnumerateCombinations/50_choose_5-12          	1000000000	         0.269 ns/op
+func BenchmarkEnumerateCombinations(b *testing.B) {
+	makeCounterFn := func() (*int, func() error) {
+		var count int
+		return &count, func() error {
+			count++
+			return nil
+		}
+	}
+
+	benchmark := func(n, r, expectedCount int) {
+		var (
+			xs        = make([]string, n)
+			buffer    = make([]string, r)
+			count, fn = makeCounterFn()
+		)
+		b.ResetTimer()
+		err := EnumerateCombinations(xs, r, buffer, fn)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if *count != expectedCount {
+			b.Fatalf("expected %d to equal %d", *count, expectedCount)
+		}
+	}
+	b.Run("100 choose 2", func(b *testing.B) {
+		benchmark(100, 2, 4_950)
+	})
+	b.Run("100 choose 3", func(b *testing.B) {
+		benchmark(100, 3, 161_700)
+	})
+	b.Run("50 choose 4", func(b *testing.B) {
+		benchmark(50, 4, 230_300)
+	})
+	b.Run("50 choose 5", func(b *testing.B) {
+		benchmark(50, 5, 2_118_760)
+	})
 }
