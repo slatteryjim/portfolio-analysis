@@ -22,3 +22,7 @@ func (s Series) AnnualReturnsStartingIn(year int) []Percent {
 	}
 	return s.AnnualReturns[year-s.FirstYear:]
 }
+
+func (s Series) IndexOfYear(year int) int {
+	return year - s.FirstYear
+}

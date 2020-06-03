@@ -151,7 +151,6 @@ func TestPortfolioCombinations_GoldenButterflyAssets(t *testing.T) {
 
 	PrintBestByEachRanking(results)
 
-	startAt = time.Now()
 	gbStat := FindOne(results, func(p *PortfolioStat) bool {
 		if len(p.Percentages) != 5 {
 			return false
@@ -164,6 +163,11 @@ func TestPortfolioCombinations_GoldenButterflyAssets(t *testing.T) {
 		return true
 	})
 	g.Expect(gbStat).ToNot(BeNil())
+	findBetterThanGoldenButterfly(gbStat, results)
+}
+
+func findBetterThanGoldenButterfly(gbStat *PortfolioStat, results []*PortfolioStat) {
+	startAt := time.Now()
 	fmt.Println("\nGoldenButterfly:", gbStat)
 	// find as good or better than GoldenButterfly
 	betterThanGB := CopyAll(FindMany(results, AsGoodOrBetterThan(gbStat)))
@@ -172,7 +176,7 @@ func TestPortfolioCombinations_GoldenButterflyAssets(t *testing.T) {
 	PrintBestByEachRanking(betterThanGB)
 	fmt.Println("\nAll as good or better:")
 	for i, p := range betterThanGB[:min(len(betterThanGB), 5)] {
-		fmt.Println(" ", i, p.ComparePerformance(*gbStat))
+		fmt.Println(" ", i+1, p.ComparePerformance(*gbStat))
 	}
 	fmt.Println("Finished GB analysis in", time.Since(startAt))
 }
@@ -200,6 +204,121 @@ func TestPortfolioCombinations_AnythingBetterThanGoldenButterfly(t *testing.T) {
 	}
 
 	PrintBestByEachRanking(results)
+}
+
+// Wow, found 4 thousand portfolios that were better than GoldenButterfly!
+// Sample output:
+//
+//   === RUN   TestAllKAssetPortfolios
+//   ...Calculate rank scores for the portfolios
+//   ...rank by all their ranks (equally weighted)
+//
+//   Best by each ranking:
+//   Best AvgReturn: [Momentum Factor Quality Factor Health Care Emerging LT STRIPS] [20% 20% 20% 20% 20%] (470027) RF:0.00 AvgReturn:12.624%(1) BLT:8.229%(518) BST:2.633%(531923) PWR:10.237%(1) SWR:10.804%(2) StdDev:13.804%(2426953) Ulcer:2.6(749516) DeepestDrawdown:-17.69%(686945) LongestDrawdown:2(2), StartDateSensitivity:16.82%(2278676)
+//   Best BaselineLTReturn: [Energy Health Care Emerging LT STRIPS REIT] [20% 20% 20% 20% 20%] (91517) RF:0.00 AvgReturn:11.488%(3207) BLT:9.368%(1) BST:4.133%(24907) PWR:9.177%(1499) SWR:9.824%(1738) StdDev:12.851%(2113132) Ulcer:2.0(485828) DeepestDrawdown:-19.18%(833783) LongestDrawdown:2(2), StartDateSensitivity:7.82%(512200)
+//   Best BaselineSTReturn: [Momentum Factor Precious Metals Dividend Growth Health Care SCV] [20% 20% 20% 20% 20%] (385089) RF:0.00 AvgReturn:10.822%(24705) BLT:7.348%(10930) BST:6.820%(1) PWR:9.022%(2721) SWR:9.685%(3068) StdDev:11.945%(1750769) Ulcer:4.0(1471427) DeepestDrawdown:-27.75%(1819033) LongestDrawdown:2(2), StartDateSensitivity:12.92%(1617187)
+//   Best PWR30: [Momentum Factor Quality Factor Health Care Emerging LT STRIPS] [20% 20% 20% 20% 20%] (470027) RF:0.00 AvgReturn:12.624%(1) BLT:8.229%(518) BST:2.633%(531923) PWR:10.237%(1) SWR:10.804%(2) StdDev:13.804%(2426953) Ulcer:2.6(749516) DeepestDrawdown:-17.69%(686945) LongestDrawdown:2(2), StartDateSensitivity:16.82%(2278676)
+//   Best SWR30: [Momentum Factor Quality Factor Dividend Growth Health Care Emerging] [20% 20% 20% 20% 20%] (1864275) RF:0.00 AvgReturn:12.453%(11) BLT:6.824%(42334) BST:1.029%(1749316) PWR:10.201%(2) SWR:10.828%(1) StdDev:15.238%(2692925) Ulcer:5.9(2117092) DeepestDrawdown:-34.06%(2434559) LongestDrawdown:4(4), StartDateSensitivity:22.85%(2771259)
+//   Best StdDev: [Int'l Bd T-Bill STT ST Munis ST Invest. Grade] [20% 20% 20% 20% 20%] (2435071) RF:0.00 AvgReturn:2.079%(2869592) BLT:0.564%(2865458) BST:-0.108%(2366870) PWR:1.756%(2865253) SWR:4.501%(2813937) StdDev:2.588%(1) Ulcer:0.3(1345) DeepestDrawdown:-2.38%(289) LongestDrawdown:4(4), StartDateSensitivity:2.67%(2575)
+//   Best UlcerScore: [Health Care Gold STB STT ST Invest. Grade] [20% 20% 20% 20% 20%] (1282952) RF:0.00 AvgReturn:5.068%(2724456) BLT:4.025%(2024102) BST:2.437%(672868) PWR:4.370%(2281119) SWR:5.972%(2150791) StdDev:4.602%(3529) Ulcer:0.1(1) DeepestDrawdown:-1.28%(2) LongestDrawdown:2(2), StartDateSensitivity:3.03%(6221)
+//   Best DeepestDrawdown: [Int'l Bd Health Care T-Bill Gold STT] [20% 20% 20% 20% 20%] (1451846) RF:0.00 AvgReturn:4.792%(2773942) BLT:3.875%(2169737) BST:2.705%(482818) PWR:4.148%(2412086) SWR:5.802%(2291009) StdDev:4.184%(1314) Ulcer:0.1(3) DeepestDrawdown:-1.28%(1) LongestDrawdown:2(2), StartDateSensitivity:3.14%(7592)
+//   Best LongestDrawdown: [Precious Metals Dividend Growth Health Care Wellesley LTT] [20% 20% 20% 20% 20%] (1) RF:0.00 AvgReturn:8.967%(468145) BLT:6.483%(90317) BST:4.851%(2565) PWR:7.533%(115913) SWR:8.442%(107771) StdDev:8.941%(518423) Ulcer:1.0(131713) DeepestDrawdown:-10.33%(177206) LongestDrawdown:1(1), StartDateSensitivity:5.40%(132427)
+//   Best StartDateSensitivity: [Global Bd Int'l Bd LT Munis Gold Windsor] [20% 20% 20% 20% 20%] (1868143) RF:0.00 AvgReturn:4.713%(2784986) BLT:3.649%(2362688) BST:1.761%(1206746) PWR:3.596%(2665201) SWR:5.264%(2599384) StdDev:5.596%(23466) Ulcer:0.7(38336) DeepestDrawdown:-6.54%(43125) LongestDrawdown:1(1), StartDateSensitivity:1.96%(1)
+//
+//   Best combined overall ranks:
+//   #1: [Precious Metals Dividend Growth Health Care Wellesley LTT] [20% 20% 20% 20% 20%] (1) RF:0.00 AvgReturn:8.967%(468145) BLT:6.483%(90317) BST:4.851%(2565) PWR:7.533%(115913) SWR:8.442%(107771) StdDev:8.941%(518423) Ulcer:1.0(131713) DeepestDrawdown:-10.33%(177206) LongestDrawdown:1(1), StartDateSensitivity:5.40%(132427)
+//   #2: [Health Care Wellesley Emerging LTT ITT] [20% 20% 20% 20% 20%] (2) RF:0.00 AvgReturn:8.988%(458121) BLT:6.368%(114617) BST:4.465%(9337) PWR:7.782%(72347) SWR:8.787%(49126) StdDev:9.098%(563633) Ulcer:0.9(84118) DeepestDrawdown:-8.55%(105344) LongestDrawdown:2(2), StartDateSensitivity:5.27%(117162)
+//   #3: [Momentum Factor Precious Metals Health Care LTT ITT] [20% 20% 20% 20% 20%] (3) RF:0.00 AvgReturn:8.797%(552752) BLT:6.335%(122335) BST:4.313%(14720) PWR:7.550%(112471) SWR:8.467%(102123) StdDev:8.673%(445944) Ulcer:0.8(78139) DeepestDrawdown:-8.33%(96843) LongestDrawdown:1(1), StartDateSensitivity:6.16%(229073)
+//   #4: [Int'l Bd Health Care Emerging STB LT STRIPS] [20% 20% 20% 20% 20%] (4) RF:0.00 AvgReturn:9.059%(425539) BLT:6.443%(98233) BST:4.618%(5761) PWR:7.656%(92220) SWR:8.658%(66821) StdDev:9.280%(619976) Ulcer:0.7(52665) DeepestDrawdown:-7.27%(61420) LongestDrawdown:2(2), StartDateSensitivity:4.83%(75743)
+//   #5: [Global Bd Int'l Bd Health Care Emerging LT STRIPS] [20% 20% 20% 20% 20%] (5) RF:0.00 AvgReturn:9.278%(334699) BLT:6.707%(55454) BST:5.029%(1380) PWR:7.797%(70129) SWR:8.750%(53652) StdDev:9.463%(681863) Ulcer:0.8(64981) DeepestDrawdown:-7.82%(78463) LongestDrawdown:2(2), StartDateSensitivity:5.02%(91945)
+//   #6: [Int'l Bd Health Care Wellesley Emerging LTT] [20% 20% 20% 20% 20%] (6) RF:0.00 AvgReturn:8.902%(499330) BLT:6.296%(132094) BST:4.354%(13036) PWR:7.715%(82387) SWR:8.711%(59078) StdDev:8.917%(511932) Ulcer:1.0(132392) DeepestDrawdown:-10.36%(178269) LongestDrawdown:1(1), StartDateSensitivity:5.97%(203443)
+//   #7: [Global Bd Health Care Wellesley Emerging LTT] [20% 20% 20% 20% 20%] (7) RF:0.00 AvgReturn:8.951%(475608) BLT:6.322%(125452) BST:4.218%(19421) PWR:7.751%(76847) SWR:8.749%(53758) StdDev:9.043%(547475) Ulcer:1.0(132995) DeepestDrawdown:-10.38%(179180) LongestDrawdown:1(1), StartDateSensitivity:5.86%(188741)
+//   #8: [Int'l Bd Health Care Emerging LT STRIPS ST Invest. Grade] [20% 20% 20% 20% 20%] (8) RF:0.00 AvgReturn:9.098%(408101) BLT:6.505%(86322) BST:4.638%(5395) PWR:7.671%(89680) SWR:8.662%(66124) StdDev:9.358%(645824) Ulcer:0.7(49771) DeepestDrawdown:-7.13%(57634) LongestDrawdown:2(2), StartDateSensitivity:4.86%(78222)
+//   #9: [Precious Metals Quality Factor Health Care LT STRIPS STT] [20% 20% 20% 20% 20%] (9) RF:0.00 AvgReturn:9.123%(397034) BLT:6.451%(96499) BST:4.166%(22693) PWR:7.518%(119173) SWR:8.423%(112328) StdDev:9.413%(664308) Ulcer:0.6(36903) DeepestDrawdown:-6.47%(41406) LongestDrawdown:1(1), StartDateSensitivity:5.38%(130165)
+//   #10: [Precious Metals Quality Factor Health Care STB LT STRIPS] [20% 20% 20% 20% 20%] (10) RF:0.00 AvgReturn:9.256%(342868) BLT:6.598%(70595) BST:4.118%(25927) PWR:7.604%(101740) SWR:8.473%(100661) StdDev:9.525%(704471) Ulcer:0.7(41549) DeepestDrawdown:-6.71%(47065) LongestDrawdown:1(1), StartDateSensitivity:5.46%(139420)
+//
+//   GoldenButterfly: [SCV Gold TSM STT LTT] [20% 20% 20% 20% 20%] (1268826) RF:0.00 AvgReturn:5.669%(2551324) BLT:5.241%(720646) BST:2.849%(394012) PWR:4.224%(2369362) SWR:5.305%(2581584) StdDev:8.103%(306429) Ulcer:3.4(1214869) DeepestDrawdown:-15.33%(484662) LongestDrawdown:3(3), StartDateSensitivity:7.71%(490731)
+//   ...Calculate rank scores for the portfolios
+//   ...rank by all their ranks (equally weighted)
+//   As good or better than GoldenButterfly: 4463
+//
+//   Best by each ranking:
+//   Best AvgReturn: [Momentum Factor Health Care Gold IT Corp LTT] [20% 20% 20% 20% 20%] (1157) RF:0.00 AvgReturn:8.419%(1) BLT:6.737%(35) BST:3.834%(352) PWR:6.663%(175) SWR:7.604%(327) StdDev:7.992%(3956) Ulcer:0.7(1215) DeepestDrawdown:-7.48%(1255) LongestDrawdown:2(2), StartDateSensitivity:7.15%(4134)
+//   Best BaselineLTReturn: [Energy Health Care Wellesley Gold LTT] [20% 20% 20% 20% 20%] (877) RF:0.00 AvgReturn:8.094%(27) BLT:7.305%(1) BST:3.220%(2427) PWR:6.613%(207) SWR:7.589%(346) StdDev:7.891%(3534) Ulcer:0.8(1673) DeepestDrawdown:-8.41%(1737) LongestDrawdown:1(1), StartDateSensitivity:6.45%(3576)
+//   Best BaselineSTReturn: [Precious Metals Int'l Bd Dividend Growth Health Care LTT] [20% 20% 20% 20% 20%] (393) RF:0.00 AvgReturn:8.291%(5) BLT:6.026%(728) BST:4.663%(1) PWR:7.058%(9) SWR:8.059%(32) StdDev:8.073%(4314) Ulcer:0.7(1130) DeepestDrawdown:-7.25%(1170) LongestDrawdown:1(1), StartDateSensitivity:4.96%(1859)
+//   Best PWR30: [Energy Health Care Wellesley STB LTT] [20% 20% 20% 20% 20%] (1385) RF:0.00 AvgReturn:8.117%(21) BLT:5.960%(911) BST:3.129%(2877) PWR:7.149%(1) SWR:8.231%(4) StdDev:8.060%(4255) Ulcer:0.8(1671) DeepestDrawdown:-8.40%(1734) LongestDrawdown:1(1), StartDateSensitivity:6.54%(3655)
+//   Best SWR30: [Global Bd Health Care Emerging STB LTT] [20% 20% 20% 20% 20%] (752) RF:0.00 AvgReturn:8.105%(24) BLT:5.655%(1943) BST:3.675%(657) PWR:7.121%(4) SWR:8.281%(1) StdDev:8.095%(4429) Ulcer:0.7(1156) DeepestDrawdown:-7.32%(1196) LongestDrawdown:2(2), StartDateSensitivity:4.40%(1063)
+//   Best StdDev: [Global Bd Int'l Bd Health Care Wellesley Gold] [20% 20% 20% 20% 20%] (2233) RF:0.00 AvgReturn:6.395%(4298) BLT:5.313%(4025) BST:3.607%(804) PWR:5.298%(3637) SWR:6.556%(3493) StdDev:5.710%(1) Ulcer:0.4(72) DeepestDrawdown:-3.71%(81) LongestDrawdown:1(1), StartDateSensitivity:3.41%(243)
+//   Best UlcerScore: [Wellington Health Care T-Bill Gold LTT] [20% 20% 20% 20% 20%] (1672) RF:0.00 AvgReturn:6.625%(3854) BLT:5.530%(2656) BST:3.739%(520) PWR:5.368%(3456) SWR:6.611%(3331) StdDev:6.202%(75) Ulcer:0.3(1) DeepestDrawdown:-2.54%(2) LongestDrawdown:2(2), StartDateSensitivity:3.01%(91)
+//   Best DeepestDrawdown: [Health Care Min Vol Factor Gold ST Munis LTT] [20% 20% 20% 20% 20%] (1145) RF:0.00 AvgReturn:6.890%(2957) BLT:5.675%(1859) BST:3.434%(1433) PWR:5.522%(2990) SWR:6.728%(2907) StdDev:6.561%(318) Ulcer:0.4(107) DeepestDrawdown:-2.47%(1) LongestDrawdown:2(2), StartDateSensitivity:5.02%(1929)
+//   Best LongestDrawdown: [Int'l Bd Dividend Growth Health Care Gold LTT] [20% 20% 20% 20% 20%] (1) RF:0.00 AvgReturn:7.682%(355) BLT:6.144%(498) BST:4.120%(106) PWR:6.246%(719) SWR:7.310%(875) StdDev:6.968%(949) Ulcer:0.3(45) DeepestDrawdown:-3.48%(55) LongestDrawdown:1(1), StartDateSensitivity:4.64%(1414)
+//   Best StartDateSensitivity: [IT Munis Global Bd Health Care Gold LTT] [20% 20% 20% 20% 20%] (3103) RF:0.00 AvgReturn:6.261%(4419) BLT:5.350%(3759) BST:3.734%(532) PWR:5.025%(4274) SWR:6.342%(4150) StdDev:6.050%(31) Ulcer:0.4(91) DeepestDrawdown:-3.82%(102) LongestDrawdown:2(2), StartDateSensitivity:2.22%(1)
+//
+//   All as good or better:
+//    0 [Int'l Bd Dividend Growth Health Care Gold LTT] [20% 20% 20% 20% 20%] (1) RF:0.00 AvgReturn:2.013%(355) BLT:0.903%(0) BST:1.271%(0) PWR:2.022%(719) SWR:2.005%(875) StdDev:-1.135%(949) Ulcer:-3.1(45) DeepestDrawdown:11.85%(55) LongestDrawdown:-2(1), StartDateSensitivity:-3.07%(1414)
+//    1 [Global Bd Dividend Growth Health Care Gold LTT] [20% 20% 20% 20% 20%] (2) RF:0.00 AvgReturn:2.062%(285) BLT:0.952%(0) BST:1.377%(0) PWR:2.037%(681) SWR:2.021%(827) StdDev:-0.990%(1276) Ulcer:-3.1(71) DeepestDrawdown:11.64%(80) LongestDrawdown:-2(1), StartDateSensitivity:-3.17%(1281)
+//    2 [Health Care Gold MCV STB LTT] [20% 20% 20% 20% 20%] (3) RF:0.00 AvgReturn:1.891%(596) BLT:1.197%(0) BST:1.261%(0) PWR:1.880%(1069) SWR:1.833%(1343) StdDev:-0.950%(1361) Ulcer:-3.0(207) DeepestDrawdown:10.92%(226) LongestDrawdown:-2(1), StartDateSensitivity:-4.00%(400)
+//    3 [Int'l Bd Health Care Gold MCV LTT] [20% 20% 20% 20% 20%] (4) RF:0.00 AvgReturn:2.061%(286) BLT:1.428%(0) BST:0.971%(0) PWR:1.970%(838) SWR:1.879%(1213) StdDev:-0.859%(1578) Ulcer:-3.0(200) DeepestDrawdown:10.96%(219) LongestDrawdown:-2(1), StartDateSensitivity:-3.48%(871)
+//    4 [Health Care Gold STB Value Factor LTT] [20% 20% 20% 20% 20%] (5) RF:0.00 AvgReturn:1.826%(772) BLT:1.068%(0) BST:1.239%(0) PWR:1.846%(1160) SWR:1.826%(1366) StdDev:-1.086%(1051) Ulcer:-3.0(166) DeepestDrawdown:11.14%(186) LongestDrawdown:-2(1), StartDateSensitivity:-3.49%(853)
+//   Finished GB analysis in 147.352553ms
+//   --- PASS: TestAllKAssetPortfolios (103.94s)
+func TestAllKAssetPortfolios(t *testing.T) {
+	t.Skip("Run manually, since it takes a few mins")
+
+	g := NewGomegaWithT(t)
+
+	const (
+		k = 5
+	)
+	targetAllocations := make([]Percent, k)
+	for i := 0; i < k; i++ {
+		targetAllocations[i] = 1.0 / k
+	}
+	var results []*PortfolioStat
+	buffer := make([]string, k)
+	var goldenButterflyStat *PortfolioStat
+	err := EnumerateCombinations(data.Names(), k, buffer, func() error {
+		assets := make([]string, len(buffer))
+		copy(assets, buffer)
+
+		returnsList := data.PortfolioReturnsList(assets...)
+
+		returns, err := portfolioReturns(returnsList, targetAllocations)
+		g.Expect(err).To(Succeed())
+
+		stat := evaluatePortfolio(returns, Combination{Assets: assets, Percentages: targetAllocations})
+		results = append(results, stat)
+		// is goldenButterfly?
+		if contains(assets, "TSM") &&
+			contains(assets, "SCV") &&
+			contains(assets, "Gold") &&
+			contains(assets, "LTT") &&
+			contains(assets, "STT") {
+			goldenButterflyStat = stat
+		}
+		return nil
+	})
+	g.Expect(err).To(Succeed())
+	g.Expect(goldenButterflyStat).ToNot(BeNil())
+
+	RankPortfoliosInPlace(results)
+	PrintBestByEachRanking(results)
+	// print best:
+	fmt.Println("\nBest combined overall ranks:")
+	for i := 0; i < 10; i++ {
+		fmt.Printf("#%d: %s\n", i+1, results[i])
+	}
+
+	findBetterThanGoldenButterfly(goldenButterflyStat, results)
+}
+
+func contains(slice []string, element string) bool {
+	for _, a := range slice {
+		if a == element {
+			return true
+		}
+	}
+	return false
 }
 
 func PrintBestByEachRanking(results []*PortfolioStat) {

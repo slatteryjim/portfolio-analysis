@@ -3,6 +3,7 @@ package data
 import (
 	"encoding/csv"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -23,6 +24,35 @@ func Names() []string {
 	res := make([]string, 0, len(_seriesByName))
 	for k := range _seriesByName {
 		res = append(res, k)
+	}
+	return res
+}
+
+// PortfolioReturnsList returns a list of returns for the given assets, for the years that they overlap.
+func PortfolioReturnsList(assetNames ...string) [][]Percent {
+	var (
+		series       = make([]Series, len(assetNames))
+		maxFirstYear = math.MinInt64
+		minLastYear  = math.MaxInt64
+	)
+	for i := 0; i < len(assetNames); i++ {
+		s := MustFind(assetNames[i])
+		series[i] = s
+		if s.FirstYear > maxFirstYear {
+			maxFirstYear = s.FirstYear
+		}
+		if s.LastYear < minLastYear {
+			minLastYear = s.LastYear
+		}
+	}
+	res := make([][]Percent, len(assetNames))
+	{
+		years := minLastYear - maxFirstYear
+		for i := 0; i < len(assetNames); i++ {
+			s := series[i]
+			index := s.IndexOfYear(maxFirstYear)
+			res[i] = s.AnnualReturns[index : index+years+1]
+		}
 	}
 	return res
 }

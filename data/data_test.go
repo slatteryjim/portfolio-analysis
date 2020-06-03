@@ -1,7 +1,6 @@
 package data
 
 import (
-	"math"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -33,24 +32,27 @@ func Test_transpose(t *testing.T) {
 	}))
 }
 
-func TestSeries_AnnualReturnsStartingIn(t *testing.T) {
+func TestPortfolioReturnsList(t *testing.T) {
 	g := NewGomegaWithT(t)
+	g.Expect(PortfolioReturnsList()).To(BeEmpty())
 
-	s := Series{
-		FirstYear:     2010,
-		LastYear:      2013,
-		AnnualReturns: []Percent{0, 1, 2, 3},
-	}
-	g.Expect(s.AnnualReturnsStartingIn(math.MinInt64)).To(Equal([]Percent{0, 1, 2, 3}))
-	g.Expect(s.AnnualReturnsStartingIn(0)).To(Equal([]Percent{0, 1, 2, 3}))
-	g.Expect(s.AnnualReturnsStartingIn(2009)).To(Equal([]Percent{0, 1, 2, 3}))
-	g.Expect(s.AnnualReturnsStartingIn(2010)).To(Equal([]Percent{0, 1, 2, 3}))
-	g.Expect(s.AnnualReturnsStartingIn(2011)).To(Equal([]Percent{1, 2, 3}))
-	g.Expect(s.AnnualReturnsStartingIn(2012)).To(Equal([]Percent{2, 3}))
-	g.Expect(s.AnnualReturnsStartingIn(2013)).To(Equal([]Percent{3}))
-	g.Expect(s.AnnualReturnsStartingIn(2014)).To(BeNil())
-	g.Expect(s.AnnualReturnsStartingIn(2015)).To(BeNil())
-	g.Expect(s.AnnualReturnsStartingIn(math.MaxInt64)).To(BeNil())
+	// one series, just returns itself
+	g.Expect(PortfolioReturnsList("TSM")).To(Equal([][]Percent{
+		MustFind("TSM").AnnualReturns,
+	}))
+
+	// two series, LCV has less data
+	g.Expect(PortfolioReturnsList("TSM", "LCV")).To(Equal([][]Percent{
+		MustFind("TSM").AnnualReturnsStartingIn(1927),
+		MustFind("LCV").AnnualReturnsStartingIn(1927),
+	}))
+
+	// three series, Gold has the least data
+	g.Expect(PortfolioReturnsList("TSM", "Gold", "LCV")).To(Equal([][]Percent{
+		MustFind("TSM").AnnualReturnsStartingIn(1969),
+		MustFind("Gold").AnnualReturnsStartingIn(1969),
+		MustFind("LCV").AnnualReturnsStartingIn(1969),
+	}))
 }
 
 // Wow, 1 millisecond (1 million nanoseconds)
