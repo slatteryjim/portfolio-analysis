@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"sort"
 	"sync"
+	"time"
 
 	. "github.com/slatteryjim/portfolio-analysis/types"
 )
@@ -96,7 +97,7 @@ func (p PortfolioStat) String() string {
 	)
 }
 
-func (p PortfolioStat) ComparePerformance(other PortfolioStat) PortfolioStat {
+func (p PortfolioStat) DiffPerformance(other PortfolioStat) PortfolioStat {
 	copied := *p.Clone()
 	copied.AvgReturn -= other.AvgReturn
 	copied.BaselineLTReturn -= other.BaselineLTReturn
@@ -109,6 +110,19 @@ func (p PortfolioStat) ComparePerformance(other PortfolioStat) PortfolioStat {
 	copied.LongestDrawdown -= other.LongestDrawdown
 	copied.StartDateSensitivity -= other.StartDateSensitivity
 	return copied
+}
+
+func (p *PortfolioStat) AsGoodOrBetterThan(other *PortfolioStat) bool {
+	return p.AvgReturn >= other.AvgReturn &&
+		p.BaselineLTReturn >= other.BaselineLTReturn &&
+		p.BaselineSTReturn >= other.BaselineSTReturn &&
+		p.PWR30 >= other.PWR30 &&
+		p.SWR30 >= other.SWR30 &&
+		p.StdDev <= other.StdDev &&
+		p.UlcerScore <= other.UlcerScore &&
+		p.DeepestDrawdown >= other.DeepestDrawdown &&
+		p.LongestDrawdown <= other.LongestDrawdown &&
+		p.StartDateSensitivity <= other.StartDateSensitivity
 }
 
 // Clone returns a deep copy.
@@ -243,74 +257,66 @@ func evaluatePortfolio(portfolioReturns []Percent, p Combination) *PortfolioStat
 // It sorts the list by the various performance metrics and populates the corresponding Rank field for each.
 // It finishes up by sorting them by their "overall" rank, considering all of the performance metrics equally.
 func RankPortfoliosInPlace(results []*PortfolioStat) {
+	startAt := time.Now()
 	fmt.Println("...Calculate rank scores for the portfolios")
 	{
-		// rank by AvgReturn
-		RankAll(results, RankAllParams{
+		RankAll("AvgReturn", results, RankAllParams{
 			Metric:       func(stat *PortfolioStat) float64 { return stat.AvgReturn.Float() },
 			LessIsBetter: false,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.AvgReturnRank = rank },
 		})
-		// rank by BaselineLTReturn
-		RankAll(results, RankAllParams{
+		RankAll("BaselineLTReturn", results, RankAllParams{
 			Metric:       func(stat *PortfolioStat) float64 { return stat.BaselineLTReturn.Float() },
 			LessIsBetter: false,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.BaselineLTReturnRank = rank },
 		})
-		// rank by BaselineSTReturn
-		RankAll(results, RankAllParams{
+		RankAll("BaselineSTReturn", results, RankAllParams{
 			Metric:       func(stat *PortfolioStat) float64 { return stat.BaselineSTReturn.Float() },
 			LessIsBetter: false,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.BaselineSTReturnRank = rank },
 		})
-		// rank by PWR30
-		RankAll(results, RankAllParams{
+		RankAll("PWR30", results, RankAllParams{
 			Metric:       func(stat *PortfolioStat) float64 { return stat.PWR30.Float() },
 			LessIsBetter: false,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.PWR30Rank = rank },
 		})
-		// rank by SWR30
-		RankAll(results, RankAllParams{
+		RankAll("SWR30", results, RankAllParams{
 			Metric:       func(stat *PortfolioStat) float64 { return stat.SWR30.Float() },
 			LessIsBetter: false,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.SWR30Rank = rank },
 		})
-		// rank by StdDev
-		RankAll(results, RankAllParams{
+		RankAll("StdDev", results, RankAllParams{
 			Metric:       func(stat *PortfolioStat) float64 { return stat.StdDev.Float() },
 			LessIsBetter: true,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.StdDevRank = rank },
 		})
-		// rank by UlcerScore
-		RankAll(results, RankAllParams{
+		RankAll("UlcerScore", results, RankAllParams{
 			Metric:       func(stat *PortfolioStat) float64 { return stat.UlcerScore },
 			LessIsBetter: true,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.UlcerScoreRank = rank },
 		})
-		// rank by DeepestDrawdown
-		RankAll(results, RankAllParams{
+		RankAll("DeepestDrawdown", results, RankAllParams{
 			Metric:       func(stat *PortfolioStat) float64 { return stat.DeepestDrawdown.Float() },
 			LessIsBetter: false,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.DeepestDrawdownRank = rank },
 		})
-		// rank by LongestDrawdown
-		RankAll(results, RankAllParams{
+		RankAll("LongestDrawdown", results, RankAllParams{
 			Metric:       func(stat *PortfolioStat) float64 { return float64(stat.LongestDrawdown) },
 			LessIsBetter: true,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.LongestDrawdownRank = rank },
 		})
-		// rank by StartDateSensitivity
-		RankAll(results, RankAllParams{
+		RankAll("StartDateSensitivity", results, RankAllParams{
 			Metric:       func(stat *PortfolioStat) float64 { return stat.StartDateSensitivity.Float() },
 			LessIsBetter: true,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.StartDateSensitivityRank = rank },
 		})
 	}
-
+	fmt.Println("Finished basic rank scores in", time.Since(startAt))
+	startAt = time.Now()
 	fmt.Println("...rank by all their ranks (equally weighted)")
 	{
 		// populate the OverallRankScore for all
-		for _, p := range results {
+		for i, p := range results {
 			p.OverallRankScore = math.Pow(p.AvgReturnRank.Percentage, 2) +
 				math.Pow(p.BaselineLTReturnRank.Percentage, 2) +
 				math.Pow(p.BaselineSTReturnRank.Percentage, 2) +
@@ -321,14 +327,18 @@ func RankPortfoliosInPlace(results []*PortfolioStat) {
 				math.Pow(p.LongestDrawdownRank.Percentage, 2) +
 				math.Pow(p.DeepestDrawdownRank.Percentage, 2) +
 				math.Pow(p.StartDateSensitivityRank.Percentage, 2)
+			if i%10_000_000 == 0 {
+				fmt.Println(" - populating OverallRankScore row", i+1)
+			}
 		}
-		// rank by OverallRankScore
-		RankAll(results, RankAllParams{
+		fmt.Println("populated OverallRankScore for all in", time.Since(startAt))
+		RankAll("OverallRankScore", results, RankAllParams{
 			Metric:       func(stat *PortfolioStat) float64 { return stat.OverallRankScore },
 			LessIsBetter: true,
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.OverallRankScoreRank = rank },
 		})
 	}
+	fmt.Println("Elapsed:", time.Since(startAt))
 }
 
 type RankAllParams struct {
@@ -338,9 +348,11 @@ type RankAllParams struct {
 }
 
 func RankAll(
+	name string,
 	results []*PortfolioStat,
 	params RankAllParams,
 ) {
+	startAt := time.Now()
 	if params.LessIsBetter {
 		sort.Slice(results, func(i, j int) bool { return params.Metric(results[i]) < params.Metric(results[j]) })
 	} else {
@@ -365,6 +377,7 @@ func RankAll(
 		rankPercentage := float64(rank)/maxRank*99 + 1
 		params.SetRank(portfolioStat, Rank{Ordinal: rank, Percentage: rankPercentage})
 	}
+	fmt.Println("Finished ranking by", name, "in", time.Since(startAt))
 }
 
 func FindOne(results []*PortfolioStat, pred func(p *PortfolioStat) bool) *PortfolioStat {

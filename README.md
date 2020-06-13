@@ -69,4 +69,15 @@ in ALL of the given metrics?
 
 The Simba spreadsheet has a wealth of other assets, we can try it out!
 
+I was able to evaluate over 4 billion portfolios (all combinations of up to 9 assets!).
+Out of that, 0.2% of them were actually as good or better than the Golden Butterfly
+portfolio in all of the ten metrics.
+
+That is over **8 million portfolios** that are "on paper" better than Golden Butterfly!
+
+Now:
+- How to sort through them and find one we would really like better?
+- Can we refine the portfolios even further by tweaking their allocation percentages
+(they were all simply equally-weighted, 1/N portfolios).
+
 To be determined...

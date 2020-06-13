@@ -1,8 +1,16 @@
 package portfolio_analysis
 
 import (
+	"compress/gzip"
+	"encoding/csv"
+	"encoding/gob"
+	"encoding/json"
 	"fmt"
+	"io"
 	"math"
+	"os"
+	"runtime"
+	"strconv"
 	"testing"
 	"time"
 
@@ -166,21 +174,6 @@ func TestPortfolioCombinations_GoldenButterflyAssets(t *testing.T) {
 	findBetterThanGoldenButterfly(gbStat, results)
 }
 
-func findBetterThanGoldenButterfly(gbStat *PortfolioStat, results []*PortfolioStat) {
-	startAt := time.Now()
-	fmt.Println("\nGoldenButterfly:", gbStat)
-	// find as good or better than GoldenButterfly
-	betterThanGB := CopyAll(FindMany(results, AsGoodOrBetterThan(gbStat)))
-	RankPortfoliosInPlace(betterThanGB)
-	fmt.Println("As good or better than GoldenButterfly:", len(betterThanGB))
-	PrintBestByEachRanking(betterThanGB)
-	fmt.Println("\nAll as good or better:")
-	for i, p := range betterThanGB[:min(len(betterThanGB), 5)] {
-		fmt.Println(" ", i+1, p.ComparePerformance(*gbStat))
-	}
-	fmt.Println("Finished GB analysis in", time.Since(startAt))
-}
-
 func TestPortfolioCombinations_AnythingBetterThanGoldenButterfly(t *testing.T) {
 	// g := NewGomegaWithT(t)
 
@@ -264,54 +257,366 @@ func TestPortfolioCombinations_AnythingBetterThanGoldenButterfly(t *testing.T) {
 //   --- PASS: TestAllKAssetPortfolios (103.94s)
 func TestAllKAssetPortfolios(t *testing.T) {
 	t.Skip("Run manually, since it takes a few mins")
-
-	g := NewGomegaWithT(t)
-
-	const (
-		k = 5
-	)
-	targetAllocations := make([]Percent, k)
-	for i := 0; i < k; i++ {
-		targetAllocations[i] = 1.0 / k
-	}
-	var results []*PortfolioStat
-	buffer := make([]string, k)
-	var goldenButterflyStat *PortfolioStat
-	err := EnumerateCombinations(data.Names(), k, buffer, func() error {
-		assets := make([]string, len(buffer))
-		copy(assets, buffer)
-
-		returnsList := data.PortfolioReturnsList(assets...)
-
-		returns, err := portfolioReturns(returnsList, targetAllocations)
-		g.Expect(err).To(Succeed())
-
-		stat := evaluatePortfolio(returns, Combination{Assets: assets, Percentages: targetAllocations})
-		results = append(results, stat)
-		// is goldenButterfly?
-		if contains(assets, "TSM") &&
-			contains(assets, "SCV") &&
-			contains(assets, "Gold") &&
-			contains(assets, "LTT") &&
-			contains(assets, "STT") {
-			goldenButterflyStat = stat
+	var (
+		goblFileBetterThanGB = func(k int) string {
+			return fmt.Sprintf("testdata/TestAllKAssetPortfolios_PortfolioStats_k%d_betterThanGoldenButterfly.gobl.gz", k)
 		}
-		return nil
+	)
+	t.Run("Evaluate", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+
+		fmt.Println("Evaluating possible portfolio combinations...")
+
+		// generate portfolio combinations
+		// across N goroutines -- evaluate combination
+		//  -- if it's better than GoldenButterfly, save it
+		//  -- writer channel writes to GOBL file
+		//
+		//
+
+		// k = 9 output:
+		// - combination #4420000000 of 4431613550 (99.7%) at 2020-06-07 22:39:47.218532 -0400 EDT m=+31143.147928393
+		// Finished writing 8607469 rows in 8h41m35.162654333s
+		// Finished evaluating 4431613550 portfolios in 8h41m35.164046248s (141606 portfolios per second)
+
+		for k := 9; k <= 9; k++ {
+			// look at all `k` combinations of assets
+			startAt := time.Now()
+			targetAllocations := make([]Percent, k)
+			for i := 0; i < k; i++ {
+				targetAllocations[i] = Percent(1.0 / float64(k))
+			}
+			nCr := Binomial(len(data.Names()), k)
+			fmt.Println()
+			fmt.Println(time.Now(), "k =", k, "nCr =", nCr, "TargetAllocations", targetAllocations)
+
+			gbStat := mustGoldenButterflyStat()
+
+			GoEvaluateAndFindBetterThanGB := func(assetCombinationBatches <-chan [][]string) <-chan *PortfolioStat {
+				out := make(chan *PortfolioStat, 10)
+				go func() {
+					defer close(out)
+					for batch := range assetCombinationBatches {
+						for _, assets := range batch {
+							returnsList := data.PortfolioReturnsList(assets...)
+							returns, err := portfolioReturns(returnsList, targetAllocations)
+							if err != nil {
+								panic(err.Error())
+							}
+							stat := evaluatePortfolio(returns, Combination{Assets: assets, Percentages: targetAllocations})
+							if stat.AsGoodOrBetterThan(gbStat) {
+								out <- stat
+							}
+						}
+					}
+				}()
+				return out
+			}
+			combinationsCh := GoEnumerateCombinations(data.Names(), k, 10_000)
+			// fan out to multiple workers
+			var workersOutput []<-chan *PortfolioStat
+			// with 6 workers, got 165,998
+			// with 7 workers, got 173,132 portfolios/second
+			// with 8 workers, got 163,287 portfolios/second
+			for i := 0; i < 7; i++ {
+				results := GoEvaluateAndFindBetterThanGB(combinationsCh)
+				workersOutput = append(workersOutput, results)
+			}
+			// merge workers' output
+			resultsCh := GoMerge(workersOutput...)
+			// encode to file
+			err := goblEncodeToFile(goblFileBetterThanGB(k), resultsCh)
+			g.Expect(err).To(Succeed())
+
+			// no buffer:  97,204 portfolios per second
+			// 10k buffer: 95,228
+
+			// k=4
+			// With plain EnumerateCombinations:  43,113 portfolios per second
+			// With GoEnumerateCombinations: 41,125 portfolios per second (95% as fast.. not bad)
+			// with 10 workers: 117,684 portfolios per second
+			// with 12 workers: 123,514 portfolios per second
+			// with 15 workers: 128,010 portfolios per second
+			// with 16 workers: 131,126 portfolios per second
+			// with 17 workers: 132,300 portfolios per second
+			// with 18 workers: 131,601 portfolios per second
+			// with 20 workers: 130,926 portfolios per second
+			// with 30 workers: 127,651 portfolios per second
+			elapsed := time.Since(startAt)
+			fmt.Printf("Finished evaluating %d portfolios in %v (%d portfolios per second)\n",
+				nCr, elapsed, int(float64(nCr)/elapsed.Seconds()))
+		}
 	})
-	g.Expect(err).To(Succeed())
-	g.Expect(goldenButterflyStat).ToNot(BeNil())
+	t.Run("inspect better than GoldenButterfly", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+		startAt := time.Now()
+		var betterThanGB []*PortfolioStat
+		goblDecodeFromFile(g, goblFileBetterThanGB(3), func(stat *PortfolioStat) (shouldContinue bool) {
+			betterThanGB = append(betterThanGB, stat)
+			return true
+		})
+		fmt.Println("As good or better than GoldenButterfly:", len(betterThanGB), "found in", time.Since(startAt))
 
-	RankPortfoliosInPlace(results)
-	PrintBestByEachRanking(results)
-	// print best:
-	fmt.Println("\nBest combined overall ranks:")
-	for i := 0; i < 10; i++ {
-		fmt.Printf("#%d: %s\n", i+1, results[i])
-	}
+		// err := csvEncodeToFile(betterThanGB, csvFileBetterThanGB)
+		// g.Expect(err).To(Succeed())
+		// return
 
-	findBetterThanGoldenButterfly(goldenButterflyStat, results)
+		// One looks noticeably good:
+		// ["Gold","Wellington","Health Care","Global Bd","Int'l Bd"]  PRW30: 5.49%  StdDev:5.99%
+
+		fmt.Println(len(betterThanGB), "portfolios better than GoldenButterfly")
+
+		gbStat := mustGoldenButterflyStat()
+		fmt.Println("GoldenButterfly: ", gbStat)
+
+		// fmt.Println("\nAll as good or better:")
+		// for i, p := range betterThanGB[:min(len(betterThanGB), 5)] {
+		// 	fmt.Println(" ", i+1, p.DiffPerformance(*gbStat))
+		// }
+
+		count := 0
+		for _, s := range betterThanGB {
+			if !contains(s.Assets, "Health Care") {
+				count++
+			}
+		}
+		fmt.Println("Counted", count, "portfolios without Health Care.")
+
+		// 19 portfolios use only 3 assets!
+		{
+			n := 4
+			fmt.Println("Less than", n, "assets:")
+			count = 0
+			for _, s := range betterThanGB {
+				if len(s.Assets) < 4 {
+					// fmt.Println(" -", s)
+					count++
+				}
+			}
+			fmt.Println("Counted", count, "portfolios with less than", n, "assets.")
+		}
+
+		// what's the longest history we have? -- 51 years
+		// a lot of 48+ years.. seems like a lot of variations of GoldenButterfly
+		fmt.Println("Longest histories...")
+		maxHistoricalYears := 0
+		for _, s := range betterThanGB {
+			years := len(data.PortfolioReturnsList(s.Assets...)[0])
+			if years > maxHistoricalYears {
+				maxHistoricalYears = years
+			}
+			// if years > 45 {
+			// 	fmt.Println(" -", years, "years: ", s)
+			// }
+		}
+		fmt.Println("Max historical years of any portfolio:", maxHistoricalYears)
+
+		// which assets are never included in any portfolios?
+		// used 52 assets, never used: "Commodities"
+		{
+			seenAssets := map[string]bool{}
+			for _, s := range betterThanGB {
+				for _, a := range s.Assets {
+					seenAssets[a] = true
+				}
+			}
+			fmt.Println("Portfolios use", len(seenAssets), "assets.")
+			for _, name := range data.Names() {
+				if !seenAssets[name] {
+					fmt.Println(" - never used:", name)
+				}
+			}
+		}
+	})
+	t.Run("parse GOBL.gz", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+		var (
+			input = goblFileBetterThanGB(1)
+			// output = goblFileUnranked
+		)
+		PrintMemUsage()
+		goblDecodeFromFile(g, input, func(stat *PortfolioStat) bool {
+			fmt.Println(stat)
+			return true
+		})
+		PrintMemUsage()
+	})
 }
 
+func mustGoldenButterflyStat() *PortfolioStat {
+	assets := []string{"TSM", "SCV", "Gold", "LTT", "STT"}
+	targetAllocations := ReadablePercents(20, 20, 20, 20, 20)
+	returnsList := data.PortfolioReturnsList(assets...)
+	returns, err := portfolioReturns(returnsList, targetAllocations)
+	if err != nil {
+		panic(err.Error())
+	}
+	stat := evaluatePortfolio(returns, Combination{Assets: assets, Percentages: targetAllocations})
+	return stat
+}
+
+// PrintMemUsage outputs the current, total and OS memory being used. As well as the number
+// of garage collection cycles completed.
+func PrintMemUsage() {
+	runtime.GC()
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
+	fmt.Printf("Alloc: %v MiB", bToMb(m.Alloc))
+	fmt.Printf("\tTotalAlloc: %v MiB", bToMb(m.TotalAlloc))
+	fmt.Printf("\tSys: %v MiB", bToMb(m.Sys))
+	fmt.Printf("\tNumGC: %v\n", m.NumGC)
+}
+
+func bToMb(b uint64) uint64 {
+	return b / 1024 / 1024
+}
+
+func csvEncodeToFile(rows []*PortfolioStat, filename string) error {
+	startAt := time.Now()
+	fmt.Println("CSV-encoding", len(rows), "rows to", filename)
+	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	csvWriter := csv.NewWriter(f)
+	err = csvWriter.Write([]string{
+		"Assets",
+		"Percentages",
+		"YearsOfData",
+		"AvgReturn",
+		"BaselineLTReturn",
+		"BaselineSTReturn",
+		"PWR30",
+		"SWR30",
+		"StdDev",
+		"UlcerScore",
+		"DeepestDrawdown",
+		"LongestDrawdown",
+		"StartDateSensitivity",
+	})
+	for i, row := range rows {
+		returnsList := data.PortfolioReturnsList(row.Assets...)
+		returns, err := portfolioReturns(returnsList, row.Percentages)
+		if err != nil {
+			return err
+		}
+		err = csvWriter.Write([]string{
+			mustJSONMarshal(row.Assets),      // encode as JS array of strings
+			mustJSONMarshal(row.Percentages), // encode as JS array of floats
+			strconv.Itoa(len(returns)),       // years of data
+			row.AvgReturn.String(),
+			row.BaselineLTReturn.String(),
+			row.BaselineSTReturn.String(),
+			row.PWR30.String(),
+			row.SWR30.String(),
+			row.StdDev.String(),
+			fmt.Sprintf("%f", row.UlcerScore),
+			row.DeepestDrawdown.String(),
+			strconv.Itoa(row.LongestDrawdown),
+			row.StartDateSensitivity.String(),
+		})
+		if err != nil {
+			return fmt.Errorf("error writing row #%d (%s): %w", i+1, row, err)
+		}
+	}
+	csvWriter.Flush()
+	fmt.Println("Finished writing in", time.Since(startAt))
+	return nil
+}
+
+func mustJSONMarshal(obj interface{}) string {
+	marshal, err := json.Marshal(obj)
+	if err != nil {
+		panic(err.Error())
+	}
+	return string(marshal)
+}
+
+// gobDecodeFromFile reads the GOB-encoded object from a file.
+func gobDecodeFromFile(g *GomegaWithT, filename string) []*PortfolioStat {
+	startAt := time.Now()
+	fmt.Println("GOB-decoding from", filename)
+	f, err := os.OpenFile(filename, os.O_RDONLY, 0644)
+	g.Expect(err).To(Succeed())
+
+	gzipReader, err := gzip.NewReader(f)
+	g.Expect(err).To(Succeed())
+
+	var obj []*PortfolioStat
+	err = gob.NewDecoder(gzipReader).Decode(&obj)
+	g.Expect(err).To(Succeed())
+	fmt.Println("Finished decoding", len(obj), "rows in", time.Since(startAt))
+	return obj
+}
+
+// goblEncodeToFile writes the GOB-encoded object to a file.
+func goblEncodeToFile(filename string, obj <-chan *PortfolioStat) error {
+	startAt := time.Now()
+	fmt.Println("GOBL-encoding rows to", filename)
+	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	gzipWriter := gzip.NewWriter(f)
+	defer gzipWriter.Close()
+	encoder := gob.NewEncoder(gzipWriter)
+	n := 0
+	for o := range obj {
+		n++
+		if err = encoder.Encode(o); err != nil {
+			return err
+		}
+	}
+	fmt.Println("Finished writing", n, "rows in", time.Since(startAt))
+	return nil
+}
+
+// goblDecodeFromFile reads the GOB-encoded object from a file.
+func goblDecodeFromFile(g *GomegaWithT, filename string, handle func(*PortfolioStat) (shouldContinue bool)) {
+	startAt := time.Now()
+	fmt.Println("GOBL-decoding from", filename)
+	f, err := os.OpenFile(filename, os.O_RDONLY, 0644)
+	g.Expect(err).To(Succeed())
+
+	gzipReader, err := gzip.NewReader(f)
+	g.Expect(err).To(Succeed())
+
+	decoder := gob.NewDecoder(gzipReader)
+
+	count := 0
+	for {
+		var obj *PortfolioStat
+		err = decoder.Decode(&obj)
+		if err == io.EOF {
+			break
+		}
+		g.Expect(err).To(Succeed())
+		count++
+		if shouldContinue := handle(obj); !shouldContinue {
+			break
+		}
+	}
+	fmt.Println("Finished decoding", count, "objects in", time.Since(startAt))
+}
+
+func findBetterThanGoldenButterfly(gbStat *PortfolioStat, results []*PortfolioStat) []*PortfolioStat {
+	startAt := time.Now()
+	fmt.Println("\nGoldenButterfly:", gbStat)
+	// find as good or better than GoldenButterfly
+	betterThanGB := CopyAll(FindMany(results, AsGoodOrBetterThan(gbStat)))
+	fmt.Println("As good or better than GoldenButterfly:", len(betterThanGB), "found in", time.Since(startAt))
+
+	RankPortfoliosInPlace(betterThanGB)
+	PrintBestByEachRanking(betterThanGB)
+	fmt.Println("\nAll as good or better:")
+	for i, p := range betterThanGB[:min(len(betterThanGB), 5)] {
+		fmt.Println(" ", i+1, p.DiffPerformance(*gbStat))
+	}
+	return betterThanGB
+}
 func contains(slice []string, element string) bool {
 	for _, a := range slice {
 		if a == element {
@@ -495,8 +800,12 @@ func TestEnumerateCombinations(t *testing.T) {
 				buffer    = make([]string, r)
 				count, fn = makeCounterFn()
 			)
+			// t.Log(fmt.Sprintf("n=%d r=%d count=%d", n, r, expectedCount))
 			g.Expect(EnumerateCombinations(xs, r, buffer, fn)).To(Succeed())
 			g.Expect(*count).To(Equal(expectedCount))
+			if n >= r && r > 0 {
+				g.Expect(Binomial(n, r)).To(Equal(expectedCount)) // verify the counts would match nCr result
+			}
 		}
 		// expectedCount=0
 		verify(0, 0, 0)
@@ -511,7 +820,7 @@ func TestEnumerateCombinations(t *testing.T) {
 		verify(3, 1, 3)
 		verify(3, 2, 3)
 		verify(3, 3, 1)
-		// n=10, see the nice symetric curve
+		// n=10, see the nice symmetric curve
 		verify(10, 1, 10)
 		verify(10, 2, 45)
 		verify(10, 3, 120)
@@ -572,4 +881,18 @@ func BenchmarkEnumerateCombinations(b *testing.B) {
 	b.Run("50 choose 5", func(b *testing.B) {
 		benchmark(50, 5, 2_118_760)
 	})
+}
+
+// Benchmark_portfolioReturnsAltogether-12    	  954178	      1263 ns/op
+func Benchmark_portfolioReturnsAltogether(b *testing.B) {
+	assets := []string{"TSM", "SCV", "Gold", "LTT", "STT"}
+	targetAllocations := ReadablePercents(20, 20, 20, 20, 20)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		returnsList := data.PortfolioReturnsList(assets...)
+		_, err := portfolioReturns(returnsList, targetAllocations)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
 }
