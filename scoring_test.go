@@ -171,7 +171,7 @@ func Benchmark_evaluatePortfolios_TSM(b *testing.B) {
 // BenchmarkPortfolioEvaluationMetrics/baselineShortTermReturn-12            999006              5614 ns/op
 // BenchmarkPortfolioEvaluationMetrics/startDateSensitivity-12               998498              5825 ns/op
 func BenchmarkPortfolioEvaluationMetrics(b *testing.B) {
-	gbReturns := MustReturns(mustGoldenButterflyStat())
+	gbReturns := mustGoldenButterflyStat().MustReturns()
 	b.Run("minPWRAndSWR30", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			minPWRAndSWR(gbReturns, 30)

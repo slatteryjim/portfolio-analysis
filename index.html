@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Data Explorer</title>
+    <!-- https://www.highcharts.com/docs/getting-started/installation -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/data.js"></script>
+    <script src="https://code.highcharts.com/modules/boost.js"></script>
+</head>
+<body>
+<h1>First Chart</h1>
+<div id="container"></div>
+</body>
+
+<script>
+
+  document.addEventListener('DOMContentLoaded', function () {
+
+    if (!Highcharts.Series.prototype.renderCanvas) {
+      throw 'Module not loaded';
+    }
+    console.time('scatter');
+
+    let myChart = Highcharts.chart('container', {
+      chart: {
+        type: 'scatter',
+        zoomType: 'xy'
+      },
+      boost: {
+        useGPUTranslations: true,
+        usePreAllocated: true
+      },
+      data: {
+        csvURL: window.location.origin + '/portfolio-analysis/testdata/betterThanGoldenButterflyPortfolios_k1-5.csv',
+        // seriesMapping: [{
+        //   x: 0,
+        //   y: 1,
+        //   label: 2
+        // }]
+      },
+      title: {
+        text: 'StartDateSensitivity vs PWR30'
+      },
+      xAxis: {
+        title: {
+          enabled: true,
+          text: 'StartDate Sensitivity'
+        },
+        startOnTick: true,
+        endOnTick: true,
+        showLastLabel: true
+      },
+      yAxis: {
+        title: {
+          text: 'PWR30'
+        }
+      },
+      // series: [
+      //   {
+      //     data: [
+      //       [1, 1],
+      //       [2, 2]
+      //     ]
+      //   }
+      // ]
+    });
+    console.timeEnd('scatter');
+  });
+</script>
+</html>
