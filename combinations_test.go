@@ -15,6 +15,9 @@ import (
 	"time"
 
 	. "github.com/onsi/gomega"
+	"github.com/xitongsys/parquet-go-source/local"
+	"github.com/xitongsys/parquet-go/parquet"
+	"github.com/xitongsys/parquet-go/writer"
 
 	"github.com/slatteryjim/portfolio-analysis/data"
 	. "github.com/slatteryjim/portfolio-analysis/types"
@@ -438,6 +441,39 @@ func TestAllKAssetPortfolios(t *testing.T) {
 		goblDecodeFromFile(g, input, func(stat *PortfolioStat) bool {
 			fmt.Println(stat)
 			return true
+		t.Run("convert to parquet", func(t *testing.T) {
+			g := NewGomegaWithT(t)
+
+			var (
+				goblFileBetterThanGB = func(k int) string {
+					return fmt.Sprintf("testdata/snapshot/TestAllKAssetPortfolios_PortfolioStats_k%d_betterThanGoldenButterfly.gobl.gz", k)
+				}
+				output = "testdata/betterThanGoldenButterflyPortfolios.parquet"
+			)
+
+			fw, err := local.NewLocalFileWriter(output)
+			g.Expect(err).To(Succeed())
+
+			// write
+			pw, err := writer.NewParquetWriter(fw, new(PortfolioStatParquet), int64(runtime.NumCPU()))
+			g.Expect(err).To(Succeed())
+			pw.CompressionType = parquet.CompressionCodec_SNAPPY
+			pw.RowGroupSize = 128 * 1024 * 1024 // 128 MB
+			fmt.Println("Writing to Parquet file:", output)
+
+			for k := 1; k <= 9; k++ {
+				input := goblFileBetterThanGB(k)
+				err := goblDecodeFromFile(input, func(stat *PortfolioStat) bool {
+					if err := pw.Write(stat.Parquet()); err != nil {
+						panic(err.Error())
+					}
+					return true
+				})
+				g.Expect(err).To(Succeed())
+			}
+			err = pw.WriteStop()
+			g.Expect(err).To(Succeed())
+			fmt.Println("Finished writing", pw.NumRows, "rows, size", pw.Size)
 		})
 		PrintMemUsage()
 	})

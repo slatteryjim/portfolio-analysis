@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/slatteryjim/portfolio-analysis/data"
 	. "github.com/slatteryjim/portfolio-analysis/types"
 )
 
@@ -26,22 +27,22 @@ var (
 type (
 	PortfolioStat struct {
 		// describe portfolio assets and percentages
-		Assets      []string
-		Percentages []Percent
+		Assets      []string  `parquet:"name=assets,                 type=LIST, valuetype=UTF8"`
+		Percentages []Percent `parquet:"name=allocation_percentages, type=LIST, valuetype=DOUBLE"`
 
 		RebalanceFactor float64
 
 		// stats on the portfolio performance
-		AvgReturn            Percent
-		BaselineLTReturn     Percent
-		BaselineSTReturn     Percent
-		PWR30                Percent
-		SWR30                Percent
-		StdDev               Percent
-		UlcerScore           float64
-		DeepestDrawdown      Percent
-		LongestDrawdown      int
-		StartDateSensitivity Percent
+		AvgReturn            Percent `parquet:"name=avg_return,            type=DOUBLE"`
+		BaselineLTReturn     Percent `parquet:"name=baseline_lt_return,    type=DOUBLE"`
+		BaselineSTReturn     Percent `parquet:"name=baseline_st_return,    type=DOUBLE"`
+		PWR30                Percent `parquet:"name=pwr30,                 type=DOUBLE"`
+		SWR30                Percent `parquet:"name=swr30,                 type=DOUBLE"`
+		StdDev               Percent `parquet:"name=std_dev,               type=DOUBLE"`
+		UlcerScore           float64 `parquet:"name=ulcer_score,           type=DOUBLE"`
+		DeepestDrawdown      Percent `parquet:"name=deepest_drawdown,      type=DOUBLE"`
+		LongestDrawdown      int     `parquet:"name=longest_drawdown,      type=DOUBLE"`
+		StartDateSensitivity Percent `parquet:"name=startdate_sensitivity, type=DOUBLE"`
 
 		// This portfolio's rank on various stats
 		AvgReturnRank            Rank
@@ -62,6 +63,30 @@ type (
 		OverallRankScoreRank Rank
 	}
 
+	// PortfolioStatParquet is the PortfolioStat
+	PortfolioStatParquet struct {
+		// describe portfolio assets and percentages
+		Assets []string `parquet:"name=assets,                 type=LIST, valuetype=UTF8"`
+		// Percentages []float64 `parquet:"name=allocation_percentages, type=LIST, valuetype=DOUBLE"`
+
+		// YearlyReturns []float64 `parquet:"name=yearly_returns,       type=LIST, valuetype=DOUBLE"`
+
+		// some attributes derived from Assets and YearlyReturns values
+		NumAssets uint8 `parquet:"name=num_assets, type=UINT_8"`
+		NumYears  uint8 `parquet:"name=num_years,  type=UINT_8"`
+
+		// stats on the portfolio performance
+		AvgReturn            float64 `parquet:"name=avg_return,            type=DOUBLE"`
+		BaselineLTReturn     float64 `parquet:"name=baseline_lt_return,    type=DOUBLE"`
+		BaselineSTReturn     float64 `parquet:"name=baseline_st_return,    type=DOUBLE"`
+		PWR30                float64 `parquet:"name=pwr30,                 type=DOUBLE"`
+		SWR30                float64 `parquet:"name=swr30,                 type=DOUBLE"`
+		StdDev               float64 `parquet:"name=std_dev,               type=DOUBLE"`
+		UlcerScore           float64 `parquet:"name=ulcer_score,           type=DOUBLE"`
+		DeepestDrawdown      float64 `parquet:"name=deepest_drawdown,      type=DOUBLE"`
+		LongestDrawdown      float64 `parquet:"name=longest_drawdown,      type=DOUBLE"`
+		StartDateSensitivity float64 `parquet:"name=startdate_sensitivity, type=DOUBLE"`
+	}
 	Rank struct {
 		Ordinal    int
 		Percentage float64
@@ -168,6 +193,28 @@ func (p PortfolioStat) MustReturns() []Percent {
 	}
 	return returns
 
+}
+
+// Parquet returns a struct ready to be serialized as Parquet.
+func (p PortfolioStat) Parquet() PortfolioStatParquet {
+	yearlyReturns := Floats(p.MustReturns()...)
+	return PortfolioStatParquet{
+		Assets: p.Assets,
+		// Percentages: Floats(p.Percentages...),
+		// YearlyReturns:        yearlyReturns,
+		NumAssets:            uint8(len(p.Assets)),
+		NumYears:             uint8(len(yearlyReturns)),
+		AvgReturn:            p.AvgReturn.Float(),
+		BaselineLTReturn:     p.BaselineLTReturn.Float(),
+		BaselineSTReturn:     p.BaselineSTReturn.Float(),
+		PWR30:                p.PWR30.Float(),
+		SWR30:                p.SWR30.Float(),
+		StdDev:               p.StdDev.Float(),
+		UlcerScore:           p.UlcerScore,
+		DeepestDrawdown:      p.DeepestDrawdown.Float(),
+		LongestDrawdown:      float64(p.LongestDrawdown),
+		StartDateSensitivity: p.StartDateSensitivity.Float(),
+	}
 }
 
 func CopyAll(ps []*PortfolioStat) []*PortfolioStat {
