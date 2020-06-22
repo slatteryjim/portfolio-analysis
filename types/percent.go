@@ -43,3 +43,11 @@ func formatFloat(f float64, prec int) string {
 	s = strings.TrimRight(s, "0")
 	return strings.TrimRight(s, ".")
 }
+
+func Floats(xs ...Percent) []float64 {
+	res := make([]float64, len(xs))
+	for i, x := range xs {
+		res[i] = x.Float()
+	}
+	return res
+}

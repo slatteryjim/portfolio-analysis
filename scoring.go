@@ -160,6 +160,16 @@ func (p PortfolioStat) Clone() *PortfolioStat {
 	}
 }
 
+func (p PortfolioStat) MustReturns() []Percent {
+	assetReturns := data.PortfolioReturnsList(p.Assets...)
+	returns, err := portfolioReturns(assetReturns, p.Percentages)
+	if err != nil {
+		panic(err.Error())
+	}
+	return returns
+
+}
+
 func CopyAll(ps []*PortfolioStat) []*PortfolioStat {
 	res := make([]*PortfolioStat, len(ps))
 	for i, p := range ps {
@@ -250,6 +260,64 @@ func evaluatePortfolio(portfolioReturns []Percent, p Combination) *PortfolioStat
 		DeepestDrawdown:      deepestDrawdown,
 		LongestDrawdown:      longestDrawdown,
 		StartDateSensitivity: startDateSensitivity(portfolioReturns),
+	}
+}
+
+// evaluatePortfolioIfAsGoodOrBetterThan evaluates the given portfolioReturns and returns
+// a non-nil PortfolioStat only if the performance metrics are all as good or better than the given
+// otherStat porformance.
+// It can return early if any of the metrics aren't as good.
+func evaluatePortfolioIfAsGoodOrBetterThan(portfolioReturns []Percent, p Combination, other *PortfolioStat) *PortfolioStat {
+	avgReturn := averageReturn(portfolioReturns)
+	if avgReturn < other.AvgReturn {
+		return nil
+	}
+	stdDev := standardDeviation(portfolioReturns)
+	if stdDev > other.StdDev {
+		return nil
+	}
+	minPWR30, minSWR30 := minPWRAndSWR(portfolioReturns, 30)
+	if minPWR30 < other.PWR30 {
+		return nil
+	}
+	if minSWR30 < other.SWR30 {
+		return nil
+	}
+	baselineLT := baselineLongTermReturn(portfolioReturns)
+	if baselineLT < other.BaselineLTReturn {
+		return nil
+	}
+	maxUlcerScore, deepestDrawdown, longestDrawdown := drawdownScores(portfolioReturns)
+	if maxUlcerScore > other.UlcerScore {
+		return nil
+	}
+	if deepestDrawdown < other.DeepestDrawdown {
+		return nil
+	}
+	if longestDrawdown > other.LongestDrawdown {
+		return nil
+	}
+	baselineST := baselineShortTermReturn(portfolioReturns)
+	if baselineST < other.BaselineSTReturn {
+		return nil
+	}
+	sensitivity := startDateSensitivity(portfolioReturns)
+	if sensitivity > other.StartDateSensitivity {
+		return nil
+	}
+	return &PortfolioStat{
+		Assets:               p.Assets,
+		Percentages:          p.Percentages,
+		AvgReturn:            avgReturn,
+		BaselineLTReturn:     baselineLT,
+		BaselineSTReturn:     baselineST,
+		PWR30:                minPWR30,
+		SWR30:                minSWR30,
+		StdDev:               stdDev,
+		UlcerScore:           maxUlcerScore,
+		DeepestDrawdown:      deepestDrawdown,
+		LongestDrawdown:      longestDrawdown,
+		StartDateSensitivity: sensitivity,
 	}
 }
 

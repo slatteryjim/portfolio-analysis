@@ -158,3 +158,53 @@ func Benchmark_evaluatePortfolios_TSM(b *testing.B) {
 		}
 	}
 }
+
+// Benchmark some portfolio evaluation metrics, want to order them cheapest to most expensive.
+//
+// $ go test -bench ^BenchmarkPortfolioEvaluationMetrics$ -run ^$ -benchtime=5s
+//
+// BenchmarkPortfolioEvaluationMetrics/averageReturn-12                   189537374              31.6 ns/op
+// BenchmarkPortfolioEvaluationMetrics/standardDeviation-12                 3170172              1887 ns/op
+// BenchmarkPortfolioEvaluationMetrics/minPWRAndSWR30-12                    2038736              2944 ns/op
+// BenchmarkPortfolioEvaluationMetrics/baselineLongTermReturn-12            1299754              4564 ns/op
+// BenchmarkPortfolioEvaluationMetrics/drawdownScores-12                    1205773              4992 ns/op
+// BenchmarkPortfolioEvaluationMetrics/baselineShortTermReturn-12            999006              5614 ns/op
+// BenchmarkPortfolioEvaluationMetrics/startDateSensitivity-12               998498              5825 ns/op
+func BenchmarkPortfolioEvaluationMetrics(b *testing.B) {
+	gbReturns := MustReturns(mustGoldenButterflyStat())
+	b.Run("minPWRAndSWR30", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			minPWRAndSWR(gbReturns, 30)
+		}
+	})
+	b.Run("drawdownScores", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			drawdownScores(gbReturns)
+		}
+	})
+	b.Run("averageReturn", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			averageReturn(gbReturns)
+		}
+	})
+	b.Run("baselineLongTermReturn", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			baselineLongTermReturn(gbReturns)
+		}
+	})
+	b.Run("baselineShortTermReturn", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			baselineShortTermReturn(gbReturns)
+		}
+	})
+	b.Run("standardDeviation", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			standardDeviation(gbReturns)
+		}
+	})
+	b.Run("startDateSensitivity", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			startDateSensitivity(gbReturns)
+		}
+	})
+}
