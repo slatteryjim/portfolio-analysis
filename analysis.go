@@ -137,7 +137,7 @@ func averageReturn(returns []Percent) Percent {
 // the worst outliers (15th percentile 15-year real CAGR)"
 // See: https://portfoliocharts.com/portfolio/long-term-returns/
 func baselineLongTermReturn(returns []Percent) Percent {
-	return baselineReturn(returns, 15, ReadablePercent(15))
+	return baselineReturn(returns, 15, 0.15)
 }
 
 // baselineShortTermReturn returns the:
@@ -145,7 +145,7 @@ func baselineLongTermReturn(returns []Percent) Percent {
 // the worst outliers (15th percentile 3-year real CAGR)"
 // See: https://portfoliocharts.com/portfolio/long-term-returns/
 func baselineShortTermReturn(returns []Percent) Percent {
-	return baselineReturn(returns, 3, ReadablePercent(15))
+	return baselineReturn(returns, 3, 0.15)
 }
 
 func baselineReturn(returns []Percent, nYears int, percentile Percent) Percent {
