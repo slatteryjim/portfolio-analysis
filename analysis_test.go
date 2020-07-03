@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 	"testing"
 
+	"github.com/guptarohit/asciigraph"
 	. "github.com/onsi/gomega"
 
 	"github.com/slatteryjim/portfolio-analysis/data"
@@ -620,4 +622,39 @@ func TestTSMPerformance(t *testing.T) {
 	// Output:
 	// [TSM] [100%] (0) RF:0.00 AvgReturn:7.453%(0) BLT:3.061%(0) BST:-2.908%(0) PWR:3.238%(0) SWR:3.786%(0) StdDev:17.165%(0) Ulcer:27.0(0) DeepestDrawdown:-52.25%(0) LongestDrawdown:13(0), StartDateSensitivity:31.65%(0)
 	// [TSM] [100%] (0) RF:0.00 AvgReturn:8.481%(0) BLT:2.363%(0) BST:-1.339%(0) PWR:2.715%(0) SWR:3.578%(0) StdDev:18.115%(0) Ulcer:27.0(0) DeepestDrawdown:-57.56%(0) LongestDrawdown:13(0), StartDateSensitivity:36.48%(0)
+}
+
+func Test_allPWRs(t *testing.T) {
+	ExpectPlot(t, allPWRs(GoldenButterfly, 10), `
+ 0.070 ┤         ╭╮ ╭╮                            
+ 0.060 ┤     ╭───╯│ ││╭─╮    ╭╮  ╭╮      ╭╮       
+ 0.050 ┤╭─╮ ╭╯    ╰╮│╰╯ ╰╮╭──╯╰──╯╰─╮  ╭─╯╰──╮╭── 
+ 0.040 ┤│ ╰─╯      ╰╯    ╰╯         ╰╮╭╯     ╰╯   
+ 0.030 ┤│                            ╰╯           
+ 0.019 ┼╯                                         
+`)
+	ExpectPlot(t, allPWRs(GoldenButterfly, 20), `
+ 0.067 ┤         ╭╮ ╭╮                  
+ 0.053 ┤╭──╮╭────╯╰─╯╰───╮╭─╮╭──────╮   
+ 0.039 ┼╯  ╰╯            ╰╯ ╰╯      ╰──
+`)
+	ExpectPlot(t, allPWRs(GoldenButterfly, 30), `
+ 0.066 ┤            ╭╮        
+ 0.054 ┤╭─╮ ╭─────╮╭╯╰──╮     
+ 0.042 ┼╯ ╰─╯     ╰╯    ╰────
+`)
+}
+
+func ExpectPlot(t testing.TB, data []Percent, expectedResult string) {
+	t.Helper()
+	plot := " " + strings.TrimSpace(asciigraph.Plot(Floats(data...)))
+	expectedResult = " " + strings.TrimSpace(expectedResult)
+
+	if plot != expectedResult {
+		fmt.Println("Got:")
+		fmt.Println(plot)
+		fmt.Println("Expected:")
+		fmt.Println(expectedResult)
+		t.Fatal("Plot didn't match")
+	}
 }

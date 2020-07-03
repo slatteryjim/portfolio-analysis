@@ -264,6 +264,17 @@ func pwrAndSWR(returns []Percent) (Percent, Percent) {
 	return pwr, swr
 }
 
+// allPWRs returns the PWRs of all the nYears-long periods.
+func allPWRs(returns []Percent, nYears int) (pwrs []Percent) {
+	if nYears == 0 {
+		return nil
+	}
+	for _, slice := range subSlices(returns, nYears) {
+		pwrs = append(pwrs, pwr(slice))
+	}
+	return pwrs
+}
+
 // startDateSensitivity is a simple quantitative way to measure the dependability of a portfolio.
 // See: https://portfoliocharts.com/portfolio/start-date-sensitivity/
 func startDateSensitivity(returns []Percent) Percent {

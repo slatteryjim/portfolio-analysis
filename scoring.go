@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/slatteryjim/portfolio-analysis/data"
 	. "github.com/slatteryjim/portfolio-analysis/types"
 )
 
