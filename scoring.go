@@ -251,7 +251,7 @@ func evaluatePortfolio(portfolioReturns []Percent, p Combination) *PortfolioStat
 	return &PortfolioStat{
 		Assets:               p.Assets,
 		Percentages:          p.Percentages,
-		AvgReturn:            averageReturn(portfolioReturns),
+		AvgReturn:            average(portfolioReturns),
 		BaselineLTReturn:     baselineLongTermReturn(portfolioReturns),
 		BaselineSTReturn:     baselineShortTermReturn(portfolioReturns),
 		PWR30:                minPWR30,
@@ -269,7 +269,7 @@ func evaluatePortfolio(portfolioReturns []Percent, p Combination) *PortfolioStat
 // otherStat porformance.
 // It can return early if any of the metrics aren't as good.
 func evaluatePortfolioIfAsGoodOrBetterThan(portfolioReturns []Percent, p Combination, other *PortfolioStat) *PortfolioStat {
-	avgReturn := averageReturn(portfolioReturns)
+	avgReturn := average(portfolioReturns)
 	if avgReturn < other.AvgReturn {
 		return nil
 	}

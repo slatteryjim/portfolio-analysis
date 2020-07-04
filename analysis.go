@@ -126,9 +126,9 @@ func cagr(returns []Percent) Percent {
 	return Percent(math.Pow(cumulative(returns).Float(), 1/n) - 1)
 }
 
-// averageReturn returns the average of the given returns.
+// average returns the average of the given returns.
 // See: https://portfoliocharts.com/portfolio/annual-returns/
-func averageReturn(returns []Percent) Percent {
+func average(returns []Percent) Percent {
 	return sum(returns) / Percent(len(returns))
 }
 

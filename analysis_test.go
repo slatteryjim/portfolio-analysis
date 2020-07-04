@@ -400,15 +400,15 @@ func Test_cagr(t *testing.T) {
 	g.Expect(cagr(GoldenButterfly)).To(Equal(Percent(0.053522786534198286)))
 }
 
-func Test_averageReturn(t *testing.T) {
+func Test_average(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	g.Expect(math.IsNaN(averageReturn(nil).Float())).To(BeTrue())
-	g.Expect(math.IsNaN(averageReturn([]Percent{}).Float())).To(BeTrue())
-	g.Expect(averageReturn(ReadablePercents(1))).To(Equal(Percent(0.01)))
-	g.Expect(averageReturn(ReadablePercents(1, 2))).To(Equal(Percent(0.015)))
-	g.Expect(averageReturn(ReadablePercents(1, 2, -3))).To(BeNumerically("~", 0))
-	g.Expect(averageReturn(ReadablePercents(series(0, 100, 1)...))).To(Equal(Percent(0.50)))
+	g.Expect(math.IsNaN(average(nil).Float())).To(BeTrue())
+	g.Expect(math.IsNaN(average([]Percent{}).Float())).To(BeTrue())
+	g.Expect(average(ReadablePercents(1))).To(Equal(Percent(0.01)))
+	g.Expect(average(ReadablePercents(1, 2))).To(Equal(Percent(0.015)))
+	g.Expect(average(ReadablePercents(1, 2, -3))).To(BeNumerically("~", 0))
+	g.Expect(average(ReadablePercents(series(0, 100, 1)...))).To(Equal(Percent(0.50)))
 }
 
 func Test_startDateSensitivity(t *testing.T) {
@@ -625,7 +625,9 @@ func TestTSMPerformance(t *testing.T) {
 }
 
 func Test_allPWRs(t *testing.T) {
-	ExpectPlot(t, allPWRs(GoldenButterfly, 10), `
+
+	t.Run("GoldenButterfly", func(t *testing.T) {
+		ExpectPlot(t, allPWRs(GoldenButterfly, 10), `
  0.070 ┤         ╭╮ ╭╮                            
  0.060 ┤     ╭───╯│ ││╭─╮    ╭╮  ╭╮      ╭╮       
  0.050 ┤╭─╮ ╭╯    ╰╮│╰╯ ╰╮╭──╯╰──╯╰─╮  ╭─╯╰──╮╭── 
@@ -633,16 +635,44 @@ func Test_allPWRs(t *testing.T) {
  0.030 ┤│                            ╰╯           
  0.019 ┼╯                                         
 `)
-	ExpectPlot(t, allPWRs(GoldenButterfly, 20), `
+		ExpectPlot(t, allPWRs(GoldenButterfly, 20), `
  0.067 ┤         ╭╮ ╭╮                  
  0.053 ┤╭──╮╭────╯╰─╯╰───╮╭─╮╭──────╮   
  0.039 ┼╯  ╰╯            ╰╯ ╰╯      ╰──
 `)
-	ExpectPlot(t, allPWRs(GoldenButterfly, 30), `
+		ExpectPlot(t, allPWRs(GoldenButterfly, 30), `
  0.066 ┤            ╭╮        
  0.054 ┤╭─╮ ╭─────╮╭╯╰──╮     
  0.042 ┼╯ ╰─╯     ╰╯    ╰────
 `)
+	})
+
+	t.Run("8-way", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+
+		allReturns, err := portfolioReturns(
+			data.PortfolioReturnsList(ParseAssets(`|ST Invest. Grade|Int'l Small|T-Bill|Wellesley|TIPS|REIT|LT STRIPS|Wellington|`)...),
+			equalWeightAllocations(8))
+		g.Expect(err).To(Succeed())
+		ExpectPlot(t, allPWRs(allReturns, 10), `
+ 0.080 ┼╮                         
+ 0.069 ┤╰╮   ╭╮  ╭╮               
+ 0.058 ┤ │╭─╮│╰─╮│╰─╮   ╭─╮       
+ 0.047 ┤ ╰╯ ╰╯  ╰╯  ╰╮╭─╯ ╰──╮╭── 
+ 0.035 ┤             ╰╯      ╰╯
+`)
+		ExpectPlot(t, allPWRs(allReturns, 20), `
+ 0.079 ┼╮               
+ 0.067 ┤╰╮              
+ 0.056 ┤ ╰──╮╭────╮   ╭ 
+ 0.045 ┤    ╰╯    ╰───╯
+`)
+		ExpectPlot(t, allPWRs(allReturns, 30), `
+ 0.074 ┼╮     
+ 0.062 ┤╰╮╭╮  
+ 0.050 ┤ ╰╯╰─
+`)
+	})
 }
 
 func ExpectPlot(t testing.TB, data []Percent, expectedResult string) {

@@ -1,10 +1,12 @@
 package portfolio_analysis
 
 import (
+	"strings"
 	"testing"
 
 	. "github.com/onsi/gomega"
 
+	"github.com/slatteryjim/portfolio-analysis/data"
 	. "github.com/slatteryjim/portfolio-analysis/types"
 )
 
@@ -135,6 +137,133 @@ var (
 	combinationsTSM = []Combination{{Assets: []string{"TSM"}, Percentages: []Percent{1}}}
 )
 
+func TestExtraPWRMetrics(t *testing.T) {
+	g := NewGomegaWithT(t)
+	ExpectRoughPercent := func(got Percent, expected Percent, note ...interface{}) {
+		t.Helper()
+		g.Expect(got*100).To(BeNumerically("~", expected, 0.0005), note...)
+	}
+	ExpectStats := func(returns []Percent, minPWR10, minPWR30, avgPWR10, avgPWR30, stdDevPWR10, stdDevPWR30 Percent) {
+		t.Helper()
+		pwrs10 := allPWRs(returns, 10)
+		pwrs30 := allPWRs(returns, 30)
+		actualMinPWR10, _ := minPWR(returns, 10)
+		actualMinPWR30, _ := minPWR(returns, 30)
+		ExpectRoughPercent(actualMinPWR10, minPWR10, "minPWR10")
+		ExpectRoughPercent(actualMinPWR30, minPWR30, "minPWR30")
+		ExpectRoughPercent(average(pwrs10), avgPWR10, "avgPWR10")
+		ExpectRoughPercent(average(pwrs30), avgPWR30, "avgPWR30")
+		ExpectRoughPercent(standardDeviation(pwrs10), stdDevPWR10, "stdDevPWR10")
+		ExpectRoughPercent(standardDeviation(pwrs30), stdDevPWR30, "stdDevPWR30")
+	}
+
+	// 8 asset portfolio with no GoldenButterfly assets and no bonds other than very short & secure
+	portfolio8way, err := portfolioReturns(
+		data.PortfolioReturnsList(ParseAssets(`|ST Invest. Grade|Int'l Small|T-Bill|Wellesley|TIPS|REIT|LT STRIPS|Wellington|`)...),
+		equalWeightAllocations(8))
+	g.Expect(err).To(Succeed())
+
+	// GoldenButterfly returns
+	ExpectStats(GoldenButterfly,
+		1.946, 4.224,
+		5.214, 5.585,
+		0.929, 0.557)
+
+	ExpectStats(portfolio8way,
+		3.539, 4.968,
+		5.191, 5.731,
+		0.951, 0.857)
+
+	t.Run("GoldenButterfly", func(t *testing.T) {
+		ExpectPlot(t, allPWRs(GoldenButterfly, 10), `
+ 0.070 ┤         ╭╮ ╭╮                            
+ 0.060 ┤     ╭───╯│ ││╭─╮    ╭╮  ╭╮      ╭╮       
+ 0.050 ┤╭─╮ ╭╯    ╰╮│╰╯ ╰╮╭──╯╰──╯╰─╮  ╭─╯╰──╮╭── 
+ 0.040 ┤│ ╰─╯      ╰╯    ╰╯         ╰╮╭╯     ╰╯   
+ 0.030 ┤│                            ╰╯           
+ 0.019 ┼╯                                         
+`)
+		ExpectPlot(t, allPWRs(GoldenButterfly, 20), `
+ 0.067 ┤         ╭╮ ╭╮                  
+ 0.053 ┤╭──╮╭────╯╰─╯╰───╮╭─╮╭──────╮   
+ 0.039 ┼╯  ╰╯            ╰╯ ╰╯      ╰──
+`)
+		ExpectPlot(t, allPWRs(GoldenButterfly, 30), `
+ 0.066 ┤            ╭╮        
+ 0.054 ┤╭─╮ ╭─────╮╭╯╰──╮     
+ 0.042 ┼╯ ╰─╯     ╰╯    ╰────
+`)
+	})
+
+	t.Run("8-way", func(t *testing.T) {
+		ExpectPlot(t, allPWRs(portfolio8way, 10), `
+ 0.080 ┼╮                         
+ 0.069 ┤╰╮   ╭╮  ╭╮               
+ 0.058 ┤ │╭─╮│╰─╮│╰─╮   ╭─╮       
+ 0.047 ┤ ╰╯ ╰╯  ╰╯  ╰╮╭─╯ ╰──╮╭── 
+ 0.035 ┤             ╰╯      ╰╯
+`)
+		ExpectPlot(t, allPWRs(portfolio8way, 20), `
+ 0.079 ┼╮               
+ 0.067 ┤╰╮              
+ 0.056 ┤ ╰──╮╭────╮   ╭ 
+ 0.045 ┤    ╰╯    ╰───╯
+`)
+		ExpectPlot(t, allPWRs(portfolio8way, 30), `
+ 0.074 ┼╮     
+ 0.062 ┤╰╮╭╮  
+ 0.050 ┤ ╰╯╰─
+`)
+	})
+}
+
+func equalWeightAllocations(n int) []Percent {
+	res := make([]Percent, n)
+	amount := 1.0 / Percent(n)
+	for i := 0; i < n; i++ {
+		res[i] = amount
+	}
+	return res
+}
+
+func ParseAssets(assetsPipeDelimited string) []string {
+	res := assetsPipeDelimited
+	res = strings.TrimPrefix(res, "|")
+	res = strings.TrimSuffix(res, "|")
+	return strings.Split(res, "|")
+}
+
+func BenchmarkCopy(b *testing.B) {
+	b.Run("Built-in", func(b *testing.B) {
+		from := make([]byte, b.N)
+		to := make([]byte, b.N)
+		b.ReportAllocs()
+		b.ResetTimer()
+		b.SetBytes(1)
+		copy(to, from)
+	})
+	b.Run("manual", func(b *testing.B) {
+		from := make([]byte, b.N)
+		to := make([]byte, b.N)
+		b.ReportAllocs()
+		b.ResetTimer()
+		b.SetBytes(1)
+		for i := 0; i < b.N; i++ {
+			to[i] = from[i]
+		}
+	})
+	b.Run("manual-append", func(b *testing.B) {
+		from := make([]byte, b.N)
+		to := make([]byte, 0, b.N)
+		b.ReportAllocs()
+		b.ResetTimer()
+		b.SetBytes(1)
+		for i := 0; i < b.N; i++ {
+			to = append(to, from[i])
+		}
+	})
+}
+
 // go test -run=^$ -bench=Benchmark_evaluatePortfolios_GoldenButterfly$ --benchtime=10s
 //
 // Benchmark_evaluatePortfolios_GoldenButterfly-12           431221             27260 ns/op
@@ -163,7 +292,7 @@ func Benchmark_evaluatePortfolios_TSM(b *testing.B) {
 //
 // $ go test -bench ^BenchmarkPortfolioEvaluationMetrics$ -run ^$ -benchtime=5s
 //
-// BenchmarkPortfolioEvaluationMetrics/averageReturn-12                   189537374              31.6 ns/op
+// BenchmarkPortfolioEvaluationMetrics/average-12                         189537374                31.6 ns/op
 // BenchmarkPortfolioEvaluationMetrics/standardDeviation-12                 3170172              1887 ns/op
 // BenchmarkPortfolioEvaluationMetrics/minPWRAndSWR30-12                    2038736              2944 ns/op
 // BenchmarkPortfolioEvaluationMetrics/baselineLongTermReturn-12            1299754              4564 ns/op
@@ -182,9 +311,9 @@ func BenchmarkPortfolioEvaluationMetrics(b *testing.B) {
 			drawdownScores(gbReturns)
 		}
 	})
-	b.Run("averageReturn", func(b *testing.B) {
+	b.Run("average", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			averageReturn(gbReturns)
+			average(gbReturns)
 		}
 	})
 	b.Run("baselineLongTermReturn", func(b *testing.B) {
