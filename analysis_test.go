@@ -675,9 +675,9 @@ func Test_allPWRs(t *testing.T) {
 	})
 }
 
-func ExpectPlot(t testing.TB, data []Percent, expectedResult string) {
+func ExpectPlot(t testing.TB, data []Percent, expectedResult string, options ...asciigraph.Option) {
 	t.Helper()
-	plot := " " + strings.TrimSpace(asciigraph.Plot(Floats(data...)))
+	plot := " " + strings.TrimSpace(asciigraph.Plot(Floats(data...), options...))
 	expectedResult = " " + strings.TrimSpace(expectedResult)
 
 	if plot != expectedResult {
@@ -687,4 +687,30 @@ func ExpectPlot(t testing.TB, data []Percent, expectedResult string) {
 		fmt.Println(expectedResult)
 		t.Fatal("Plot didn't match")
 	}
+}
+
+func Test_slope(t *testing.T) {
+	// 1.00 slope (100%)
+	ExpectRoughPercent(t, slope(ReadablePercents(1, 2, 3, 4)), 100)
+	ExpectRoughPercent(t, slope(ReadablePercents(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)), 100)
+	// different y-intercept, but same 100% slope!
+	ExpectRoughPercent(t, slope(ReadablePercents(5, 6, 7, 8, 9, 10)), 100)
+	// 50% slope
+	ExpectRoughPercent(t, slope(ReadablePercents(1, 1.5, 2, 2.5, 3, 3.5, 4)), 50)
+	// negative slope
+	ExpectRoughPercent(t, slope(ReadablePercents(-1, -2, -3, -4)), -100)
+	ExpectRoughPercent(t, slope(ReadablePercents(-1, -1.5, -2, -2.5, -3, -3.5, -4)), -50)
+
+	ExpectRoughPercent(t, slope(GoldenButterfly), 3.803)
+	ExpectRoughPercent(t, slope(TSM), 17.882)
+	ExpectRoughPercent(t, slope(SCV), 9.512)
+	ExpectRoughPercent(t, slope(GLD), -17.286)
+	ExpectRoughPercent(t, slope(STT), -3.499)
+	ExpectRoughPercent(t, slope(LTT), 12.408)
+}
+
+func ExpectRoughPercent(t testing.TB, got Percent, expected Percent, note ...interface{}) {
+	t.Helper()
+	g := NewGomegaWithT(t)
+	g.Expect(got*100).To(BeNumerically("~", expected, 0.0005), note...)
 }

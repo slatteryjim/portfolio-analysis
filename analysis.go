@@ -180,6 +180,38 @@ func standardDeviation(xs []Percent) Percent {
 	return Percent(math.Sqrt(((1 / n) * sumOfSquaredDiffs).Float()))
 }
 
+// slope attempts to give some number indicating how the values generally appear to be changing.
+// https://www.dummies.com/education/math/statistics/how-to-calculate-a-regression-line/
+func slope(ys []Percent) Percent {
+	n := len(ys)
+
+	// manufacture x's, just percentages 1 through n
+	xs := make([]Percent, n)
+	for i := 0; i < n; i++ {
+		xs[i] = ReadablePercent(float64(i) + 1)
+	}
+
+	xsStddev := standardDeviation(xs)
+	ysStddev := standardDeviation(ys)
+
+	// correlation coefficient r
+	// https://www.dummies.com/education/math/statistics/how-to-calculate-a-correlation/
+	var correlation Percent
+	{
+		xsAvg := average(xs)
+		ysAvg := average(ys)
+
+		var sumOfStuff Percent
+		for i := 0; i < n; i++ {
+			sumOfStuff += (xs[i] - xsAvg) * (ys[i] - ysAvg)
+		}
+		correlation = sumOfStuff /
+			(xsStddev * ysStddev) /
+			(Percent(n))
+	}
+	return correlation * (ysStddev / xsStddev)
+}
+
 // swr returns the Safe-withdrawal rate
 func swr(returns []Percent) Percent {
 	cumulativeGrowth := cumulativeList(returns)

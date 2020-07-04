@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/guptarohit/asciigraph"
 	. "github.com/onsi/gomega"
 
 	"github.com/slatteryjim/portfolio-analysis/data"
@@ -139,22 +140,25 @@ var (
 
 func TestExtraPWRMetrics(t *testing.T) {
 	g := NewGomegaWithT(t)
-	ExpectRoughPercent := func(got Percent, expected Percent, note ...interface{}) {
-		t.Helper()
-		g.Expect(got*100).To(BeNumerically("~", expected, 0.0005), note...)
-	}
-	ExpectStats := func(returns []Percent, minPWR10, minPWR30, avgPWR10, avgPWR30, stdDevPWR10, stdDevPWR30 Percent) {
+	ExpectStats := func(returns []Percent,
+		minPWR10, minPWR30,
+		avgPWR10, avgPWR30,
+		stdDevPWR10, stdDevPWR30,
+		slopePWR10, slopePWR30 Percent) {
 		t.Helper()
 		pwrs10 := allPWRs(returns, 10)
 		pwrs30 := allPWRs(returns, 30)
 		actualMinPWR10, _ := minPWR(returns, 10)
 		actualMinPWR30, _ := minPWR(returns, 30)
-		ExpectRoughPercent(actualMinPWR10, minPWR10, "minPWR10")
-		ExpectRoughPercent(actualMinPWR30, minPWR30, "minPWR30")
-		ExpectRoughPercent(average(pwrs10), avgPWR10, "avgPWR10")
-		ExpectRoughPercent(average(pwrs30), avgPWR30, "avgPWR30")
-		ExpectRoughPercent(standardDeviation(pwrs10), stdDevPWR10, "stdDevPWR10")
-		ExpectRoughPercent(standardDeviation(pwrs30), stdDevPWR30, "stdDevPWR30")
+		ExpectRoughPercent(t, actualMinPWR10, minPWR10, "minPWR10")
+		ExpectRoughPercent(t, actualMinPWR30, minPWR30, "minPWR30")
+		ExpectRoughPercent(t, average(pwrs10), avgPWR10, "avgPWR10")
+		ExpectRoughPercent(t, average(pwrs30), avgPWR30, "avgPWR30")
+		ExpectRoughPercent(t, standardDeviation(pwrs10), stdDevPWR10, "stdDevPWR10")
+		ExpectRoughPercent(t, standardDeviation(pwrs30), stdDevPWR30, "stdDevPWR30")
+
+		ExpectRoughPercent(t, slope(pwrs10), slopePWR10, "slopePWR10")
+		ExpectRoughPercent(t, slope(pwrs30), slopePWR30, "slopePWR30")
 	}
 
 	// 8 asset portfolio with no GoldenButterfly assets and no bonds other than very short & secure
@@ -167,14 +171,69 @@ func TestExtraPWRMetrics(t *testing.T) {
 	ExpectStats(GoldenButterfly,
 		1.946, 4.224,
 		5.214, 5.585,
-		0.929, 0.557)
+		0.929, 0.557,
+		-0.349, 0.310)
 
 	ExpectStats(portfolio8way,
 		3.539, 4.968,
 		5.191, 5.731,
-		0.951, 0.857)
+		0.951, 0.857,
+		-7.958, -41.076)
+
+	ExpectRoughPercent(t, slope(GoldenButterfly), 3.803)
+	ExpectRoughPercent(t, slope(portfolio8way), -20.380)
 
 	t.Run("GoldenButterfly", func(t *testing.T) {
+		t.Run("basic components", func(t *testing.T) {
+			ExpectPlot(t, GoldenButterfly, `
+  0.24 ┤         ╭╮ ╭╮                                     
+  0.11 ┼ ╭─╮ ╭─╮ ││ │╰╮╭─╮ ╭╮╭╮╭╮╭╮╭╮    ╭╮ ╭╮ ╭─╮╭╮╭╮╭─╮╭ 
+ -0.02 ┤╭╯ ╰─╯ ╰─╯╰╮│ ╰╯ ╰─╯││╰╯╰╯╰╯╰────╯╰─╯╰╮│ ╰╯╰╯╰╯ ╰╯ 
+ -0.15 ┼╯          ╰╯       ╰╯                ╰╯           `)
+			ExpectPlot(t, TSM, `
+  0.32 ┤     ╭╮              ╭╮  ╭╮      ╭╮        ╭╮      
+  0.21 ┤     │╰╮  ╭╮ ╭╮╭╮  ╭╮││  ││╭──╮  ││    ╭╮  ││  ╭╮╭ 
+  0.09 ┤ ╭─╮ │ │ ╭╯│╭╯││╰╮╭╯││╰─╮│╰╯  │  │╰╮╭╮ │╰╮╭╯╰╮╭╯││ 
+ -0.02 ┼╭╯ │ │ │╭╯ ││ ╰╯ ╰╯ ││  ╰╯    │  │ ╰╯╰╮│ ╰╯  ╰╯ ││ 
+ -0.14 ┼╯  │ │ ╰╯  ╰╯       ╰╯        ╰─╮│    ││        ╰╯ 
+ -0.25 ┤   ╰╮│                          ╰╯    ││           
+ -0.37 ┤    ╰╯                                ╰╯            `)
+			ExpectPlot(t, SCV, `
+  0.45 ┤     ╭─╮                                           
+  0.34 ┤     │ │     ╭╮      ╭╮    ╭╮    ╭╮        ╭╮      
+  0.23 ┤     │ │ ╭╮ ╭╯│╭╮ ╭╮ │╰─╮╭─╯│ ╭╮ │╰╮   ╭─╮╭╯│ ╭╮ ╭ 
+  0.12 ┼ ╭╮  │ ╰─╯╰╮│ ││╰╮│╰╮│  ││  │ │╰╮│ │╭╮ │ ││ ╰╮│╰╮│ 
+  0.01 ┤╭╯╰╮ │     ╰╯ ╰╯ ││ ││  ╰╯  │╭╯ ││ ╰╯│ │ ││  ╰╯ ││ 
+ -0.10 ┤│  │ │           ╰╯ ││      ╰╯  ╰╯   ╰╮│ ╰╯     ╰╯ 
+ -0.21 ┼╯  │ │              ╰╯                ││           
+ -0.32 ┤   ╰─╯                                ╰╯            `)
+			ExpectPlot(t, LTT, `
+  0.36 ┤            ╭╮                                     
+  0.26 ┼            ││ ╭╮        ╭╮                        
+  0.16 ┤            ││ │╰╮       ││   ╭╮      ╭╮ ╭╮ ╭╮     
+  0.05 ┤╭─╮   ╭╮    ││╭╯ │ ╭╮╭╮╭╮││╭─╮││╭╮   ╭╯│╭╯│ ││ ╭╮╭ 
+ -0.05 ┤│ │  ╭╯│    │╰╯  │╭╯╰╯╰╯││╰╯ ││╰╯╰───╯ ││ ╰╮│╰─╯╰╯ 
+ -0.15 ┼╯ ╰──╯ ╰────╯    ╰╯     ╰╯   ╰╯        ╰╯  ╰╯        `)
+			ExpectPlot(t, STT, `
+  0.17 ┼            ╭╮                                     
+  0.06 ┤╭╮          ││╭──╮ ╭╮╭╮  ╭╮    ╭╮     ╭╮           
+ -0.05 ┼╯╰──────────╯╰╯  ╰─╯╰╯╰──╯╰────╯╰─────╯╰────────── `)
+			ExpectPlot(t, GLD, `
+  0.97 ┤                   ╭╮                                                                                 
+  0.84 ┤                   ││                                                                                 
+  0.71 ┤                   │╰╮                                                                                
+  0.58 ┼      ╭───╮       ╭╯ │                                                                                
+  0.45 ┤     ╭╯   │       │  │                                                                                
+  0.32 ┤    ╭╯    │      ╭╯  │                                            ╭─╮     ╭──╮  ╭──╮                  
+  0.19 ┤   ╭╯     ╰╮   ╭─╯   ╰╮         ╭────╮         ╭─╮               ╭╯ ╰─╮╭──╯  ╰──╯  ╰╮         ╭──╮  ╭ 
+  0.06 ┤ ╭─╯       │  ╭╯      │  ╭─╮   ╭╯    │        ╭╯ ╰────╮   ╭──╮ ╭─╯    ╰╯            ╰──╮  ╭╮ ╭╯  ╰──╯ 
+ -0.07 ┤╭╯         │ ╭╯       ╰╮ │ ╰╮ ╭╯     ╰────────╯       ╰───╯  ╰─╯                       ╰╮╭╯╰─╯        
+ -0.20 ┼╯          ╰─╯         │╭╯  ╰─╯                                                         ╰╯            
+ -0.33 ┤                       ╰╯
+`,
+				asciigraph.Height(10), asciigraph.Width(len(GLD)*2))
+		})
+
 		ExpectPlot(t, allPWRs(GoldenButterfly, 10), `
  0.070 ┤         ╭╮ ╭╮                            
  0.060 ┤     ╭───╯│ ││╭─╮    ╭╮  ╭╮      ╭╮       
