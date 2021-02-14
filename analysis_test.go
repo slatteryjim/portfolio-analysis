@@ -288,20 +288,27 @@ func Test_minPWR(t *testing.T) {
 	verify(ReadablePercents(10, -5, 10, -20), 3, pwr(ReadablePercents(-5, 10, -20)), 1)
 	verify(ReadablePercents(10, -5, 10, -20), 4, pwr(ReadablePercents(10, -5, 10, -20)), 0)
 
-	// TODO: write this data to a report, as a Golden file
+	t.Run("example series", func(t *testing.T) {
+		var sb strings.Builder
+		reportLine := func(name string, returns []Percent, nYears int) string {
+			minPWR, index := minPWRProxy(returns, nYears)
+			return fmt.Sprintf("%s: %2d years minPWR: %16v at index %2d\n", name, nYears, minPWR, index)
+		}
+		sb.WriteString(reportLine("TSM", TSM, 30))
+		sb.WriteString(reportLine("SCV", SCV, 30))
+		sb.WriteString(reportLine("GLD", GLD, 30))
+		sb.WriteString(reportLine("LTT", LTT, 30))
+		sb.WriteString(reportLine("STT", STT, 30))
+		sb.WriteString(reportLine("STB", STB, 30))
+		sb.WriteString("\n")
+		sb.WriteString(reportLine("GoldenButterfly", GoldenButterfly, 10))
+		sb.WriteString(reportLine("GoldenButterfly", GoldenButterfly, 20))
+		sb.WriteString(reportLine("GoldenButterfly", GoldenButterfly, 30))
+		sb.WriteString(reportLine("GoldenButterfly", GoldenButterfly, 40))
+		sb.WriteString(reportLine("GoldenButterfly", GoldenButterfly, 50))
 
-	verify(TSM, 30, 0.03237787319823412, 0)
-	verify(SCV, 30, 0.03803405103934034, 0)
-	verify(GLD, 30, -0.015630815039841064, 6)
-	verify(LTT, 30, 0.021678521798131487, 0)
-	verify(STT, 30, 0.017145731503677816, 21)
-	verify(STB, 30, 0.022672387011138363, 0)
-
-	verify(GoldenButterfly, 10, 0.019455306405833442, 0)
-	verify(GoldenButterfly, 20, 0.038591150235617475, 0)
-	verify(GoldenButterfly, 30, 0.04224373554338784, 0)
-	verify(GoldenButterfly, 40, 0.04205689393031536, 0)
-	verify(GoldenButterfly, 50, 0.042883248739577114, 0)
+		ExpectMatchesGoldenFile(t, sb.String())
+	})
 }
 
 func Test_minSWR(t *testing.T) {
@@ -351,20 +358,27 @@ func Test_minSWR(t *testing.T) {
 	verify(ReadablePercents(10, -5, 10, -20), 3, swr(ReadablePercents(-5, 10, -20)), 1)
 	verify(ReadablePercents(10, -5, 10, -20), 4, swr(ReadablePercents(10, -5, 10, -20)), 0)
 
-	// TODO: write this data to a report, as a Golden file
+	t.Run("example series", func(t *testing.T) {
+		var sb strings.Builder
+		reportLine := func(name string, returns []Percent, nYears int) string {
+			gotMinSWR, index := minSWRProxy(returns, nYears)
+			return fmt.Sprintf("%s: %2d years minSWR: %16v at index %2d\n", name, nYears, gotMinSWR, index)
+		}
+		sb.WriteString(reportLine("TSM", TSM, 30))
+		sb.WriteString(reportLine("SCV", SCV, 30))
+		sb.WriteString(reportLine("GLD", GLD, 30))
+		sb.WriteString(reportLine("LTT", LTT, 30))
+		sb.WriteString(reportLine("STT", STT, 30))
+		sb.WriteString(reportLine("STB", STB, 30))
+		sb.WriteString("\n")
+		sb.WriteString(reportLine("GoldenButterfly", GoldenButterfly, 10))
+		sb.WriteString(reportLine("GoldenButterfly", GoldenButterfly, 20))
+		sb.WriteString(reportLine("GoldenButterfly", GoldenButterfly, 30))
+		sb.WriteString(reportLine("GoldenButterfly", GoldenButterfly, 40))
+		sb.WriteString(reportLine("GoldenButterfly", GoldenButterfly, 50))
 
-	verify(TSM, 30, 0.03786147243197951, 0)
-	verify(SCV, 30, 0.0429043601737704, 0)
-	verify(GLD, 30, 0.012374613192608942, 11)
-	verify(LTT, 30, 0.03418591730792702, 0)
-	verify(STT, 30, 0.039739924674330344, 3)
-	verify(STB, 30, 0.039649617433661334, 0)
-
-	verify(GoldenButterfly, 10, 0.09331551382163732, 0)
-	verify(GoldenButterfly, 20, 0.0626136479380333, 0)
-	verify(GoldenButterfly, 30, 0.053048942980622904, 0)
-	verify(GoldenButterfly, 40, 0.048790172577370526, 0)
-	verify(GoldenButterfly, 50, 0.04665049136149236, 0)
+		ExpectMatchesGoldenFile(t, sb.String())
+	})
 }
 
 func Test_subSlices(t *testing.T) {
@@ -514,31 +528,43 @@ func Test_baselineReturn(t *testing.T) {
 }
 
 func Test_baselineLongTermReturn(t *testing.T) {
-	g := NewGomegaWithT(t)
+	t.Run("example data", func(t *testing.T) {
+		var sb strings.Builder
+		reportLine := func(name string, returns []Percent) string {
+			ltReturn := baselineLongTermReturn(returns)
+			return fmt.Sprintf("%s: baselineLongTermReturn: %16v\n", name, ltReturn)
+		}
+		sb.WriteString(reportLine("TSM", TSM))
+		sb.WriteString(reportLine("SCV", SCV))
+		sb.WriteString(reportLine("GLD", GLD))
+		sb.WriteString(reportLine("LTT", LTT))
+		sb.WriteString(reportLine("STT", STT))
+		sb.WriteString(reportLine("STB", STB))
+		sb.WriteString("\n")
+		sb.WriteString(reportLine("GoldenButterfly", GoldenButterfly))
 
-	// TODO: write this data to a report, as a Golden file
-
-	g.Expect(baselineLongTermReturn(TSM)).To(Equal(Percent(0.0306081363792714)))
-	g.Expect(baselineLongTermReturn(SCV)).To(Equal(Percent(0.05925736306162355)))
-	g.Expect(baselineLongTermReturn(LTT)).To(Equal(Percent(0.022165919650537713)))
-	g.Expect(baselineLongTermReturn(STT)).To(Equal(Percent(0.007220749317469188)))
-	g.Expect(baselineLongTermReturn(STB)).To(Equal(Percent(0.013944874877032776)))
-	g.Expect(baselineLongTermReturn(GLD)).To(Equal(Percent(-0.0520425731161559)))
-	g.Expect(baselineLongTermReturn(GoldenButterfly)).To(Equal(Percent(0.05240937633854492)))
+		ExpectMatchesGoldenFile(t, sb.String())
+	})
 }
 
 func Test_baselineShortTermReturn(t *testing.T) {
-	g := NewGomegaWithT(t)
+	t.Run("example data", func(t *testing.T) {
+		var sb strings.Builder
+		reportLine := func(name string, returns []Percent) string {
+			stReturn := baselineShortTermReturn(returns)
+			return fmt.Sprintf("%s: baselineShortTermReturn: %16v\n", name, stReturn)
+		}
+		sb.WriteString(reportLine("TSM", TSM))
+		sb.WriteString(reportLine("SCV", SCV))
+		sb.WriteString(reportLine("GLD", GLD))
+		sb.WriteString(reportLine("LTT", LTT))
+		sb.WriteString(reportLine("STT", STT))
+		sb.WriteString(reportLine("STB", STB))
+		sb.WriteString("\n")
+		sb.WriteString(reportLine("GoldenButterfly", GoldenButterfly))
 
-	// TODO: write this data to a report, as a Golden file
-
-	g.Expect(baselineShortTermReturn(TSM)).To(Equal(Percent(-0.02907904796851324)))
-	g.Expect(baselineShortTermReturn(SCV)).To(Equal(Percent(0.01936917994777443)))
-	g.Expect(baselineShortTermReturn(LTT)).To(Equal(Percent(0.00639165311066181)))
-	g.Expect(baselineShortTermReturn(STT)).To(Equal(Percent(-0.013316758228289038)))
-	g.Expect(baselineShortTermReturn(STB)).To(Equal(Percent(-0.006415578705477043)))
-	g.Expect(baselineShortTermReturn(GLD)).To(Equal(Percent(-0.1135918966323598)))
-	g.Expect(baselineShortTermReturn(GoldenButterfly)).To(Equal(Percent(0.028491192128850873)))
+		ExpectMatchesGoldenFile(t, sb.String())
+	})
 }
 
 func Test_standardDeviation(t *testing.T) {
