@@ -1,2 +1,7 @@
 .DS_Store
 /.idea
+/testdata/csv
+/testdata/ipynb
+/testdata/snapshot
+/testdata/sqlite
+/testdata/*.gz

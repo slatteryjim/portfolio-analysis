@@ -80,6 +80,8 @@ func Test_ulcerScore(t *testing.T) {
 	g.Expect(ulcerScore([]GrowthMultiplier{0.90, 0.90}, true)).To(Equal(1.9999999999999996))
 	g.Expect(ulcerScore([]GrowthMultiplier{0.90, 0.80}, true)).To(Equal(2.999999999999999))
 
+	// TODO: write this data to a report, as a Golden file
+
 	dd, _ := leadingDrawdownSequence(GoldenButterfly)
 	g.Expect(dd).To(Equal([]GrowthMultiplier{0.8466616731717865, 0.8613248299786367, 0.9480466828875849}))
 	g.Expect(ulcerScore(dd, true)).To(Equal(3.4396681396199194))
@@ -107,6 +109,8 @@ func Test_drawdownScores(t *testing.T) {
 	verify(ReadablePercents(-20, 30), 1.9999999999999996, -0.19999999999999996, 1)
 	verify(ReadablePercents(-10, -20, 40), 3.799999999999999, -0.2799999999999999, 2)
 	verify(ReadablePercents(-10, 30, -10, -20, 30), 8.879999999999995, -0.2799999999999999, 3)
+
+	// TODO: write this data to a report, as a Golden file
 
 	verify(TSM, 26.990140749914836, -0.5225438230658536, 13)
 	verify(SCV, 27.53985971540292, -0.6102169347344113, 10)

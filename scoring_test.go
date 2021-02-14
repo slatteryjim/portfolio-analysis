@@ -72,6 +72,8 @@ func TestEvaluatePortfolios(t *testing.T) {
 	g.Expect(EvaluatePortfolios(nil, nil)).To(BeEmpty())
 	g.Expect(EvaluatePortfolios([]Combination{}, nil)).To(BeEmpty())
 
+	// TODO: write this data to a report, as a Golden file
+
 	g.Expect(EvaluatePortfolios([]Combination{
 		{Assets: []string{"TSM"}, Percentages: ReadablePercents(100)},
 	}, assetMap)).To(Equal([]*PortfolioStat{
@@ -166,6 +168,8 @@ func TestExtraPWRMetrics(t *testing.T) {
 		data.PortfolioReturnsList(ParseAssets(`|ST Invest. Grade|Int'l Small|T-Bill|Wellesley|TIPS|REIT|LT STRIPS|Wellington|`)...),
 		equalWeightAllocations(8))
 	g.Expect(err).To(Succeed())
+
+	// TODO: write this data to a report, as a Golden file
 
 	// GoldenButterfly returns
 	ExpectStats(GoldenButterfly,

@@ -78,11 +78,23 @@ func Test_portfolioReturns(t *testing.T) {
 			TSM,
 		))
 
-		// GoldenButterfly
-		g.Expect(portfolioReturnsProxy([][]Percent{TSM, SCV, LTT, STT, GLD}, ReadablePercents(20, 20, 20, 20, 20))).To(Equal(
-			[]Percent{-0.1533383268282135, 0.017318791285211466, 0.10068425974797353, 0.11372919971053391, -0.0172148539804938, -0.06461024302567049, 0.09360907230753582, 0.139978985084822, 0.009677225905924784, 0.03404942084475439, 0.2372421712101816, 0.025928538460314007, -0.09709304924704815, 0.1973312916341973, 0.07495518258141035, -0.010392136396391902, 0.18336903125620316, 0.14078544233466855, 0.00018309646857563727, 0.04669750085940259, 0.08673884623758171, -0.08572038845018258, 0.1563762834314272, 0.061295238653148135, 0.10983322532725735, -0.0465004614702163, 0.178993634975939, 0.052560744788289336, 0.11162614426521761, 0.05817517787259961, 0.016929554860230407, 0.03104069332156112, 0.017056422822255918, -0.0017220660217116823, 0.16666679718569166, 0.06405102737142347, 0.03846823294327486, 0.09777651111177979, 0.04997737064863614, -0.06695505567337855, 0.11050169878101092, 0.14604978374972077, 0.04114653873382587, 0.07603962935631807, 0.04372680283039169, 0.08816734725542127, -0.04048477144240979, 0.07444466516990281, 0.08438538586983815, -0.05602189725865632, 0.1534744248725398},
-		))
+		t.Run("GoldenButterfly", func(t *testing.T) {
+			g := NewGomegaWithT(t)
+			returns, err := portfolioReturnsProxy([][]Percent{TSM, SCV, LTT, STT, GLD}, ReadablePercents(20, 20, 20, 20, 20))
+			g.Expect(err).To(Succeed())
+			ExpectMatchesGoldenFile(t, formatPercents(returns))
+		})
 	})
+}
+
+// formatPercents returns the percents, one per line, right-justified.
+func formatPercents(returns []Percent) string {
+	var sb strings.Builder
+	sb.WriteString("Percents:\n")
+	for _, r := range returns {
+		sb.WriteString(fmt.Sprintf("  %18v\n", r.String()))
+	}
+	return sb.String()
 }
 
 func TestPortfolioTradingSimulation(t *testing.T) {
@@ -276,6 +288,8 @@ func Test_minPWR(t *testing.T) {
 	verify(ReadablePercents(10, -5, 10, -20), 3, pwr(ReadablePercents(-5, 10, -20)), 1)
 	verify(ReadablePercents(10, -5, 10, -20), 4, pwr(ReadablePercents(10, -5, 10, -20)), 0)
 
+	// TODO: write this data to a report, as a Golden file
+
 	verify(TSM, 30, 0.03237787319823412, 0)
 	verify(SCV, 30, 0.03803405103934034, 0)
 	verify(GLD, 30, -0.015630815039841064, 6)
@@ -336,6 +350,8 @@ func Test_minSWR(t *testing.T) {
 	verify(ReadablePercents(10, -5, 10, -20), 2, swr(ReadablePercents(10, -20)), 2)
 	verify(ReadablePercents(10, -5, 10, -20), 3, swr(ReadablePercents(-5, 10, -20)), 1)
 	verify(ReadablePercents(10, -5, 10, -20), 4, swr(ReadablePercents(10, -5, 10, -20)), 0)
+
+	// TODO: write this data to a report, as a Golden file
 
 	verify(TSM, 30, 0.03786147243197951, 0)
 	verify(SCV, 30, 0.0429043601737704, 0)
@@ -499,6 +515,9 @@ func Test_baselineReturn(t *testing.T) {
 
 func Test_baselineLongTermReturn(t *testing.T) {
 	g := NewGomegaWithT(t)
+
+	// TODO: write this data to a report, as a Golden file
+
 	g.Expect(baselineLongTermReturn(TSM)).To(Equal(Percent(0.0306081363792714)))
 	g.Expect(baselineLongTermReturn(SCV)).To(Equal(Percent(0.05925736306162355)))
 	g.Expect(baselineLongTermReturn(LTT)).To(Equal(Percent(0.022165919650537713)))
@@ -510,6 +529,9 @@ func Test_baselineLongTermReturn(t *testing.T) {
 
 func Test_baselineShortTermReturn(t *testing.T) {
 	g := NewGomegaWithT(t)
+
+	// TODO: write this data to a report, as a Golden file
+
 	g.Expect(baselineShortTermReturn(TSM)).To(Equal(Percent(-0.02907904796851324)))
 	g.Expect(baselineShortTermReturn(SCV)).To(Equal(Percent(0.01936917994777443)))
 	g.Expect(baselineShortTermReturn(LTT)).To(Equal(Percent(0.00639165311066181)))
@@ -625,6 +647,8 @@ func TestTSMPerformance(t *testing.T) {
 }
 
 func Test_allPWRs(t *testing.T) {
+
+	// TODO: write this data to a report, as a Golden file
 
 	t.Run("GoldenButterfly", func(t *testing.T) {
 		ExpectPlot(t, allPWRs(GoldenButterfly, 10), `

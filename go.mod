@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/golang/protobuf v1.3.3 // indirect
 	github.com/guptarohit/asciigraph v0.5.0
-	github.com/kr/pretty v0.1.0 // indirect
+	github.com/kr/pretty v0.1.0
 	github.com/mattn/go-sqlite3 v1.14.0
 	github.com/onsi/gomega v1.9.0
 	golang.org/x/text v0.3.2 // indirect
