@@ -527,7 +527,7 @@ func TestAllKAssetPortfolios(t *testing.T) {
 		})
 		t.Run("convert to SQLite", func(t *testing.T) {
 			g := NewGomegaWithT(t)
-			const sqliteFile = "testdata/betterThanGoldenButterfly.sqlite"
+			const sqliteFile = "testdata/betterThanGoldenButterfly_extraMetrics.sqlite"
 			db, err := sql.Open("sqlite3", sqliteFile+"?mode=rwc")
 			g.Expect(err).To(Succeed())
 			defer db.Close()
@@ -547,7 +547,12 @@ func TestAllKAssetPortfolios(t *testing.T) {
 				    ulcer_score           REAL,
 				    deepest_drawdown      REAL,
 				    longest_drawdown      REAL,
-				    startdate_sensitivity REAL
+				    startdate_sensitivity REAL,
+				    pwr10                 REAL,
+				    pwr10_stdev           REAL,
+				    pwr10_slope           REAL,
+				    pwr30_stdev           REAL,
+				    pwr30_slope           REAL
 				    );
 			`
 			_, err = db.Exec(sqlStmt)
@@ -576,14 +581,22 @@ func TestAllKAssetPortfolios(t *testing.T) {
 						ulcer_score,
 						deepest_drawdown,
 						longest_drawdown,
-						startdate_sensitivity
+						startdate_sensitivity,
+						pwr10,
+						pwr10_stdev,
+						pwr10_slope,
+						pwr30_stdev,
+						pwr30_slope
 					)
-					VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+					VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				`)
 				g.Expect(err).To(Succeed())
 				for stat := range items {
 					returnsList := data.PortfolioReturnsList(stat.Assets...)
 					returns, err := portfolioReturns(returnsList, stat.Percentages)
+					minPWR10, _ := minPWR(returns, 10)
+					pwrs10 := allPWRs(returns, 10)
+					pwrs30 := allPWRs(returns, 30)
 					_, err = stmt.Exec(
 						"|"+strings.Join(stat.Assets, "|")+"|", // encode as string
 						len(stat.Assets), // NumAssets
@@ -598,6 +611,11 @@ func TestAllKAssetPortfolios(t *testing.T) {
 						stat.DeepestDrawdown.Float(),
 						stat.LongestDrawdown,
 						stat.StartDateSensitivity.Float(),
+						minPWR10.Float(),
+						standardDeviation(pwrs10).Float(),
+						slope(pwrs10).Float(),
+						standardDeviation(pwrs30).Float(),
+						slope(pwrs30).Float(),
 					)
 					if err != nil {
 						return err
