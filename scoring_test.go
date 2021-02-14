@@ -1,10 +1,12 @@
 package portfolio_analysis
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/guptarohit/asciigraph"
+	"github.com/kr/pretty"
 	. "github.com/onsi/gomega"
 
 	"github.com/slatteryjim/portfolio-analysis/data"
@@ -72,61 +74,25 @@ func TestEvaluatePortfolios(t *testing.T) {
 	g.Expect(EvaluatePortfolios(nil, nil)).To(BeEmpty())
 	g.Expect(EvaluatePortfolios([]Combination{}, nil)).To(BeEmpty())
 
-	// TODO: write this data to a report, as a Golden file
+	t.Run("TSM", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+		res, err := EvaluatePortfolios([]Combination{
+			{Assets: []string{"TSM"}, Percentages: ReadablePercents(100)},
+		}, assetMap)
+		g.Expect(err).To(Succeed())
+		ExpectMatchesGoldenFile(t, pretty.Sprint(res))
+	})
 
-	g.Expect(EvaluatePortfolios([]Combination{
-		{Assets: []string{"TSM"}, Percentages: ReadablePercents(100)},
-	}, assetMap)).To(Equal([]*PortfolioStat{
-		{
-			Assets:               []string{"TSM"},
-			Percentages:          ReadablePercents(100),
-			AvgReturn:            0.07453082614598813,
-			BaselineLTReturn:     0.0306081363792714,
-			BaselineSTReturn:     -0.02907904796851324,
-			PWR30:                0.03237787319823412,
-			SWR30:                0.03786147243197951,
-			StdDev:               0.17165466213991304,
-			UlcerScore:           26.990140749914836,
-			DeepestDrawdown:      -0.5225438230658536,
-			LongestDrawdown:      13,
-			StartDateSensitivity: 0.3164541256493081,
-		},
-	}))
-
-	// two combinations will exercise two goroutines
-	g.Expect(EvaluatePortfolios([]Combination{
-		{Assets: []string{"TSM"}, Percentages: ReadablePercents(100)},
-		{Assets: []string{"TSM", "GLD"}, Percentages: ReadablePercents(50, 50)},
-	}, assetMap)).To(Equal([]*PortfolioStat{
-		{
-			Assets:               []string{"TSM"},
-			Percentages:          ReadablePercents(100),
-			AvgReturn:            0.07453082614598813,
-			BaselineLTReturn:     0.0306081363792714,
-			BaselineSTReturn:     -0.02907904796851324,
-			PWR30:                0.03237787319823412,
-			SWR30:                0.03786147243197951,
-			StdDev:               0.17165466213991304,
-			UlcerScore:           26.990140749914836,
-			DeepestDrawdown:      -0.5225438230658536,
-			LongestDrawdown:      13,
-			StartDateSensitivity: 0.3164541256493081,
-		},
-		{
-			Assets:               []string{"TSM", "GLD"},
-			Percentages:          ReadablePercents(50, 50),
-			AvgReturn:            0.06387494536221017,
-			BaselineLTReturn:     0.035477861130724264,
-			BaselineSTReturn:     -0.0051889628058078285,
-			PWR30:                0.028202600645605407,
-			SWR30:                0.04066373587232011,
-			StdDev:               0.13238370526536952,
-			UlcerScore:           9.965222445166578,
-			DeepestDrawdown:      -0.25929582951888575,
-			LongestDrawdown:      6,
-			StartDateSensitivity: 0.21610371811517437,
-		},
-	}))
+	t.Run("two combinations", func(t *testing.T) {
+		g := NewGomegaWithT(t)
+		// two combinations will exercise two goroutines
+		res, err := EvaluatePortfolios([]Combination{
+			{Assets: []string{"TSM"}, Percentages: ReadablePercents(100)},
+			{Assets: []string{"TSM", "GLD"}, Percentages: ReadablePercents(50, 50)},
+		}, assetMap)
+		g.Expect(err).To(Succeed())
+		ExpectMatchesGoldenFile(t, pretty.Sprint(res))
+	})
 }
 
 var (
@@ -142,25 +108,29 @@ var (
 
 func TestExtraPWRMetrics(t *testing.T) {
 	g := NewGomegaWithT(t)
-	ExpectStats := func(returns []Percent,
-		minPWR10, minPWR30,
-		avgPWR10, avgPWR30,
-		stdDevPWR10, stdDevPWR30,
-		slopePWR10, slopePWR30 Percent) {
-		t.Helper()
+	statsReport := func(name string, returns []Percent) string {
 		pwrs10 := allPWRs(returns, 10)
 		pwrs30 := allPWRs(returns, 30)
 		actualMinPWR10, _ := minPWR(returns, 10)
 		actualMinPWR30, _ := minPWR(returns, 30)
-		ExpectRoughPercent(t, actualMinPWR10, minPWR10, "minPWR10")
-		ExpectRoughPercent(t, actualMinPWR30, minPWR30, "minPWR30")
-		ExpectRoughPercent(t, average(pwrs10), avgPWR10, "avgPWR10")
-		ExpectRoughPercent(t, average(pwrs30), avgPWR30, "avgPWR30")
-		ExpectRoughPercent(t, standardDeviation(pwrs10), stdDevPWR10, "stdDevPWR10")
-		ExpectRoughPercent(t, standardDeviation(pwrs30), stdDevPWR30, "stdDevPWR30")
 
-		ExpectRoughPercent(t, slope(pwrs10), slopePWR10, "slopePWR10")
-		ExpectRoughPercent(t, slope(pwrs30), slopePWR30, "slopePWR30")
+		var sb strings.Builder
+		sb.WriteString(name + ":\n\n")
+		sb.WriteString(fmt.Sprintf("10-year PWRs:\n"))
+		sb.WriteString(fmt.Sprintf("     min: %15v\n", actualMinPWR10))
+		sb.WriteString(fmt.Sprintf("     avg: %15v\n", average(pwrs10)))
+		sb.WriteString(fmt.Sprintf("  stdDev: %15v\n", standardDeviation(pwrs10)))
+		sb.WriteString(fmt.Sprintf("\n"))
+		sb.WriteString(fmt.Sprintf("30-year PWRs:\n"))
+		sb.WriteString(fmt.Sprintf("     min: %15v\n", actualMinPWR30))
+		sb.WriteString(fmt.Sprintf("     avg: %15v\n", average(pwrs30)))
+		sb.WriteString(fmt.Sprintf("  stdDev: %15v\n", standardDeviation(pwrs30)))
+		sb.WriteString(fmt.Sprintf("\n"))
+		sb.WriteString(fmt.Sprintf("10-year PWR slope: %16v\n", slope(pwrs10)))
+		sb.WriteString(fmt.Sprintf("30-year PWR slope: %16v\n", slope(pwrs30)))
+		sb.WriteString(fmt.Sprintf("\n"))
+		sb.WriteString(fmt.Sprintf("Overall portfolio slope: %15v\n", slope(returns)))
+		return sb.String()
 	}
 
 	// 8 asset portfolio with no GoldenButterfly assets and no bonds other than very short & secure
@@ -169,23 +139,12 @@ func TestExtraPWRMetrics(t *testing.T) {
 		equalWeightAllocations(8))
 	g.Expect(err).To(Succeed())
 
-	// TODO: write this data to a report, as a Golden file
-
-	// GoldenButterfly returns
-	ExpectStats(GoldenButterfly,
-		1.946, 4.224,
-		5.214, 5.585,
-		0.929, 0.557,
-		-0.349, 0.310)
-
-	ExpectStats(portfolio8way,
-		3.539, 4.968,
-		5.191, 5.731,
-		0.951, 0.857,
-		-7.958, -41.076)
-
-	ExpectRoughPercent(t, slope(GoldenButterfly), 3.803)
-	ExpectRoughPercent(t, slope(portfolio8way), -20.380)
+	t.Run("GoldenButterfly", func(t *testing.T) {
+		ExpectMatchesGoldenFile(t, statsReport(t.Name(), GoldenButterfly))
+	})
+	t.Run("portfolio8way", func(t *testing.T) {
+		ExpectMatchesGoldenFile(t, statsReport(t.Name(), portfolio8way))
+	})
 
 	t.Run("GoldenButterfly", func(t *testing.T) {
 		t.Run("basic components", func(t *testing.T) {

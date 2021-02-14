@@ -1,0 +1,16 @@
+TestExtraPWRMetrics/GoldenButterfly:
+
+10-year PWRs:
+     min: 1.945530640583%
+     avg: 5.213980428749%
+  stdDev: 0.928523674756%
+
+30-year PWRs:
+     min: 4.224373554339%
+     avg: 5.584942389173%
+  stdDev:  0.55722828735%
+
+10-year PWR slope: -0.349221605901%
+30-year PWR slope:  0.309515640275%
+
+Overall portfolio slope:  3.80346561718%

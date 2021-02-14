@@ -674,27 +674,19 @@ func TestTSMPerformance(t *testing.T) {
 
 func Test_allPWRs(t *testing.T) {
 
-	// TODO: write this data to a report, as a Golden file
+	plot := func(name string, returns []Percent, nYears int) string {
+		data := allPWRs(returns, nYears)
+		return fmt.Sprintf("%s, %d-year PWR's:\n", name, nYears) +
+			" " + strings.TrimSpace(asciigraph.Plot(Floats(data...))) +
+			"\n\n"
+	}
 
 	t.Run("GoldenButterfly", func(t *testing.T) {
-		ExpectPlot(t, allPWRs(GoldenButterfly, 10), `
- 0.070 ┤         ╭╮ ╭╮                            
- 0.060 ┤     ╭───╯│ ││╭─╮    ╭╮  ╭╮      ╭╮       
- 0.050 ┤╭─╮ ╭╯    ╰╮│╰╯ ╰╮╭──╯╰──╯╰─╮  ╭─╯╰──╮╭── 
- 0.040 ┤│ ╰─╯      ╰╯    ╰╯         ╰╮╭╯     ╰╯   
- 0.030 ┤│                            ╰╯           
- 0.019 ┼╯                                         
-`)
-		ExpectPlot(t, allPWRs(GoldenButterfly, 20), `
- 0.067 ┤         ╭╮ ╭╮                  
- 0.053 ┤╭──╮╭────╯╰─╯╰───╮╭─╮╭──────╮   
- 0.039 ┼╯  ╰╯            ╰╯ ╰╯      ╰──
-`)
-		ExpectPlot(t, allPWRs(GoldenButterfly, 30), `
- 0.066 ┤            ╭╮        
- 0.054 ┤╭─╮ ╭─────╮╭╯╰──╮     
- 0.042 ┼╯ ╰─╯     ╰╯    ╰────
-`)
+		var sb strings.Builder
+		sb.WriteString(plot("GoldenButterfly", GoldenButterfly, 10))
+		sb.WriteString(plot("GoldenButterfly", GoldenButterfly, 20))
+		sb.WriteString(plot("GoldenButterfly", GoldenButterfly, 30))
+		ExpectMatchesGoldenFile(t, sb.String())
 	})
 
 	t.Run("8-way", func(t *testing.T) {
@@ -704,27 +696,16 @@ func Test_allPWRs(t *testing.T) {
 			data.PortfolioReturnsList(ParseAssets(`|ST Invest. Grade|Int'l Small|T-Bill|Wellesley|TIPS|REIT|LT STRIPS|Wellington|`)...),
 			equalWeightAllocations(8))
 		g.Expect(err).To(Succeed())
-		ExpectPlot(t, allPWRs(allReturns, 10), `
- 0.080 ┼╮                         
- 0.069 ┤╰╮   ╭╮  ╭╮               
- 0.058 ┤ │╭─╮│╰─╮│╰─╮   ╭─╮       
- 0.047 ┤ ╰╯ ╰╯  ╰╯  ╰╮╭─╯ ╰──╮╭── 
- 0.035 ┤             ╰╯      ╰╯
-`)
-		ExpectPlot(t, allPWRs(allReturns, 20), `
- 0.079 ┼╮               
- 0.067 ┤╰╮              
- 0.056 ┤ ╰──╮╭────╮   ╭ 
- 0.045 ┤    ╰╯    ╰───╯
-`)
-		ExpectPlot(t, allPWRs(allReturns, 30), `
- 0.074 ┼╮     
- 0.062 ┤╰╮╭╮  
- 0.050 ┤ ╰╯╰─
-`)
+
+		var sb strings.Builder
+		sb.WriteString(plot("8-way", allReturns, 10))
+		sb.WriteString(plot("8-way", allReturns, 20))
+		sb.WriteString(plot("8-way", allReturns, 30))
+		ExpectMatchesGoldenFile(t, sb.String())
 	})
 }
 
+// TODO: remove? fully replace with Golden file tests
 func ExpectPlot(t testing.TB, data []Percent, expectedResult string, options ...asciigraph.Option) {
 	t.Helper()
 	plot := " " + strings.TrimSpace(asciigraph.Plot(Floats(data...), options...))

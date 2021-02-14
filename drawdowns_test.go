@@ -1,6 +1,8 @@
 package portfolio_analysis
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -80,11 +82,17 @@ func Test_ulcerScore(t *testing.T) {
 	g.Expect(ulcerScore([]GrowthMultiplier{0.90, 0.90}, true)).To(Equal(1.9999999999999996))
 	g.Expect(ulcerScore([]GrowthMultiplier{0.90, 0.80}, true)).To(Equal(2.999999999999999))
 
-	// TODO: write this data to a report, as a Golden file
-
-	dd, _ := leadingDrawdownSequence(GoldenButterfly)
-	g.Expect(dd).To(Equal([]GrowthMultiplier{0.8466616731717865, 0.8613248299786367, 0.9480466828875849}))
-	g.Expect(ulcerScore(dd, true)).To(Equal(3.4396681396199194))
+	t.Run("GoldenButterfly", func(t *testing.T) {
+		dd, _ := leadingDrawdownSequence(GoldenButterfly)
+		var sb strings.Builder
+		sb.WriteString("Draw-down sequence:\n")
+		for _, m := range dd {
+			sb.WriteString(fmt.Sprintf("  %17v\n", Percent(m)))
+		}
+		sb.WriteString("\n")
+		sb.WriteString(fmt.Sprintf("Ulcer score: %17v", ulcerScore(dd, true)))
+		ExpectMatchesGoldenFile(t, sb.String())
+	})
 }
 
 func Test_drawdownScores(t *testing.T) {
@@ -110,13 +118,21 @@ func Test_drawdownScores(t *testing.T) {
 	verify(ReadablePercents(-10, -20, 40), 3.799999999999999, -0.2799999999999999, 2)
 	verify(ReadablePercents(-10, 30, -10, -20, 30), 8.879999999999995, -0.2799999999999999, 3)
 
-	// TODO: write this data to a report, as a Golden file
+	t.Run("example series", func(t *testing.T) {
+		var sb strings.Builder
+		reportLine := func(name string, returns []Percent) string {
+			ulcer, maxDD, maxDur := drawdownScores(returns)
+			return fmt.Sprintf("%16s: %8.4f ulcer, maxDrawDown: %17v, maxDuration: %2d\n", name, ulcer, maxDD, maxDur)
+		}
+		sb.WriteString(reportLine("TSM", TSM))
+		sb.WriteString(reportLine("SCV", SCV))
+		sb.WriteString(reportLine("GLD", GLD))
+		sb.WriteString(reportLine("LTT", LTT))
+		sb.WriteString(reportLine("STT", STT))
+		sb.WriteString(reportLine("STB", STB))
+		sb.WriteString("\n")
+		sb.WriteString(reportLine("GoldenButterfly", GoldenButterfly))
 
-	verify(TSM, 26.990140749914836, -0.5225438230658536, 13)
-	verify(SCV, 27.53985971540292, -0.6102169347344113, 10)
-	verify(GLD, 393.21757430117924, -0.783196539516205, 40)
-	verify(LTT, 28.38445160979715, -0.45411601643765687, 13)
-	verify(STT, 11.51644603701871, -0.19005483707691806, 11)
-	verify(STB, 10.082153041903915, -0.2005766291394362, 10)
-	verify(GoldenButterfly, 3.4396681396199194, -0.15333832682821347, 3)
+		ExpectMatchesGoldenFile(t, sb.String())
+	})
 }
