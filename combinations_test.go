@@ -259,14 +259,14 @@ func TestPortfolioCombinations_AnythingBetterThanGoldenButterfly(t *testing.T) {
 //   Finished GB analysis in 147.352553ms
 //   --- PASS: TestAllKAssetPortfolios (103.94s)
 func TestAllKAssetPortfolios(t *testing.T) {
-	// t.Skip("Run manually")
+	t.Skip("Run manually")
 	var (
 		goblFileBetterThanGB = func(k int) string {
 			return fmt.Sprintf("testdata/TestAllKAssetPortfolios_PortfolioStats_k%d_betterThanGoldenButterfly.gobl.gz", k)
 		}
 	)
 	t.Run("Evaluate", func(t *testing.T) {
-		// t.Skip("Run manually")
+		t.Skip("Run manually")
 		// g := NewGomegaWithT(t)
 
 		fmt.Println("Evaluating possible portfolio combinations...")
