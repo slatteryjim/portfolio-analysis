@@ -327,7 +327,7 @@ func evaluatePortfolioIfAsGoodOrBetterThan(portfolioReturns []Percent, p Combina
 // It finishes up by sorting them by their "overall" rank, considering all of the performance metrics equally.
 func RankPortfoliosInPlace(results []*PortfolioStat) {
 	startAt := time.Now()
-	fmt.Println("...Calculate rank scores for the portfolios")
+	// fmt.Println("...Calculate rank scores for the portfolios")
 	{
 		RankAll("AvgReturn", results, RankAllParams{
 			Metric:       func(stat *PortfolioStat) float64 { return stat.AvgReturn.Float() },
@@ -380,9 +380,9 @@ func RankPortfoliosInPlace(results []*PortfolioStat) {
 			SetRank:      func(stat *PortfolioStat, rank Rank) { stat.StartDateSensitivityRank = rank },
 		})
 	}
-	fmt.Println("Finished basic rank scores in", time.Since(startAt))
+	// fmt.Println("Finished basic rank scores in", time.Since(startAt))
 	startAt = time.Now()
-	fmt.Println("...rank by all their ranks (equally weighted)")
+	// fmt.Println("...rank by all their ranks (equally weighted)")
 	{
 		// populate the OverallRankScore for all
 		for i, p := range results {
@@ -400,7 +400,7 @@ func RankPortfoliosInPlace(results []*PortfolioStat) {
 				fmt.Println(" - populating OverallRankScore row", i+1)
 			}
 		}
-		fmt.Println("populated OverallRankScore for all in", time.Since(startAt))
+		// fmt.Println("populated OverallRankScore for all in", time.Since(startAt))
 		RankAll("OverallRankScore", results, RankAllParams{
 			Metric:       func(stat *PortfolioStat) float64 { return stat.OverallRankScore },
 			LessIsBetter: true,
@@ -421,7 +421,7 @@ func RankAll(
 	results []*PortfolioStat,
 	params RankAllParams,
 ) {
-	startAt := time.Now()
+	// startAt := time.Now()
 	if params.LessIsBetter {
 		sort.Slice(results, func(i, j int) bool { return params.Metric(results[i]) < params.Metric(results[j]) })
 	} else {
@@ -446,7 +446,7 @@ func RankAll(
 		rankPercentage := float64(rank)/maxRank*99 + 1
 		params.SetRank(portfolioStat, Rank{Ordinal: rank, Percentage: rankPercentage})
 	}
-	fmt.Println("Finished ranking by", name, "in", time.Since(startAt))
+	// fmt.Println("Finished ranking by", name, "in", time.Since(startAt))
 }
 
 func FindOne(results []*PortfolioStat, pred func(p *PortfolioStat) bool) *PortfolioStat {
