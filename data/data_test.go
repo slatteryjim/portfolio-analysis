@@ -56,10 +56,10 @@ func TestPortfolioReturnsList(t *testing.T) {
 }
 
 // Wow, 1 millisecond (1 million nanoseconds)
-// Benchmark_parseSimbaTSV-12    	    1117	   1063301 ns/op
+// Benchmark_parseSimbaTSV-12    	    1088	   1095898 ns/op
 func Benchmark_parseSimbaTSV(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_, err := parseSimbaTSV(simbaBacktestingSpreadsheetRev19bTSV)
+		_, err := parseSimbaTSV(simbaBacktestingSpreadsheetRev20aTSV)
 		if err != nil {
 			b.Fatal(err)
 		}

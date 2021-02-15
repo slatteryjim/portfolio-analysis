@@ -121,7 +121,7 @@ func TestPortfolioCombinations_GoldenButterflyAssets(t *testing.T) {
 	startAt := time.Now()
 	perms := Combinations([]string{"TSM", "SCV", "LTT", "STT", "GLD"}, ReadablePercents(seriesRange(5)...))
 	// g.Expect(len(perms)).To(Equal(10_626)) // only 3,876 include all five.
-	fmt.Println("Generated", len(perms), "combinations in", time.Since(startAt))
+	Log(t, "Generated", len(perms), "combinations in", time.Since(startAt))
 
 	// filter to only include combinations where all 5 assets are used/
 	// (See: https://github.com/golang/go/wiki/SliceTricks#filtering-without-allocating)
@@ -143,7 +143,7 @@ func TestPortfolioCombinations_GoldenButterflyAssets(t *testing.T) {
 	// }
 	//g.Expect(len(perms)).To(Equal(3_876))
 	startAt = time.Now()
-	fmt.Println("...Evaluating", len(perms), "combinations.")
+	Log(t, "...Evaluating", len(perms), "combinations.")
 
 	results, err := EvaluatePortfolios(perms, assetMap)
 	g.Expect(err).ToNot(HaveOccurred())
@@ -160,7 +160,7 @@ func TestPortfolioCombinations_GoldenButterflyAssets(t *testing.T) {
 	fmt.Println("#2:", results[1])
 	fmt.Println("#3:", results[2])
 
-	PrintBestByEachRanking(results)
+	PrintBestByEachRanking(t, results)
 
 	gbStat := FindOne(results, func(p *PortfolioStat) bool {
 		if len(p.Percentages) != 5 {
@@ -174,7 +174,12 @@ func TestPortfolioCombinations_GoldenButterflyAssets(t *testing.T) {
 		return true
 	})
 	g.Expect(gbStat).ToNot(BeNil())
-	findBetterThanGoldenButterfly(gbStat, results)
+	findBetterThanGoldenButterfly(t, gbStat, results)
+}
+
+func Log(t *testing.T, content ...interface{}) {
+	//fmt.Println(content...)
+	t.Log(content...)
 }
 
 func TestPortfolioCombinations_AnythingBetterThanGoldenButterfly(t *testing.T) {
@@ -199,7 +204,7 @@ func TestPortfolioCombinations_AnythingBetterThanGoldenButterfly(t *testing.T) {
 		fmt.Printf("#%d: %s\n", i+1, results[i])
 	}
 
-	PrintBestByEachRanking(results)
+	PrintBestByEachRanking(t, results)
 }
 
 // Wow, found 4 thousand portfolios that were better than GoldenButterfly!
@@ -921,9 +926,9 @@ func gobDecodeFromFile(g *GomegaWithT, filename string) []*PortfolioStat {
 }
 
 // goblEncodeToFile writes the GOB-encoded object to a file.
-func goblEncodeToFile(filename string, obj <-chan *PortfolioStat) error {
+func goblEncodeToFile(t *testing.T, filename string, obj <-chan *PortfolioStat) error {
 	startAt := time.Now()
-	fmt.Println("GOBL-encoding rows to", filename)
+	Log(t, "GOBL-encoding rows to", filename)
 	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
@@ -939,7 +944,7 @@ func goblEncodeToFile(filename string, obj <-chan *PortfolioStat) error {
 			return err
 		}
 	}
-	fmt.Println("Finished writing", n, "rows in", time.Since(startAt))
+	Log(t, "Finished writing", n, "rows in", time.Since(startAt))
 	return nil
 }
 
@@ -978,18 +983,18 @@ func goblDecodeFromFile(filename string, handle func(*PortfolioStat) (shouldCont
 	return nil
 }
 
-func findBetterThanGoldenButterfly(gbStat *PortfolioStat, results []*PortfolioStat) []*PortfolioStat {
+func findBetterThanGoldenButterfly(t *testing.T, gbStat *PortfolioStat, results []*PortfolioStat) []*PortfolioStat {
 	startAt := time.Now()
-	fmt.Println("\nGoldenButterfly:", gbStat)
+	Log(t, "\nGoldenButterfly:", gbStat)
 	// find as good or better than GoldenButterfly
 	betterThanGB := CopyAll(FindMany(results, AsGoodOrBetterThan(gbStat)))
-	fmt.Println("As good or better than GoldenButterfly:", len(betterThanGB), "found in", time.Since(startAt))
+	Log(t, "As good or better than GoldenButterfly:", len(betterThanGB), "found in", time.Since(startAt))
 
 	RankPortfoliosInPlace(betterThanGB)
-	PrintBestByEachRanking(betterThanGB)
-	fmt.Println("\nAll as good or better:")
+	PrintBestByEachRanking(t, betterThanGB)
+	Log(t, "\nAll as good or better:")
 	for i, p := range betterThanGB[:min(len(betterThanGB), 5)] {
-		fmt.Println(" ", i+1, p.DiffPerformance(*gbStat))
+		Log(t, " ", i+1, p.DiffPerformance(*gbStat))
 	}
 	return betterThanGB
 }
@@ -1002,18 +1007,18 @@ func contains(slice []string, element string) bool {
 	return false
 }
 
-func PrintBestByEachRanking(results []*PortfolioStat) {
-	fmt.Println("\nBest by each ranking:")
-	fmt.Println("Best AvgReturn:", FindOne(results, func(p *PortfolioStat) bool { return p.AvgReturnRank.Ordinal == 1 }))
-	fmt.Println("Best BaselineLTReturn:", FindOne(results, func(p *PortfolioStat) bool { return p.BaselineLTReturnRank.Ordinal == 1 }))
-	fmt.Println("Best BaselineSTReturn:", FindOne(results, func(p *PortfolioStat) bool { return p.BaselineSTReturnRank.Ordinal == 1 }))
-	fmt.Println("Best PWR30:", FindOne(results, func(p *PortfolioStat) bool { return p.PWR30Rank.Ordinal == 1 }))
-	fmt.Println("Best SWR30:", FindOne(results, func(p *PortfolioStat) bool { return p.SWR30Rank.Ordinal == 1 }))
-	fmt.Println("Best StdDev:", FindOne(results, func(p *PortfolioStat) bool { return p.StdDevRank.Ordinal == 1 }))
-	fmt.Println("Best UlcerScore:", FindOne(results, func(p *PortfolioStat) bool { return p.UlcerScoreRank.Ordinal == 1 }))
-	fmt.Println("Best DeepestDrawdown:", FindOne(results, func(p *PortfolioStat) bool { return p.DeepestDrawdownRank.Ordinal == 1 }))
-	fmt.Println("Best LongestDrawdown:", FindOne(results, func(p *PortfolioStat) bool { return p.LongestDrawdownRank.Ordinal == 1 }))
-	fmt.Println("Best StartDateSensitivity:", FindOne(results, func(p *PortfolioStat) bool { return p.StartDateSensitivityRank.Ordinal == 1 }))
+func PrintBestByEachRanking(t *testing.T, results []*PortfolioStat) {
+	Log(t, "\nBest by each ranking:")
+	Log(t, "Best AvgReturn:", FindOne(results, func(p *PortfolioStat) bool { return p.AvgReturnRank.Ordinal == 1 }))
+	Log(t, "Best BaselineLTReturn:", FindOne(results, func(p *PortfolioStat) bool { return p.BaselineLTReturnRank.Ordinal == 1 }))
+	Log(t, "Best BaselineSTReturn:", FindOne(results, func(p *PortfolioStat) bool { return p.BaselineSTReturnRank.Ordinal == 1 }))
+	Log(t, "Best PWR30:", FindOne(results, func(p *PortfolioStat) bool { return p.PWR30Rank.Ordinal == 1 }))
+	Log(t, "Best SWR30:", FindOne(results, func(p *PortfolioStat) bool { return p.SWR30Rank.Ordinal == 1 }))
+	Log(t, "Best StdDev:", FindOne(results, func(p *PortfolioStat) bool { return p.StdDevRank.Ordinal == 1 }))
+	Log(t, "Best UlcerScore:", FindOne(results, func(p *PortfolioStat) bool { return p.UlcerScoreRank.Ordinal == 1 }))
+	Log(t, "Best DeepestDrawdown:", FindOne(results, func(p *PortfolioStat) bool { return p.DeepestDrawdownRank.Ordinal == 1 }))
+	Log(t, "Best LongestDrawdown:", FindOne(results, func(p *PortfolioStat) bool { return p.LongestDrawdownRank.Ordinal == 1 }))
+	Log(t, "Best StartDateSensitivity:", FindOne(results, func(p *PortfolioStat) bool { return p.StartDateSensitivityRank.Ordinal == 1 }))
 }
 
 func approxEqual(x, y, tolerance float64) bool {

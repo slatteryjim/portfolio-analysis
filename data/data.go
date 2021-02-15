@@ -62,7 +62,7 @@ var _seriesByName map[string]Series
 
 func init() {
 	var err error
-	_seriesByName, err = parseSimbaTSV(simbaBacktestingSpreadsheetRev19bTSV)
+	_seriesByName, err = parseSimbaTSV(simbaBacktestingSpreadsheetRev20aTSV)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -71,19 +71,27 @@ func init() {
 // parseSimbaTSV parses TSV content from the Simba Backtesting Spreadsheet,
 // and returns a map of the series identified by name.
 func parseSimbaTSV(tsv string) (map[string]Series, error) {
+	const (
+		expectedLastYear = 2020
+	)
+	normalizeNames := map[string]string{
+		"TSM (US)": "TSM",
+		"TBM (US)": "TBM",
+	}
+
 	reader := csv.NewReader(strings.NewReader(tsv))
 	reader.Comma = '\t'
 	records, err := reader.ReadAll()
 	if err != nil {
 		return nil, err
 	}
-	if len(records) != 151 {
-		return nil, fmt.Errorf("unexpected records length)")
+	if len(records) != 152 {
+		return nil, fmt.Errorf("unexpected records length: %d", len(records))
 	}
 
 	rows := transpose(records)
-	if len(rows) != 80 {
-		return nil, fmt.Errorf("unexpected records length")
+	if len(rows) != 78 {
+		return nil, fmt.Errorf("unexpected rows length: %d", len(rows))
 	}
 	// for _, s := range rows {
 	// 	fmt.Println(s)
@@ -108,7 +116,7 @@ func parseSimbaTSV(tsv string) (map[string]Series, error) {
 	if firstYear := yearNumbers[0]; firstYear != 1871 {
 		return nil, fmt.Errorf("unexpected first year: %d", firstYear)
 	}
-	if lastYear := yearNumbers[len(yearNumbers)-1]; lastYear != 2019 {
+	if lastYear := yearNumbers[len(yearNumbers)-1]; lastYear != expectedLastYear {
 		return nil, fmt.Errorf("unexpected last year: %d", lastYear)
 	}
 
@@ -128,6 +136,9 @@ func parseSimbaTSV(tsv string) (map[string]Series, error) {
 		)
 		if name == "" || symbol == "" {
 			return nil, fmt.Errorf("name or symbol should not be empty in row #%d", i+1)
+		}
+		if newName, ok := normalizeNames[name]; ok {
+			name = newName
 		}
 		var (
 			annualReturns []Percent
@@ -158,7 +169,7 @@ func parseSimbaTSV(tsv string) (map[string]Series, error) {
 		if firstYear == nil {
 			return nil, fmt.Errorf("row #%d: firstYear should not be nil", i+1)
 		}
-		if lastYear != 2019 {
+		if lastYear != expectedLastYear {
 			return nil, fmt.Errorf("row #%d: all rows should have data up to the same year", i+1)
 		}
 		if len(annualReturns) < 35 {

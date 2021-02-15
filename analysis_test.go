@@ -654,21 +654,21 @@ func Test_rebalanceFactor_effect(t *testing.T) {
 	RankPortfoliosInPlace(results)
 
 	gbStat := FindOne(results, func(p *PortfolioStat) bool { return math.Abs(p.RebalanceFactor-1.0) < 0.00001 })
-	fmt.Println("RebalanceFactor=1:", gbStat)
+	Log(t, "RebalanceFactor=1:", gbStat)
 
-	fmt.Println("Best combined overall ranks:")
-	fmt.Println("#1:", results[0])
-	fmt.Println("#2:", results[1])
-	fmt.Println("#3:", results[2])
+	Log(t, "Best combined overall ranks:")
+	Log(t, "#1:", results[0])
+	Log(t, "#2:", results[1])
+	Log(t, "#3:", results[2])
 
-	fmt.Println("\nBest by each ranking:")
-	PrintBestByEachRanking(results)
+	Log(t, "\nBest by each ranking:")
+	PrintBestByEachRanking(t, results)
 
 	// find as good or better than GoldenButterfly
 	betterThanGB := CopyAll(FindMany(results, AsGoodOrBetterThan(gbStat)))
 	RankPortfoliosInPlace(betterThanGB)
-	fmt.Println("As good or better than GoldenButterfly:", len(betterThanGB))
-	PrintBestByEachRanking(betterThanGB)
+	Log(t, "As good or better than GoldenButterfly:", len(betterThanGB))
+	PrintBestByEachRanking(t, betterThanGB)
 }
 
 func TestTSMPerformance(t *testing.T) {

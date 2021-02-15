@@ -1,16 +1,16 @@
 portfolio8way:
 
 10-year PWRs:
-     min: 3.538708145622%
-     avg: 5.190623930554%
-  stdDev:  0.95071328848%
+     min: 3.536550845398%
+     avg: 5.221501883986%
+  stdDev: 1.028771335563%
 
 30-year PWRs:
-     min: 4.967890424538%
-     avg: 5.731181704844%
-  stdDev: 0.856546063188%
+     min: 5.057475062493%
+     avg: 5.888955428065%
+  stdDev: 0.843857476771%
 
-10-year PWR slope: -7.957544231712%
-30-year PWR slope: -41.075561102112%
+10-year PWR slope: -8.953397339966%
+30-year PWR slope: -26.663938862263%
 
-Overall portfolio slope: -20.379613050626%
+Overall portfolio slope: -20.202787906132%
