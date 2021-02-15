@@ -106,8 +106,18 @@ var (
 	combinationsTSM = []Combination{{Assets: []string{"TSM"}, Percentages: []Percent{1}}}
 )
 
+func portfolioReturns8Way() []Percent {
+	// 8 asset portfolio with no GoldenButterfly assets and no bonds other than very short & secure
+	portfolio8way, err := portfolioReturns(
+		data.PortfolioReturnsList(ParseAssets(`|ST Invest. Grade|Int'l Small|T-Bill|Wellesley|TIPS|REIT|LT STRIPS|Wellington|`)...),
+		equalWeightAllocations(8))
+	if err != nil {
+		panic(err)
+	}
+	return portfolio8way
+}
+
 func TestExtraPWRMetrics(t *testing.T) {
-	g := NewGomegaWithT(t)
 	statsReport := func(name string, returns []Percent) string {
 		pwrs10 := allPWRs(returns, 10)
 		pwrs30 := allPWRs(returns, 30)
@@ -133,109 +143,53 @@ func TestExtraPWRMetrics(t *testing.T) {
 		return sb.String()
 	}
 
-	// 8 asset portfolio with no GoldenButterfly assets and no bonds other than very short & secure
-	portfolio8way, err := portfolioReturns(
-		data.PortfolioReturnsList(ParseAssets(`|ST Invest. Grade|Int'l Small|T-Bill|Wellesley|TIPS|REIT|LT STRIPS|Wellington|`)...),
-		equalWeightAllocations(8))
-	g.Expect(err).To(Succeed())
-
 	t.Run("GoldenButterfly", func(t *testing.T) {
-		ExpectMatchesGoldenFile(t, statsReport(t.Name(), GoldenButterfly))
+		ExpectMatchesGoldenFile(t,
+			statsReport("GoldenButterfly", GoldenButterfly))
 	})
 	t.Run("portfolio8way", func(t *testing.T) {
-		ExpectMatchesGoldenFile(t, statsReport(t.Name(), portfolio8way))
+		ExpectMatchesGoldenFile(t,
+			statsReport("portfolio8way", portfolioReturns8Way()))
 	})
+}
+
+func TestSampleGraphs(t *testing.T) {
+	plot := func(name string, data []Percent) string {
+		opts := []asciigraph.Option{
+			asciigraph.Height(10),
+			asciigraph.Width(len(data) * 2),
+		}
+		return fmt.Sprintf("%s:\n", name) +
+			asciigraph.Plot(Floats(data...), opts...) +
+			"\n\n"
+	}
 
 	t.Run("GoldenButterfly", func(t *testing.T) {
 		t.Run("basic components", func(t *testing.T) {
-			ExpectPlot(t, GoldenButterfly, `
-  0.24 ┤         ╭╮ ╭╮                                     
-  0.11 ┼ ╭─╮ ╭─╮ ││ │╰╮╭─╮ ╭╮╭╮╭╮╭╮╭╮    ╭╮ ╭╮ ╭─╮╭╮╭╮╭─╮╭ 
- -0.02 ┤╭╯ ╰─╯ ╰─╯╰╮│ ╰╯ ╰─╯││╰╯╰╯╰╯╰────╯╰─╯╰╮│ ╰╯╰╯╰╯ ╰╯ 
- -0.15 ┼╯          ╰╯       ╰╯                ╰╯           `)
-			ExpectPlot(t, TSM, `
-  0.32 ┤     ╭╮              ╭╮  ╭╮      ╭╮        ╭╮      
-  0.21 ┤     │╰╮  ╭╮ ╭╮╭╮  ╭╮││  ││╭──╮  ││    ╭╮  ││  ╭╮╭ 
-  0.09 ┤ ╭─╮ │ │ ╭╯│╭╯││╰╮╭╯││╰─╮│╰╯  │  │╰╮╭╮ │╰╮╭╯╰╮╭╯││ 
- -0.02 ┼╭╯ │ │ │╭╯ ││ ╰╯ ╰╯ ││  ╰╯    │  │ ╰╯╰╮│ ╰╯  ╰╯ ││ 
- -0.14 ┼╯  │ │ ╰╯  ╰╯       ╰╯        ╰─╮│    ││        ╰╯ 
- -0.25 ┤   ╰╮│                          ╰╯    ││           
- -0.37 ┤    ╰╯                                ╰╯            `)
-			ExpectPlot(t, SCV, `
-  0.45 ┤     ╭─╮                                           
-  0.34 ┤     │ │     ╭╮      ╭╮    ╭╮    ╭╮        ╭╮      
-  0.23 ┤     │ │ ╭╮ ╭╯│╭╮ ╭╮ │╰─╮╭─╯│ ╭╮ │╰╮   ╭─╮╭╯│ ╭╮ ╭ 
-  0.12 ┼ ╭╮  │ ╰─╯╰╮│ ││╰╮│╰╮│  ││  │ │╰╮│ │╭╮ │ ││ ╰╮│╰╮│ 
-  0.01 ┤╭╯╰╮ │     ╰╯ ╰╯ ││ ││  ╰╯  │╭╯ ││ ╰╯│ │ ││  ╰╯ ││ 
- -0.10 ┤│  │ │           ╰╯ ││      ╰╯  ╰╯   ╰╮│ ╰╯     ╰╯ 
- -0.21 ┼╯  │ │              ╰╯                ││           
- -0.32 ┤   ╰─╯                                ╰╯            `)
-			ExpectPlot(t, LTT, `
-  0.36 ┤            ╭╮                                     
-  0.26 ┼            ││ ╭╮        ╭╮                        
-  0.16 ┤            ││ │╰╮       ││   ╭╮      ╭╮ ╭╮ ╭╮     
-  0.05 ┤╭─╮   ╭╮    ││╭╯ │ ╭╮╭╮╭╮││╭─╮││╭╮   ╭╯│╭╯│ ││ ╭╮╭ 
- -0.05 ┤│ │  ╭╯│    │╰╯  │╭╯╰╯╰╯││╰╯ ││╰╯╰───╯ ││ ╰╮│╰─╯╰╯ 
- -0.15 ┼╯ ╰──╯ ╰────╯    ╰╯     ╰╯   ╰╯        ╰╯  ╰╯        `)
-			ExpectPlot(t, STT, `
-  0.17 ┼            ╭╮                                     
-  0.06 ┤╭╮          ││╭──╮ ╭╮╭╮  ╭╮    ╭╮     ╭╮           
- -0.05 ┼╯╰──────────╯╰╯  ╰─╯╰╯╰──╯╰────╯╰─────╯╰────────── `)
-			ExpectPlot(t, GLD, `
-  0.97 ┤                   ╭╮                                                                                 
-  0.84 ┤                   ││                                                                                 
-  0.71 ┤                   │╰╮                                                                                
-  0.58 ┼      ╭───╮       ╭╯ │                                                                                
-  0.45 ┤     ╭╯   │       │  │                                                                                
-  0.32 ┤    ╭╯    │      ╭╯  │                                            ╭─╮     ╭──╮  ╭──╮                  
-  0.19 ┤   ╭╯     ╰╮   ╭─╯   ╰╮         ╭────╮         ╭─╮               ╭╯ ╰─╮╭──╯  ╰──╯  ╰╮         ╭──╮  ╭ 
-  0.06 ┤ ╭─╯       │  ╭╯      │  ╭─╮   ╭╯    │        ╭╯ ╰────╮   ╭──╮ ╭─╯    ╰╯            ╰──╮  ╭╮ ╭╯  ╰──╯ 
- -0.07 ┤╭╯         │ ╭╯       ╰╮ │ ╰╮ ╭╯     ╰────────╯       ╰───╯  ╰─╯                       ╰╮╭╯╰─╯        
- -0.20 ┼╯          ╰─╯         │╭╯  ╰─╯                                                         ╰╯            
- -0.33 ┤                       ╰╯
-`,
-				asciigraph.Height(10), asciigraph.Width(len(GLD)*2))
+			var sb strings.Builder
+			sb.WriteString(plot("GoldenButterfly", GoldenButterfly))
+			sb.WriteString(plot("TSM", TSM))
+			sb.WriteString(plot("SCV", SCV))
+			sb.WriteString(plot("LTT", LTT))
+			sb.WriteString(plot("STT", STT))
+			sb.WriteString(plot("GLD", GLD))
+			ExpectMatchesGoldenFile(t, sb.String())
 		})
-
-		ExpectPlot(t, allPWRs(GoldenButterfly, 10), `
- 0.070 ┤         ╭╮ ╭╮                            
- 0.060 ┤     ╭───╯│ ││╭─╮    ╭╮  ╭╮      ╭╮       
- 0.050 ┤╭─╮ ╭╯    ╰╮│╰╯ ╰╮╭──╯╰──╯╰─╮  ╭─╯╰──╮╭── 
- 0.040 ┤│ ╰─╯      ╰╯    ╰╯         ╰╮╭╯     ╰╯   
- 0.030 ┤│                            ╰╯           
- 0.019 ┼╯                                         
-`)
-		ExpectPlot(t, allPWRs(GoldenButterfly, 20), `
- 0.067 ┤         ╭╮ ╭╮                  
- 0.053 ┤╭──╮╭────╯╰─╯╰───╮╭─╮╭──────╮   
- 0.039 ┼╯  ╰╯            ╰╯ ╰╯      ╰──
-`)
-		ExpectPlot(t, allPWRs(GoldenButterfly, 30), `
- 0.066 ┤            ╭╮        
- 0.054 ┤╭─╮ ╭─────╮╭╯╰──╮     
- 0.042 ┼╯ ╰─╯     ╰╯    ╰────
-`)
+		t.Run("PWRs", func(t *testing.T) {
+			var sb strings.Builder
+			sb.WriteString(plot("GoldenButterfly 10-year PWRs", allPWRs(GoldenButterfly, 10)))
+			sb.WriteString(plot("GoldenButterfly 20-year PWRs", allPWRs(GoldenButterfly, 20)))
+			sb.WriteString(plot("GoldenButterfly 30-year PWRs", allPWRs(GoldenButterfly, 30)))
+			ExpectMatchesGoldenFile(t, sb.String())
+		})
 	})
-
-	t.Run("8-way", func(t *testing.T) {
-		ExpectPlot(t, allPWRs(portfolio8way, 10), `
- 0.080 ┼╮                         
- 0.069 ┤╰╮   ╭╮  ╭╮               
- 0.058 ┤ │╭─╮│╰─╮│╰─╮   ╭─╮       
- 0.047 ┤ ╰╯ ╰╯  ╰╯  ╰╮╭─╯ ╰──╮╭── 
- 0.035 ┤             ╰╯      ╰╯
-`)
-		ExpectPlot(t, allPWRs(portfolio8way, 20), `
- 0.079 ┼╮               
- 0.067 ┤╰╮              
- 0.056 ┤ ╰──╮╭────╮   ╭ 
- 0.045 ┤    ╰╯    ╰───╯
-`)
-		ExpectPlot(t, allPWRs(portfolio8way, 30), `
- 0.074 ┼╮     
- 0.062 ┤╰╮╭╮  
- 0.050 ┤ ╰╯╰─
-`)
+	t.Run("8-way PWRs", func(t *testing.T) {
+		portfolio8way := portfolioReturns8Way()
+		var sb strings.Builder
+		sb.WriteString(plot("8-WayPortfolio 10-year PWRs", allPWRs(portfolio8way, 10)))
+		sb.WriteString(plot("8-WayPortfolio 20-year PWRs", allPWRs(portfolio8way, 20)))
+		sb.WriteString(plot("8-WayPortfolio 30-year PWRs", allPWRs(portfolio8way, 30)))
+		ExpectMatchesGoldenFile(t, sb.String())
 	})
 }
 

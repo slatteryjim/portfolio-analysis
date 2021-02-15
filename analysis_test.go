@@ -421,13 +421,20 @@ func Test_cagr(t *testing.T) {
 	}
 	g.Expect(cagr(ReadablePercents(5, 5, 5, 5, 5))).To(Equal(Percent(0.050000000000000044)))
 
-	g.Expect(cagr(TSM)).To(Equal(Percent(0.05924856139463475)))
-	g.Expect(cagr(SCV)).To(Equal(Percent(0.07363869666341749)))
-	g.Expect(cagr(LTT)).To(Equal(Percent(0.036995981175477866)))
-	g.Expect(cagr(STT)).To(Equal(Percent(0.01821005315305091)))
-	g.Expect(cagr(STB)).To(Equal(Percent(0.02224589590692516)))
-	g.Expect(cagr(GLD)).To(Equal(Percent(0.029261555900620406)))
-	g.Expect(cagr(GoldenButterfly)).To(Equal(Percent(0.053522786534198286)))
+	t.Run("example series", func(t *testing.T) {
+		reportLine := func(name string, returns []Percent) string {
+			return fmt.Sprintf("%s CAGR: %14v\n", name, cagr(returns))
+		}
+		var sb strings.Builder
+		sb.WriteString(reportLine("TSM", TSM))
+		sb.WriteString(reportLine("SCV", SCV))
+		sb.WriteString(reportLine("LTT", LTT))
+		sb.WriteString(reportLine("STT", STT))
+		sb.WriteString(reportLine("STB", STB))
+		sb.WriteString(reportLine("GLD", GLD))
+		sb.WriteString(reportLine("GoldenButterfly", GoldenButterfly))
+		ExpectMatchesGoldenFile(t, sb.String())
+	})
 }
 
 func Test_average(t *testing.T) {
@@ -582,13 +589,21 @@ func Test_standardDeviation(t *testing.T) {
 		g.Expect(standardDeviation([]Percent{1, -2, 3, -4})).To(Equal(Percent(2.692582403567252)))
 	})
 
-	g.Expect(standardDeviation(TSM)).To(Equal(ReadablePercent(17.165466213991304)))
-	g.Expect(standardDeviation(SCV)).To(Equal(ReadablePercent(19.3942212424017)))
-	g.Expect(standardDeviation(LTT)).To(Equal(Percent(0.12326313856389255)))
-	g.Expect(standardDeviation(STT)).To(Equal(Percent(0.043862677714401194)))
-	g.Expect(standardDeviation(STB)).To(Equal(Percent(0.04824512942467834)))
-	g.Expect(standardDeviation(GLD)).To(Equal(ReadablePercent(23.857120994357875)))
-	g.Expect(standardDeviation(GoldenButterfly)).To(Equal(Percent(0.08102969356581732)))
+	t.Run("example data", func(t *testing.T) {
+		var sb strings.Builder
+		reportLine := func(name string, returns []Percent) string {
+			return fmt.Sprintf("%s standardDeviation: %16v\n", name, standardDeviation(returns))
+		}
+		sb.WriteString(reportLine("TSM", TSM))
+		sb.WriteString(reportLine("SCV", SCV))
+		sb.WriteString(reportLine("GLD", GLD))
+		sb.WriteString(reportLine("LTT", LTT))
+		sb.WriteString(reportLine("STT", STT))
+		sb.WriteString(reportLine("STB", STB))
+		sb.WriteString("\n")
+		sb.WriteString(reportLine("GoldenButterfly", GoldenButterfly))
+		ExpectMatchesGoldenFile(t, sb.String())
+	})
 }
 
 func Test_readablePercent(t *testing.T) {
@@ -677,7 +692,7 @@ func Test_allPWRs(t *testing.T) {
 	plot := func(name string, returns []Percent, nYears int) string {
 		data := allPWRs(returns, nYears)
 		return fmt.Sprintf("%s, %d-year PWR's:\n", name, nYears) +
-			" " + strings.TrimSpace(asciigraph.Plot(Floats(data...))) +
+			asciigraph.Plot(Floats(data...)) +
 			"\n\n"
 	}
 
@@ -705,21 +720,6 @@ func Test_allPWRs(t *testing.T) {
 	})
 }
 
-// TODO: remove? fully replace with Golden file tests
-func ExpectPlot(t testing.TB, data []Percent, expectedResult string, options ...asciigraph.Option) {
-	t.Helper()
-	plot := " " + strings.TrimSpace(asciigraph.Plot(Floats(data...), options...))
-	expectedResult = " " + strings.TrimSpace(expectedResult)
-
-	if plot != expectedResult {
-		fmt.Println("Got:")
-		fmt.Println(plot)
-		fmt.Println("Expected:")
-		fmt.Println(expectedResult)
-		t.Fatal("Plot didn't match")
-	}
-}
-
 func Test_slope(t *testing.T) {
 	// 1.00 slope (100%)
 	ExpectRoughPercent(t, slope(ReadablePercents(1, 2, 3, 4)), 100)
@@ -732,12 +732,20 @@ func Test_slope(t *testing.T) {
 	ExpectRoughPercent(t, slope(ReadablePercents(-1, -2, -3, -4)), -100)
 	ExpectRoughPercent(t, slope(ReadablePercents(-1, -1.5, -2, -2.5, -3, -3.5, -4)), -50)
 
-	ExpectRoughPercent(t, slope(GoldenButterfly), 3.803)
-	ExpectRoughPercent(t, slope(TSM), 17.882)
-	ExpectRoughPercent(t, slope(SCV), 9.512)
-	ExpectRoughPercent(t, slope(GLD), -17.286)
-	ExpectRoughPercent(t, slope(STT), -3.499)
-	ExpectRoughPercent(t, slope(LTT), 12.408)
+	t.Run("example series", func(t *testing.T) {
+		reportLine := func(name string, returns []Percent) string {
+			return fmt.Sprintf("%s slope: %17v\n", name, slope(returns))
+		}
+		var sb strings.Builder
+		sb.WriteString(reportLine("GoldenButterfly", GoldenButterfly))
+		sb.WriteString(reportLine("TSM", TSM))
+		sb.WriteString(reportLine("SCV", SCV))
+		sb.WriteString(reportLine("LTT", LTT))
+		sb.WriteString(reportLine("STT", STT))
+		sb.WriteString(reportLine("STB", STB))
+		sb.WriteString(reportLine("GLD", GLD))
+		ExpectMatchesGoldenFile(t, sb.String())
+	})
 }
 
 func ExpectRoughPercent(t testing.TB, got Percent, expected Percent, note ...interface{}) {
