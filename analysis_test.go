@@ -151,7 +151,7 @@ func TestPortfolioTradingSimulation(t *testing.T) {
 	t.Run("rebalanceFactor = 4.00 -- too extreme, panic as allocation goes below zero", func(t *testing.T) {
 		g := NewGomegaWithT(t)
 		g.Expect(func() {
-			PortfolioTradingSimulation(assets, targetAllocations, 4.0)
+			_, _ = PortfolioTradingSimulation(assets, targetAllocations, 4.0)
 		}).To(Panic()) //
 	})
 }
@@ -690,9 +690,9 @@ func TestTSMPerformance(t *testing.T) {
 func Test_allPWRs(t *testing.T) {
 
 	plot := func(name string, returns []Percent, nYears int) string {
-		data := allPWRs(returns, nYears)
+		points := allPWRs(returns, nYears)
 		return fmt.Sprintf("%s, %d-year PWR's:\n", name, nYears) +
-			asciigraph.Plot(Floats(data...)) +
+			asciigraph.Plot(Floats(points...)) +
 			"\n\n"
 	}
 

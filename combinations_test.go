@@ -178,8 +178,13 @@ func TestPortfolioCombinations_GoldenButterflyAssets(t *testing.T) {
 }
 
 func Log(t *testing.T, content ...interface{}) {
-	//fmt.Println(content...)
+	// fmt.Println(content...)
 	t.Log(content...)
+}
+
+func Logf(t *testing.T, format string, content ...interface{}) {
+	// fmt.Printf(format, content...)
+	t.Logf(format, content...)
 }
 
 func TestPortfolioCombinations_AnythingBetterThanGoldenButterfly(t *testing.T) {
@@ -199,9 +204,9 @@ func TestPortfolioCombinations_AnythingBetterThanGoldenButterfly(t *testing.T) {
 	RankPortfoliosInPlace(results)
 
 	// print best:
-	fmt.Println("Best combined overall ranks:")
+	Log(t, "Best combined overall ranks:")
 	for i := 0; i < 10; i++ {
-		fmt.Printf("#%d: %s\n", i+1, results[i])
+		Logf(t, "#%d: %s\n", i+1, results[i])
 	}
 
 	PrintBestByEachRanking(t, results)
@@ -263,7 +268,15 @@ func TestPortfolioCombinations_AnythingBetterThanGoldenButterfly(t *testing.T) {
 //    4 [Health Care Gold STB Value Factor LTT] [20% 20% 20% 20% 20%] (5) RF:0.00 AvgReturn:1.826%(772) BLT:1.068%(0) BST:1.239%(0) PWR:1.846%(1160) SWR:1.826%(1366) StdDev:-1.086%(1051) Ulcer:-3.0(166) DeepestDrawdown:11.14%(186) LongestDrawdown:-2(1), StartDateSensitivity:-3.49%(853)
 //   Finished GB analysis in 147.352553ms
 //   --- PASS: TestAllKAssetPortfolios (103.94s)
-func TestAllKAssetPortfolios(t *testing.T) {
+//
+//
+// 2021-02-15: In 2020, this function was used to generate ".gob.gz" files of 'k' combinations of assets.
+//   Later, I added code to further filter and gather that content into SQLite files.
+//   The SQLite files could then be queried by an IPython Notebook to generate various graphs/scatterplots.
+//
+//   Now in 2021, since we have new data to process, I'm going to setup a new workflow to generate content directly
+//   to SQLite files.
+func TestAllKAssetPortfolios__Deprecated(t *testing.T) {
 	t.Skip("Run manually")
 	var (
 		goblFileBetterThanGB = func(k int) string {
