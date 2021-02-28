@@ -163,7 +163,7 @@ func (p PortfolioStat) Clone() *PortfolioStat {
 
 func (p PortfolioStat) MustReturns() []Percent {
 	assetReturns := data.PortfolioReturnsList(p.Assets...)
-	returns, err := portfolioReturns(assetReturns, p.Percentages)
+	returns, err := PortfolioReturns(assetReturns, p.Percentages)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -235,7 +235,7 @@ func evaluatePortfolios(perms []Combination, assetMap map[string][]Percent) ([]*
 				returnsList = append(returnsList, returns)
 			}
 		}
-		portfolioReturns, err := portfolioReturns(returnsList, p.Percentages)
+		portfolioReturns, err := PortfolioReturns(returnsList, p.Percentages)
 		if err != nil {
 			return nil, fmt.Errorf("perm #%d, error calculating portfolio returns for %+v: %w", i+1, p, err)
 		}
@@ -264,11 +264,11 @@ func evaluatePortfolio(portfolioReturns []Percent, p Combination) *PortfolioStat
 	}
 }
 
-// evaluatePortfolioIfAsGoodOrBetterThan evaluates the given portfolioReturns and returns
+// EvaluatePortfolioIfAsGoodOrBetterThan evaluates the given portfolioReturns and returns
 // a non-nil PortfolioStat only if the performance metrics are all as good or better than the given
 // otherStat porformance.
 // It can return early if any of the metrics aren't as good.
-func evaluatePortfolioIfAsGoodOrBetterThan(portfolioReturns []Percent, p Combination, other *PortfolioStat) *PortfolioStat {
+func EvaluatePortfolioIfAsGoodOrBetterThan(portfolioReturns []Percent, p Combination, other *PortfolioStat) *PortfolioStat {
 	avgReturn := average(portfolioReturns)
 	if avgReturn < other.AvgReturn {
 		return nil

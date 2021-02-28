@@ -17,10 +17,10 @@ import (
 func Test_portfolioReturns(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	// portfolioReturns and PortfolioTradingSimulation should always return identical results, for rebalanceFactor=1
+	// PortfolioReturns and PortfolioTradingSimulation should always return identical results, for rebalanceFactor=1
 	portfolioReturnsProxy := func(returnsList [][]Percent, targetAllocations []Percent) ([]Percent, error) {
 		t.Helper()
-		a, errA := portfolioReturns(returnsList, targetAllocations)
+		a, errA := PortfolioReturns(returnsList, targetAllocations)
 		b, errB := PortfolioTradingSimulation(returnsList, targetAllocations, 1)
 		g.Expect(len(a)).To(Equal(len(b)), "returns length")
 		for i := range a {
@@ -125,8 +125,8 @@ func TestPortfolioTradingSimulation(t *testing.T) {
 		g.Expect(PortfolioTradingSimulation(assets, targetAllocations, 1)).To(Equal(
 			[]Percent{firstReturn, 0.09999999999999987, 0.10000000000000009},
 		))
-		// just a sanity check, this matches portfolioReturns, minus some float weirdness
-		g.Expect(portfolioReturns(assets, targetAllocations)).To(Equal(
+		// just a sanity check, this matches PortfolioReturns, minus some float weirdness
+		g.Expect(PortfolioReturns(assets, targetAllocations)).To(Equal(
 			[]Percent{0.1, 0.1, 0.1},
 		))
 	})
@@ -707,7 +707,7 @@ func Test_allPWRs(t *testing.T) {
 	t.Run("8-way", func(t *testing.T) {
 		g := NewGomegaWithT(t)
 
-		allReturns, err := portfolioReturns(
+		allReturns, err := PortfolioReturns(
 			data.PortfolioReturnsList(ParseAssets(`|ST Invest. Grade|Int'l Small|T-Bill|Wellesley|TIPS|REIT|LT STRIPS|Wellington|`)...),
 			equalWeightAllocations(8))
 		g.Expect(err).To(Succeed())

@@ -19,13 +19,14 @@ var (
 	STB = data.MustFind("STB").AnnualReturnsStartingIn(1969)
 	GLD = data.MustFind("Gold").AnnualReturnsStartingIn(1969)
 
-	GoldenButterfly, _ = portfolioReturns([][]Percent{TSM, SCV, LTT, STT, GLD}, ReadablePercents(20, 20, 20, 20, 20))
+	GoldenButterfly, _ = PortfolioReturns([][]Percent{TSM, SCV, LTT, STT, GLD}, ReadablePercents(20, 20, 20, 20, 20))
 )
 
-// take a list of multiple asset returns, and the percentage to rebalance each year. Returns the resultant set of returns.
+// PortfolioReturns takes a list of multiple asset returns, and the percentage to rebalance each year.
+// Returns the resultant set of returns.
 // Example:
 //     portfolio_returns([TSM, ITB], [60, 40])
-func portfolioReturns(returnsList [][]Percent, targetAllocations []Percent) ([]Percent, error) {
+func PortfolioReturns(returnsList [][]Percent, targetAllocations []Percent) ([]Percent, error) {
 	if math.Abs(sum(targetAllocations).Float()-1.00) > 0.00000000000001 {
 		return nil, fmt.Errorf("targetAllocations must sum to 100%%, got %v", sum(targetAllocations))
 	}

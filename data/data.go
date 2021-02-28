@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"math"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -25,6 +26,7 @@ func Names() []string {
 	for k := range _seriesByName {
 		res = append(res, k)
 	}
+	sort.Strings(res)
 	return res
 }
 

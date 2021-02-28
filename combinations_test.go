@@ -320,7 +320,7 @@ func TestAllKAssetPortfolios__Deprecated(t *testing.T) {
 			for _, a := range []string{"TSM", "SCV", "Gold", "LTT", "STT"} {
 				gbAssets[a] = true
 			}
-			gbStat := mustGoldenButterflyStat()
+			gbStat := MustGoldenButterflyStat()
 
 			GoEvaluateAndFindBetterThanGB := func(assetCombinationBatches <-chan [][]string) <-chan *PortfolioStat {
 				out := make(chan *PortfolioStat, 10)
@@ -329,17 +329,17 @@ func TestAllKAssetPortfolios__Deprecated(t *testing.T) {
 					for batch := range assetCombinationBatches {
 						for _, assets := range batch {
 							returnsList := data.PortfolioReturnsList(assets...)
-							returns, err := portfolioReturns(returnsList, targetAllocations)
+							returns, err := PortfolioReturns(returnsList, targetAllocations)
 							if err != nil {
 								panic(err.Error())
 							}
 							combination := Combination{Assets: assets, Percentages: targetAllocations}
-							statIfBetter := evaluatePortfolioIfAsGoodOrBetterThan(returns, combination, gbStat)
+							statIfBetter := EvaluatePortfolioIfAsGoodOrBetterThan(returns, combination, gbStat)
 							if statIfBetter != nil {
 								out <- statIfBetter
 							}
 							// check if these are GB assets
-							if consistsOf(assets, gbAssets) {
+							if ConsistsOf(assets, gbAssets) {
 								fmt.Println("Seen GB assets!", assets, "StatIfBetter:", statIfBetter)
 							}
 						}
@@ -401,7 +401,7 @@ func TestAllKAssetPortfolios__Deprecated(t *testing.T) {
 
 		fmt.Println(len(betterThanGB), "portfolios better than GoldenButterfly")
 
-		gbStat := mustGoldenButterflyStat()
+		gbStat := MustGoldenButterflyStat()
 		fmt.Println("GoldenButterfly: ", gbStat)
 
 		// fmt.Println("\nAll as good or better:")
@@ -611,7 +611,7 @@ func TestAllKAssetPortfolios__Deprecated(t *testing.T) {
 				g.Expect(err).To(Succeed())
 				for stat := range items {
 					returnsList := data.PortfolioReturnsList(stat.Assets...)
-					returns, err := portfolioReturns(returnsList, stat.Percentages)
+					returns, err := PortfolioReturns(returnsList, stat.Percentages)
 					minPWR10, _ := minPWR(returns, 10)
 					pwrs10 := allPWRs(returns, 10)
 					pwrs30 := allPWRs(returns, 30)
@@ -686,7 +686,7 @@ func TestAllKAssetPortfolios__Deprecated(t *testing.T) {
 					return val
 				}
 
-				gbStat    = mustGoldenButterflyStat()
+				gbStat    = MustGoldenButterflyStat()
 				gbReturns = gbStat.MustReturns()
 				gbPWR3    = minPWRn(gbReturns, 3)
 				gbPWR10   = minPWRn(gbReturns, 10)
@@ -719,18 +719,6 @@ func TestAllKAssetPortfolios__Deprecated(t *testing.T) {
 			fmt.Printf("BetterByMetricsCounts: %v\n", betterByNMetricsCounts)
 		})
 	})
-}
-
-func consistsOf(assets []string, expectedAssets map[string]bool) bool {
-	if len(assets) != len(expectedAssets) {
-		return false
-	}
-	for _, asset := range assets {
-		if !expectedAssets[asset] {
-			return false
-		}
-	}
-	return true
 }
 
 func CountBetterMetrics(stat, other *PortfolioStat) int {
@@ -766,18 +754,6 @@ func CountBetterMetrics(stat, other *PortfolioStat) int {
 		n++
 	}
 	return n
-}
-
-func mustGoldenButterflyStat() *PortfolioStat {
-	assets := []string{"LTT", "Gold", "STT", "SCV", "TSM"}
-	targetAllocations := ReadablePercents(20, 20, 20, 20, 20)
-	returnsList := data.PortfolioReturnsList(assets...)
-	returns, err := portfolioReturns(returnsList, targetAllocations)
-	if err != nil {
-		panic(err.Error())
-	}
-	stat := evaluatePortfolio(returns, Combination{Assets: assets, Percentages: targetAllocations})
-	return stat
 }
 
 // PrintMemUsage outputs the current, total and OS memory being used. As well as the number
@@ -836,7 +812,7 @@ func GoCSVEncodeToFile(rows <-chan PortfolioStat, filename string) <-chan error 
 		for row := range rows {
 			count++
 			returnsList := data.PortfolioReturnsList(row.Assets...)
-			returns, err := portfolioReturns(returnsList, row.Percentages)
+			returns, err := PortfolioReturns(returnsList, row.Percentages)
 			if err != nil {
 				return err
 			}
@@ -870,7 +846,7 @@ func TestSingle(t *testing.T) {
 	g := NewGomegaWithT(t)
 	for _, name := range data.Names() {
 		series := data.MustFind(name)
-		returns, err := portfolioReturns([][]Percent{series.AnnualReturns}, []Percent{1})
+		returns, err := PortfolioReturns([][]Percent{series.AnnualReturns}, []Percent{1})
 		g.Expect(err).To(Succeed())
 		stat := evaluatePortfolio(returns, Combination{
 			Assets:      []string{name},
@@ -1284,7 +1260,7 @@ func Benchmark_portfolioReturnsAltogether(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		returnsList := data.PortfolioReturnsList(assets...)
-		_, err := portfolioReturns(returnsList, targetAllocations)
+		_, err := PortfolioReturns(returnsList, targetAllocations)
 		if err != nil {
 			b.Fatal(err)
 		}

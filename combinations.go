@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/slatteryjim/portfolio-analysis/data"
 	. "github.com/slatteryjim/portfolio-analysis/types"
 )
 
@@ -189,6 +190,18 @@ func GoMerge(channels ...<-chan *PortfolioStat) <-chan *PortfolioStat {
 	return out
 }
 
+func ConsistsOf(assets []string, expectedAssets map[string]bool) bool {
+	if len(assets) != len(expectedAssets) {
+		return false
+	}
+	for _, asset := range assets {
+		if !expectedAssets[asset] {
+			return false
+		}
+	}
+	return true
+}
+
 // The following Binomial function is adapted from:
 //   https://github.com/gonum/gonum/blob/889a9573ff783c5b75e4528dbd304233c58ce0c4/stat/combin/combin.go
 
@@ -224,4 +237,16 @@ func Binomial(n, k int) int {
 		b = (n - k + i) * b / i
 	}
 	return b
+}
+
+func MustGoldenButterflyStat() *PortfolioStat {
+	assets := []string{"LTT", "Gold", "STT", "SCV", "TSM"}
+	targetAllocations := ReadablePercents(20, 20, 20, 20, 20)
+	returnsList := data.PortfolioReturnsList(assets...)
+	returns, err := PortfolioReturns(returnsList, targetAllocations)
+	if err != nil {
+		panic(err.Error())
+	}
+	stat := evaluatePortfolio(returns, Combination{Assets: assets, Percentages: targetAllocations})
+	return stat
 }

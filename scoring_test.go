@@ -108,7 +108,7 @@ var (
 
 func portfolioReturns8Way() []Percent {
 	// 8 asset portfolio with no GoldenButterfly assets and no bonds other than very short & secure
-	portfolio8way, err := portfolioReturns(
+	portfolio8way, err := PortfolioReturns(
 		data.PortfolioReturnsList(ParseAssets(`|ST Invest. Grade|Int'l Small|T-Bill|Wellesley|TIPS|REIT|LT STRIPS|Wellington|`)...),
 		equalWeightAllocations(8))
 	if err != nil {
@@ -276,7 +276,7 @@ func Benchmark_evaluatePortfolios_TSM(b *testing.B) {
 // BenchmarkPortfolioEvaluationMetrics/baselineShortTermReturn-12            999006              5614 ns/op
 // BenchmarkPortfolioEvaluationMetrics/startDateSensitivity-12               998498              5825 ns/op
 func BenchmarkPortfolioEvaluationMetrics(b *testing.B) {
-	gbReturns := mustGoldenButterflyStat().MustReturns()
+	gbReturns := MustGoldenButterflyStat().MustReturns()
 	b.Run("minPWRAndSWR30", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			minPWRAndSWR(gbReturns, 30)
