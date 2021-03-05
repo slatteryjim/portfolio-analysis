@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"sort"
 	"testing"
-	"time"
 
 	. "github.com/onsi/gomega"
 
 	pa "github.com/slatteryjim/portfolio-analysis"
 	"github.com/slatteryjim/portfolio-analysis/data"
-	. "github.com/slatteryjim/portfolio-analysis/types"
 )
 
 func TestAllKAssetPortfolios__Deprecated(t *testing.T) {
@@ -71,79 +69,39 @@ func TestAllKAssetPortfolios__Deprecated(t *testing.T) {
 		//  -- if it's better than GoldenButterfly, save it
 		//  -- writer channel writes to Sqlite file
 
+		gbStat := pa.MustGoldenButterflyStat()
+
 		// without GB and bond assets, didn't find anything for k from 5 to 13
 		//    9: Finished evaluating   4,431,613,550 portfolios in    47s  (95,249,342 portfolios per second)
 		//   10: Finished evaluating  19,499,099,620 portfolios in  2m21s (138,136,738 portfolios per second)
 		//   11: Finished evaluating  76,223,753,060 portfolios in  5m14s (242,050,925 portfolios per second)
 		//   12: Finished evaluating 266,783,135,710 portfolios in  9m55s (448,262,849 portfolios per second)
 		//   13: Finished evaluating 841,392,966,470 portfolios in 17m42s (791,867,558 portfolios per second)
-		for k := 9; k <= 13; k++ {
-			// look at all `k` combinations of assets
-			startAt := time.Now()
-			targetAllocations := make([]Percent, k)
-			for i := 0; i < k; i++ {
-				targetAllocations[i] = Percent(1.0 / float64(k))
-			}
-			nCr := pa.Binomial(len(data.Names()), k)
-			fmt.Println()
-			fmt.Println(time.Now(), "k =", k, "nCr =", nCr, "TargetAllocations", targetAllocations)
 
-			gbAssets := make(map[string]bool, 5)
-			for _, a := range []string{"TSM", "SCV", "Gold", "LTT", "STT"} {
-				gbAssets[a] = true
-			}
-			gbStat := pa.MustGoldenButterflyStat()
+		// Adding back Gold as an allowed asset
+		//    9: Finished evaluating   4,431,613,550 portfolios in   1m8s  (65,173,892 portfolios per second)
+		//   10: Finished evaluating  19,499,099,620 portfolios in   3m3s (106,841,693 portfolios per second)
+		//   11: Finished evaluating  76,223,753,060 portfolios in  7m56s (160,193,944 portfolios per second)
 
-			GoEvaluateAndFindBetterThanGB := func(assetCombinationBatches <-chan [][]string) <-chan *pa.PortfolioStat {
-				out := make(chan *pa.PortfolioStat, 10)
-				go func() {
-					defer close(out)
-					for batch := range assetCombinationBatches {
-						for _, assets := range batch {
-							returnsList := data.PortfolioReturnsList(assets...)
-							returns, err := pa.PortfolioReturns(returnsList, targetAllocations)
-							if err != nil {
-								panic(err.Error())
-							}
-							combination := pa.Combination{Assets: assets, Percentages: targetAllocations}
-							statIfBetter := pa.EvaluatePortfolioIfAsGoodOrBetterThan(returns, combination, gbStat)
-							if statIfBetter != nil {
-								out <- statIfBetter
-							}
-							// check if these are GB assets
-							if pa.ConsistsOf(assets, gbAssets) {
-								fmt.Println("Seen GB assets!", assets, "StatIfBetter:", statIfBetter)
-							}
-						}
-					}
-				}()
-				return out
+		resultsCh := make(chan *pa.PortfolioStat, 10)
+		go func() {
+			defer close(resultsCh)
+			for k := 9; k <= 11; k++ {
+				count := 0
+				for result := range GoFindKAssetsBetterThanX(gbStat, k, names) {
+					count++
+					resultsCh <- result
+				}
+				fmt.Printf("k=%d result count: %d\n", k, count)
 			}
+		}()
 
-			combinationsCh := pa.GoEnumerateCombinations(names, k, 10_000)
-			// fan out to multiple workers, 9 workers was a sweet spot
-			var workersOutput []<-chan *pa.PortfolioStat
-			for i := 0; i < 9; i++ {
-				results := GoEvaluateAndFindBetterThanGB(combinationsCh)
-				workersOutput = append(workersOutput, results)
-			}
-			// merge workers' output
-			resultsCh := pa.GoMerge(workersOutput...)
-			// encode to file
-			// err := goblEncodeToFile(goblFileBetterThanGB(k), resultsCh)
-			// g.Expect(err).To(Succeed())
-
-			// just count results
-			count := 0
-			for range resultsCh {
-				count++
-			}
-			fmt.Println("Result count:", count)
-
-			elapsed := time.Since(startAt)
-			fmt.Printf("Finished evaluating %d portfolios in %v (%d portfolios per second)\n",
-				nCr, elapsed, int(float64(nCr)/elapsed.Seconds()))
+		// just count results
+		count := 0
+		for range resultsCh {
+			count++
 		}
+		fmt.Println("\nOverall result count:", count)
 	})
 	/*
 		t.Run("parse GOBL.gz", func(t *testing.T) {
