@@ -31,7 +31,7 @@ func TestAllKAssetPortfolios__Deprecated(t *testing.T) {
 		// delete assets to exclude
 		{
 			// GB assets
-			mustDelete(t, assetNames, "Gold")
+			// mustDelete(t, assetNames, "Gold")
 			mustDelete(t, assetNames, "SCV")
 			mustDelete(t, assetNames, "TSM")
 			mustDelete(t, assetNames, "LTT")
@@ -72,21 +72,21 @@ func TestAllKAssetPortfolios__Deprecated(t *testing.T) {
 		gbStat := pa.MustGoldenButterflyStat()
 
 		// without GB and bond assets, didn't find anything for k from 5 to 13
-		//    9: Finished evaluating   4,431,613,550 portfolios in    47s  (95,249,342 portfolios per second)
-		//   10: Finished evaluating  19,499,099,620 portfolios in  2m21s (138,136,738 portfolios per second)
-		//   11: Finished evaluating  76,223,753,060 portfolios in  5m14s (242,050,925 portfolios per second)
-		//   12: Finished evaluating 266,783,135,710 portfolios in  9m55s (448,262,849 portfolios per second)
-		//   13: Finished evaluating 841,392,966,470 portfolios in 17m42s (791,867,558 portfolios per second)
+		//    9: Finished evaluating (wrong number) portfolios in    47s
+		//   10: Finished evaluating (wrong number) portfolios in  2m21s
+		//   11: Finished evaluating (wrong number) portfolios in  5m14s
+		//   12: Finished evaluating (wrong number) portfolios in  9m55s
+		//   13: Finished evaluating (wrong number) portfolios in 17m42s
 
 		// Adding back Gold as an allowed asset
-		//    9: Finished evaluating   4,431,613,550 portfolios in   1m8s  (65,173,892 portfolios per second)
-		//   10: Finished evaluating  19,499,099,620 portfolios in   3m3s (106,841,693 portfolios per second)
-		//   11: Finished evaluating  76,223,753,060 portfolios in  7m56s (160,193,944 portfolios per second)
+		//    8: Finished evaluating  23,535,820 portfolios in  19s (1,237,431 portfolios per second)
+		//    9: Finished evaluating  70,607,460 portfolios in 1m9s (1,026,176 portfolios per second)
+		//   10: Finished evaluating 183,579,396 portfolios in 3m7s   (984,209 portfolios per second)
 
 		resultsCh := make(chan *pa.PortfolioStat, 10)
 		go func() {
 			defer close(resultsCh)
-			for k := 9; k <= 11; k++ {
+			for k := 11; k <= 11; k++ {
 				count := 0
 				for result := range GoFindKAssetsBetterThanX(gbStat, k, names) {
 					count++
@@ -98,8 +98,9 @@ func TestAllKAssetPortfolios__Deprecated(t *testing.T) {
 
 		// just count results
 		count := 0
-		for range resultsCh {
+		for result := range resultsCh {
 			count++
+			fmt.Println("Found better:", result)
 		}
 		fmt.Println("\nOverall result count:", count)
 	})
