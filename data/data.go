@@ -64,7 +64,7 @@ var _seriesByName map[string]Series
 
 func init() {
 	var err error
-	_seriesByName, err = parseSimbaTSV(simbaBacktestingSpreadsheetRev20aTSV)
+	_seriesByName, err = parseSimbaTSV(simbaBacktestingSpreadsheetRev21bTSV)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -74,7 +74,7 @@ func init() {
 // and returns a map of the series identified by name.
 func parseSimbaTSV(tsv string) (map[string]Series, error) {
 	const (
-		expectedLastYear = 2020
+		expectedLastYear = 2021
 	)
 	normalizeNames := map[string]string{
 		"TSM (US)": "TSM",
@@ -87,7 +87,7 @@ func parseSimbaTSV(tsv string) (map[string]Series, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(records) != 152 {
+	if len(records) != 153 {
 		return nil, fmt.Errorf("unexpected records length: %d", len(records))
 	}
 

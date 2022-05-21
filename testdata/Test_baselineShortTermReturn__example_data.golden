@@ -2,7 +2,7 @@ TSM: baselineShortTermReturn: -2.907904796851%
 SCV: baselineShortTermReturn:  1.936917994777%
 GLD: baselineShortTermReturn: -11.359189663236%
 LTT: baselineShortTermReturn:  0.940144493254%
-STT: baselineShortTermReturn: -1.331675822829%
-STB: baselineShortTermReturn: -0.641557870548%
+STT: baselineShortTermReturn: -1.396161595875%
+STB: baselineShortTermReturn: -0.678858473924%
 
 GoldenButterfly: baselineShortTermReturn:  2.849119212885%

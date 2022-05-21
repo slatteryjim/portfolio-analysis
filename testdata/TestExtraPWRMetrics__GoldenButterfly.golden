@@ -1,16 +1,16 @@
 GoldenButterfly:
 
 10-year PWRs:
-     min: 2.097163139978%
-     avg: 5.224318736039%
-  stdDev: 0.903879266341%
+     min: 2.275232806642%
+     avg: 5.230352952587%
+  stdDev: 0.879153759947%
 
 30-year PWRs:
-     min: 4.300569961536%
-     avg: 5.629443864929%
-  stdDev: 0.548497253587%
+     min: 4.393301958357%
+     avg: 5.642464413005%
+  stdDev: 0.524915290637%
 
-10-year PWR slope: -0.651396573299%
-30-year PWR slope:  0.528309181125%
+10-year PWR slope: -0.937156926242%
+30-year PWR slope:  0.052390951839%
 
-Overall portfolio slope: 4.752555214629%
+Overall portfolio slope: 3.228208462459%

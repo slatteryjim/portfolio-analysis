@@ -59,7 +59,7 @@ func TestPortfolioReturnsList(t *testing.T) {
 // Benchmark_parseSimbaTSV-12    	    1088	   1095898 ns/op
 func Benchmark_parseSimbaTSV(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_, err := parseSimbaTSV(simbaBacktestingSpreadsheetRev20aTSV)
+		_, err := parseSimbaTSV(simbaBacktestingSpreadsheetRev21bTSV)
 		if err != nil {
 			b.Fatal(err)
 		}
