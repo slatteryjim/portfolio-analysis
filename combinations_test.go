@@ -141,7 +141,7 @@ func TestPortfolioCombinations_GoldenButterflyAssets(t *testing.T) {
 	// 	fmt.Printf("...culled down to %0.1f%% combinations in %s\n", float64(len(filtered))/float64(len(perms))*100, time.Since(startAt))
 	// 	perms = filtered
 	// }
-	//g.Expect(len(perms)).To(Equal(3_876))
+	// g.Expect(len(perms)).To(Equal(3_876))
 	startAt = time.Now()
 	Log(t, "...Evaluating", len(perms), "combinations.")
 
@@ -1053,7 +1053,7 @@ func TestEnumerateCombinations(t *testing.T) {
 	makeAccumulateAllFn := func(buffer []string) (*[][]string, func() error) {
 		var result [][]string
 		return &result, func() error {
-			fmt.Println(buffer)
+			// fmt.Println(buffer)
 			copyBuffer := make([]string, len(buffer))
 			copy(copyBuffer, buffer)
 			result = append(result, copyBuffer)
