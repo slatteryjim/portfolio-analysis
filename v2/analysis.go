@@ -38,9 +38,14 @@ func GoFindKAssetsBetterThanX(ideal *pa.PortfolioStat, k int, names []string) <-
 							panic(err.Error())
 						}
 						combination := pa.Combination{Assets: assets, Percentages: targetAllocations}
-						statIfBetter := pa.EvaluatePortfolioIfAsGoodOrBetterThan(returns, combination, ideal)
-						if statIfBetter != nil {
-							out <- statIfBetter
+						var stat *pa.PortfolioStat
+						if ideal != nil {
+							stat = pa.EvaluatePortfolioIfAsGoodOrBetterThan(returns, combination, ideal)
+						} else {
+							stat = pa.EvaluatePortfolio(returns, combination)
+						}
+						if stat != nil {
+							out <- stat
 						}
 					}
 				}

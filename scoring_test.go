@@ -119,27 +119,27 @@ func portfolioReturns8Way() []Percent {
 
 func TestExtraPWRMetrics(t *testing.T) {
 	statsReport := func(name string, returns []Percent) string {
-		pwrs10 := allPWRs(returns, 10)
-		pwrs30 := allPWRs(returns, 30)
-		actualMinPWR10, _ := minPWR(returns, 10)
-		actualMinPWR30, _ := minPWR(returns, 30)
+		pwrs10 := AllPWRs(returns, 10)
+		pwrs30 := AllPWRs(returns, 30)
+		actualMinPWR10, _ := MinPWR(returns, 10)
+		actualMinPWR30, _ := MinPWR(returns, 30)
 
 		var sb strings.Builder
 		sb.WriteString(name + ":\n\n")
 		sb.WriteString(fmt.Sprintf("10-year PWRs:\n"))
 		sb.WriteString(fmt.Sprintf("     min: %15v\n", actualMinPWR10))
 		sb.WriteString(fmt.Sprintf("     avg: %15v\n", average(pwrs10)))
-		sb.WriteString(fmt.Sprintf("  stdDev: %15v\n", standardDeviation(pwrs10)))
+		sb.WriteString(fmt.Sprintf("  stdDev: %15v\n", StandardDeviation(pwrs10)))
 		sb.WriteString(fmt.Sprintf("\n"))
 		sb.WriteString(fmt.Sprintf("30-year PWRs:\n"))
 		sb.WriteString(fmt.Sprintf("     min: %15v\n", actualMinPWR30))
 		sb.WriteString(fmt.Sprintf("     avg: %15v\n", average(pwrs30)))
-		sb.WriteString(fmt.Sprintf("  stdDev: %15v\n", standardDeviation(pwrs30)))
+		sb.WriteString(fmt.Sprintf("  stdDev: %15v\n", StandardDeviation(pwrs30)))
 		sb.WriteString(fmt.Sprintf("\n"))
-		sb.WriteString(fmt.Sprintf("10-year PWR slope: %16v\n", slope(pwrs10)))
-		sb.WriteString(fmt.Sprintf("30-year PWR slope: %16v\n", slope(pwrs30)))
+		sb.WriteString(fmt.Sprintf("10-year PWR Slope: %16v\n", Slope(pwrs10)))
+		sb.WriteString(fmt.Sprintf("30-year PWR Slope: %16v\n", Slope(pwrs30)))
 		sb.WriteString(fmt.Sprintf("\n"))
-		sb.WriteString(fmt.Sprintf("Overall portfolio slope: %15v\n", slope(returns)))
+		sb.WriteString(fmt.Sprintf("Overall portfolio Slope: %15v\n", Slope(returns)))
 		return sb.String()
 	}
 
@@ -177,18 +177,18 @@ func TestSampleGraphs(t *testing.T) {
 		})
 		t.Run("PWRs", func(t *testing.T) {
 			var sb strings.Builder
-			sb.WriteString(plot("GoldenButterfly 10-year PWRs", allPWRs(GoldenButterfly, 10)))
-			sb.WriteString(plot("GoldenButterfly 20-year PWRs", allPWRs(GoldenButterfly, 20)))
-			sb.WriteString(plot("GoldenButterfly 30-year PWRs", allPWRs(GoldenButterfly, 30)))
+			sb.WriteString(plot("GoldenButterfly 10-year PWRs", AllPWRs(GoldenButterfly, 10)))
+			sb.WriteString(plot("GoldenButterfly 20-year PWRs", AllPWRs(GoldenButterfly, 20)))
+			sb.WriteString(plot("GoldenButterfly 30-year PWRs", AllPWRs(GoldenButterfly, 30)))
 			ExpectMatchesGoldenFile(t, sb.String())
 		})
 	})
 	t.Run("8-way PWRs", func(t *testing.T) {
 		portfolio8way := portfolioReturns8Way()
 		var sb strings.Builder
-		sb.WriteString(plot("8-WayPortfolio 10-year PWRs", allPWRs(portfolio8way, 10)))
-		sb.WriteString(plot("8-WayPortfolio 20-year PWRs", allPWRs(portfolio8way, 20)))
-		sb.WriteString(plot("8-WayPortfolio 30-year PWRs", allPWRs(portfolio8way, 30)))
+		sb.WriteString(plot("8-WayPortfolio 10-year PWRs", AllPWRs(portfolio8way, 10)))
+		sb.WriteString(plot("8-WayPortfolio 20-year PWRs", AllPWRs(portfolio8way, 20)))
+		sb.WriteString(plot("8-WayPortfolio 30-year PWRs", AllPWRs(portfolio8way, 30)))
 		ExpectMatchesGoldenFile(t, sb.String())
 	})
 }
@@ -269,7 +269,7 @@ func Benchmark_evaluatePortfolios_TSM(b *testing.B) {
 // $ go test -bench ^BenchmarkPortfolioEvaluationMetrics$ -run ^$ -benchtime=5s
 //
 // BenchmarkPortfolioEvaluationMetrics/average-12                         189537374                31.6 ns/op
-// BenchmarkPortfolioEvaluationMetrics/standardDeviation-12                 3170172              1887 ns/op
+// BenchmarkPortfolioEvaluationMetrics/StandardDeviation-12                 3170172              1887 ns/op
 // BenchmarkPortfolioEvaluationMetrics/minPWRAndSWR30-12                    2038736              2944 ns/op
 // BenchmarkPortfolioEvaluationMetrics/baselineLongTermReturn-12            1299754              4564 ns/op
 // BenchmarkPortfolioEvaluationMetrics/drawdownScores-12                    1205773              4992 ns/op
@@ -302,9 +302,9 @@ func BenchmarkPortfolioEvaluationMetrics(b *testing.B) {
 			baselineShortTermReturn(gbReturns)
 		}
 	})
-	b.Run("standardDeviation", func(b *testing.B) {
+	b.Run("StandardDeviation", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			standardDeviation(gbReturns)
+			StandardDeviation(gbReturns)
 		}
 	})
 	b.Run("startDateSensitivity", func(b *testing.B) {

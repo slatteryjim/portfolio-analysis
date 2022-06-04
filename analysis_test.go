@@ -241,15 +241,15 @@ func Test_pwr(t *testing.T) {
 	g.Expect(pwrProxy(sampleReturns)).To(Equal(Percent(0.06574303881824274)))
 }
 
-func Test_minPWR(t *testing.T) {
+func Test_MinPWR(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	// minPWRProxy calls both minPWR and minPWRAndSWR, making sure they both calculate an identical value.
+	// minPWRProxy calls both MinPWR and minPWRAndSWR, making sure they both calculate an identical value.
 	minPWRProxy := func(returns []Percent, nYears int) (Percent, int) {
 		t.Helper()
-		a, n := minPWR(returns, nYears)
+		a, n := MinPWR(returns, nYears)
 		b, _ := minPWRAndSWR(returns, nYears)
-		g.Expect(a).To(Equal(b), "minPWR equal minPWRAndSWR")
+		g.Expect(a).To(Equal(b), "MinPWR equal minPWRAndSWR")
 		return a, n
 	}
 
@@ -261,7 +261,7 @@ func Test_minPWR(t *testing.T) {
 	}
 
 	g.Expect(func() {
-		minPWR(nil, 1)
+		MinPWR(nil, 1)
 	}).To(Panic())
 	g.Expect(func() {
 		minPWRAndSWR(nil, 1)
@@ -292,7 +292,7 @@ func Test_minPWR(t *testing.T) {
 		var sb strings.Builder
 		reportLine := func(name string, returns []Percent, nYears int) string {
 			minPWR, index := minPWRProxy(returns, nYears)
-			return fmt.Sprintf("%s: %2d years minPWR: %16v at index %2d\n", name, nYears, minPWR, index)
+			return fmt.Sprintf("%s: %2d years MinPWR: %16v at index %2d\n", name, nYears, minPWR, index)
 		}
 		sb.WriteString(reportLine("TSM", TSM, 30))
 		sb.WriteString(reportLine("SCV", SCV, 30))
@@ -574,25 +574,25 @@ func Test_baselineShortTermReturn(t *testing.T) {
 	})
 }
 
-func Test_standardDeviation(t *testing.T) {
+func Test_StandardDeviation(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	g.Expect(func() {
-		standardDeviation(nil)
+		StandardDeviation(nil)
 	}).To(Panic())
 
 	t.Run("matches STDEVP function in google spreadsheet", func(t *testing.T) {
 		g := NewGomegaWithT(t)
-		g.Expect(standardDeviation([]Percent{1})).To(Equal(ReadablePercent(0.0)))
-		g.Expect(standardDeviation([]Percent{1, 2})).To(Equal(Percent(0.5)))
-		g.Expect(standardDeviation([]Percent{1, 2, 3, 4})).To(Equal(Percent(1.118033988749895)))
-		g.Expect(standardDeviation([]Percent{1, -2, 3, -4})).To(Equal(Percent(2.692582403567252)))
+		g.Expect(StandardDeviation([]Percent{1})).To(Equal(ReadablePercent(0.0)))
+		g.Expect(StandardDeviation([]Percent{1, 2})).To(Equal(Percent(0.5)))
+		g.Expect(StandardDeviation([]Percent{1, 2, 3, 4})).To(Equal(Percent(1.118033988749895)))
+		g.Expect(StandardDeviation([]Percent{1, -2, 3, -4})).To(Equal(Percent(2.692582403567252)))
 	})
 
 	t.Run("example data", func(t *testing.T) {
 		var sb strings.Builder
 		reportLine := func(name string, returns []Percent) string {
-			return fmt.Sprintf("%s standardDeviation: %16v\n", name, standardDeviation(returns))
+			return fmt.Sprintf("%s StandardDeviation: %16v\n", name, StandardDeviation(returns))
 		}
 		sb.WriteString(reportLine("TSM", TSM))
 		sb.WriteString(reportLine("SCV", SCV))
@@ -646,7 +646,7 @@ func Test_rebalanceFactor_effect(t *testing.T) {
 		returns, err := PortfolioTradingSimulation(gbAssets, gbCombination.Percentages, rebalanceFactor)
 		g.Expect(err).To(Succeed())
 
-		stat := evaluatePortfolio(returns, gbCombination)
+		stat := EvaluatePortfolio(returns, gbCombination)
 		stat.RebalanceFactor = rebalanceFactor
 		results = append(results, stat)
 	}
@@ -675,11 +675,11 @@ func TestTSMPerformance(t *testing.T) {
 	tsmCombination := Combination{Assets: []string{"TSM"}, Percentages: ReadablePercents(100)}
 
 	// 1969 start date, using new TSV data source
-	stat := evaluatePortfolio(TSM, tsmCombination)
+	stat := EvaluatePortfolio(TSM, tsmCombination)
 	fmt.Println(stat)
 
 	// 1871 start date
-	stat = evaluatePortfolio(data.MustFind("TSM").AnnualReturns, tsmCombination)
+	stat = EvaluatePortfolio(data.MustFind("TSM").AnnualReturns, tsmCombination)
 	fmt.Println(stat)
 
 	// Output:
@@ -687,10 +687,10 @@ func TestTSMPerformance(t *testing.T) {
 	// [TSM] [100%] (0) RF:0.00 AvgReturn:8.481%(0) BLT:2.363%(0) BST:-1.339%(0) PWR:2.715%(0) SWR:3.578%(0) StdDev:18.115%(0) Ulcer:27.0(0) DeepestDrawdown:-57.56%(0) LongestDrawdown:13(0), StartDateSensitivity:36.48%(0)
 }
 
-func Test_allPWRs(t *testing.T) {
+func Test_AllPWRs(t *testing.T) {
 
 	plot := func(name string, returns []Percent, nYears int) string {
-		points := allPWRs(returns, nYears)
+		points := AllPWRs(returns, nYears)
 		return fmt.Sprintf("%s, %d-year PWR's:\n", name, nYears) +
 			asciigraph.Plot(Floats(points...)) +
 			"\n\n"
@@ -720,21 +720,21 @@ func Test_allPWRs(t *testing.T) {
 	})
 }
 
-func Test_slope(t *testing.T) {
-	// 1.00 slope (100%)
-	ExpectRoughPercent(t, slope(ReadablePercents(1, 2, 3, 4)), 100)
-	ExpectRoughPercent(t, slope(ReadablePercents(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)), 100)
-	// different y-intercept, but same 100% slope!
-	ExpectRoughPercent(t, slope(ReadablePercents(5, 6, 7, 8, 9, 10)), 100)
-	// 50% slope
-	ExpectRoughPercent(t, slope(ReadablePercents(1, 1.5, 2, 2.5, 3, 3.5, 4)), 50)
-	// negative slope
-	ExpectRoughPercent(t, slope(ReadablePercents(-1, -2, -3, -4)), -100)
-	ExpectRoughPercent(t, slope(ReadablePercents(-1, -1.5, -2, -2.5, -3, -3.5, -4)), -50)
+func Test_Slope(t *testing.T) {
+	// 1.00 Slope (100%)
+	ExpectRoughPercent(t, Slope(ReadablePercents(1, 2, 3, 4)), 100)
+	ExpectRoughPercent(t, Slope(ReadablePercents(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)), 100)
+	// different y-intercept, but same 100% Slope!
+	ExpectRoughPercent(t, Slope(ReadablePercents(5, 6, 7, 8, 9, 10)), 100)
+	// 50% Slope
+	ExpectRoughPercent(t, Slope(ReadablePercents(1, 1.5, 2, 2.5, 3, 3.5, 4)), 50)
+	// negative Slope
+	ExpectRoughPercent(t, Slope(ReadablePercents(-1, -2, -3, -4)), -100)
+	ExpectRoughPercent(t, Slope(ReadablePercents(-1, -1.5, -2, -2.5, -3, -3.5, -4)), -50)
 
 	t.Run("example series", func(t *testing.T) {
 		reportLine := func(name string, returns []Percent) string {
-			return fmt.Sprintf("%s slope: %17v\n", name, slope(returns))
+			return fmt.Sprintf("%s Slope: %17v\n", name, Slope(returns))
 		}
 		var sb strings.Builder
 		sb.WriteString(reportLine("GoldenButterfly", GoldenButterfly))

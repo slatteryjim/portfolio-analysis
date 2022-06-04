@@ -1,17 +1,20 @@
 package v2
 
 import (
+	"database/sql"
 	"fmt"
 	"sort"
+	"strings"
 	"testing"
 
+	_ "github.com/mattn/go-sqlite3"
 	. "github.com/onsi/gomega"
 
 	pa "github.com/slatteryjim/portfolio-analysis"
 	"github.com/slatteryjim/portfolio-analysis/data"
 )
 
-func TestAllKAssetPortfolios__Deprecated(t *testing.T) {
+func TestAllKAssetPortfolios(t *testing.T) {
 	t.Skip("Run manually")
 	var (
 	// sqliteFileBetterThanGB = func(k int) string {
@@ -19,6 +22,78 @@ func TestAllKAssetPortfolios__Deprecated(t *testing.T) {
 	// }
 	)
 	t.Run("Evaluate", func(t *testing.T) {
+		t.Skip("Run manually")
+		g := NewGomegaWithT(t)
+
+		fmt.Println("Starting with", len(data.Names()), "assets in list.")
+		assetNames := map[string]struct{}{}
+		for _, name := range data.Names() {
+			assetNames[name] = struct{}{}
+			// fmt.Println("-", name)
+		}
+		// delete assets to exclude
+		{
+			// GB assets
+			// mustDelete(t, assetNames, "Gold")
+			// mustDelete(t, assetNames, "SCV")
+			// mustDelete(t, assetNames, "TSM")
+			// mustDelete(t, assetNames, "LTT")
+			// mustDelete(t, assetNames, "STT")
+			// Bond assets
+			// mustDelete(t, assetNames, "Int'l Bd")
+			// mustDelete(t, assetNames, "Global Bd")
+			// mustDelete(t, assetNames, "Hi-Yield Corp Bd")
+			// mustDelete(t, assetNames, "LT STRIPS")
+			// mustDelete(t, assetNames, "T-Bill")
+			// mustDelete(t, assetNames, "STB")
+			// mustDelete(t, assetNames, "ITB")
+			// mustDelete(t, assetNames, "IT Corp")
+			// mustDelete(t, assetNames, "ITT")
+			// mustDelete(t, assetNames, "TBM")
+			// mustDelete(t, assetNames, "ST Invest. Grade")
+			// mustDelete(t, assetNames, "ST Munis")
+			// mustDelete(t, assetNames, "IT Munis")
+			// mustDelete(t, assetNames, "LT Munis")
+		}
+		var names []string
+		for n := range assetNames {
+			names = append(names, n)
+		}
+		sort.Strings(names)
+		fmt.Println("After deletes, have", len(names), "assets in list:")
+		for _, name := range names {
+			fmt.Println("-", name)
+		}
+
+		fmt.Println("Evaluating possible portfolio combinations...")
+
+		// generate portfolio combinations
+		// across N goroutines -- evaluate combination
+		//  -- if it's better than GoldenButterfly, save it
+		//  -- writer channel writes to Sqlite file
+
+		// minStat := pa.MustGoldenButterflyStat()
+		var minStat *pa.PortfolioStat // nil; accept all portfolios
+
+		resultsCh := make(chan *pa.PortfolioStat, 10)
+		go func() {
+			defer close(resultsCh)
+			for k := 1; k <= 5; k++ {
+				count := 0
+				for result := range GoFindKAssetsBetterThanX(minStat, k, names) {
+					count++
+					resultsCh <- result
+				}
+				fmt.Printf("k=%d result count: %d\n", k, count)
+			}
+		}()
+
+		// just count results
+		// CountResults(resultsCh)
+		err := EncodeResultsToSQLite("output/portfolios.sqlite", resultsCh)
+		g.Expect(err).To(Succeed())
+	})
+	t.Run("Evaluate trimmed down list", func(t *testing.T) {
 		t.Skip("Run manually")
 		// g := NewGomegaWithT(t)
 
@@ -286,6 +361,126 @@ func TestAllKAssetPortfolios__Deprecated(t *testing.T) {
 			})
 		})
 	*/
+}
+
+func EncodeResultsToSQLite(sqliteFile string, results chan *pa.PortfolioStat) error {
+	db, err := sql.Open("sqlite3", sqliteFile+"?mode=rwc")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// create table
+	sqlStmt := `
+		CREATE TABLE IF NOT EXISTS portfolios (
+			assets                TEXT NOT NULL,
+			num_assets            INTEGER,
+			num_years             INTEGER,
+			avg_return            REAL,
+			baseline_lt_return    REAL,
+			baseline_st_return    REAL,
+			pwr30                 REAL,
+			swr30                 REAL,
+			std_dev               REAL,
+			ulcer_score           REAL,
+			deepest_drawdown      REAL,
+			longest_drawdown      REAL,
+			startdate_sensitivity REAL,
+			pwr10                 REAL,
+			pwr10_stdev           REAL,
+			pwr10_slope           REAL,
+			pwr30_stdev           REAL,
+			pwr30_slope           REAL
+			);
+	`
+	_, err = db.Exec(sqlStmt)
+	if err != nil {
+		return err
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	stmt, err := tx.Prepare(`
+			INSERT INTO portfolios (
+				assets,
+				num_assets,
+				num_years,
+				avg_return,
+				baseline_lt_return,
+				baseline_st_return,
+				pwr30,
+				swr30,
+				std_dev,
+				ulcer_score,
+				deepest_drawdown,
+				longest_drawdown,
+				startdate_sensitivity,
+				pwr10,
+				pwr10_stdev,
+				pwr10_slope,
+				pwr30_stdev,
+				pwr30_slope
+			)
+			VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`)
+	if err != nil {
+		return err
+	}
+	var totalRows int
+	for stat := range results {
+		returnsList := data.PortfolioReturnsList(stat.Assets...)
+		returns, err := pa.PortfolioReturns(returnsList, stat.Percentages)
+		if err != nil {
+			return err
+		}
+		minPWR10, _ := pa.MinPWR(returns, 10)
+		pwrs10 := pa.AllPWRs(returns, 10)
+		pwrs30 := pa.AllPWRs(returns, 30)
+		_, err = stmt.Exec(
+			"|"+strings.Join(stat.Assets, "|")+"|", // encode as string
+			len(stat.Assets), // NumAssets
+			len(returns),     // NumYears
+			stat.AvgReturn.Float(),
+			stat.BaselineLTReturn.Float(),
+			stat.BaselineSTReturn.Float(),
+			stat.PWR30.Float(),
+			stat.SWR30.Float(),
+			stat.StdDev.Float(),
+			stat.UlcerScore,
+			stat.DeepestDrawdown.Float(),
+			stat.LongestDrawdown,
+			stat.StartDateSensitivity.Float(),
+			minPWR10.Float(),
+			pa.StandardDeviation(pwrs10).Float(),
+			pa.Slope(pwrs10).Float(),
+			pa.StandardDeviation(pwrs30).Float(),
+			pa.Slope(pwrs30).Float(),
+		)
+		if err != nil {
+			return err
+		}
+		totalRows++
+	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	if err := stmt.Close(); err != nil {
+		return err
+	}
+
+	fmt.Println("Wrote total rows:", totalRows)
+	return nil
+}
+
+func CountResults(resultsCh <-chan *pa.PortfolioStat) {
+	count := 0
+	for range resultsCh {
+		count++
+		// fmt.Println("Found:", result)
+	}
+	fmt.Println("\nOverall result count:", count)
 }
 
 func mustDelete(t *testing.T, names map[string]struct{}, name string) {

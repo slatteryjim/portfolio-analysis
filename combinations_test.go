@@ -198,7 +198,7 @@ func TestPortfolioCombinations_AnythingBetterThanGoldenButterfly(t *testing.T) {
 			Assets:      []string{n},
 			Percentages: ReadablePercents(100),
 		}
-		stat := evaluatePortfolio(data.MustFind(n).AnnualReturns, p)
+		stat := EvaluatePortfolio(data.MustFind(n).AnnualReturns, p)
 		results = append(results, stat)
 	}
 	RankPortfoliosInPlace(results)
@@ -612,9 +612,9 @@ func TestAllKAssetPortfolios__Deprecated(t *testing.T) {
 				for stat := range items {
 					returnsList := data.PortfolioReturnsList(stat.Assets...)
 					returns, err := PortfolioReturns(returnsList, stat.Percentages)
-					minPWR10, _ := minPWR(returns, 10)
-					pwrs10 := allPWRs(returns, 10)
-					pwrs30 := allPWRs(returns, 30)
+					minPWR10, _ := MinPWR(returns, 10)
+					pwrs10 := AllPWRs(returns, 10)
+					pwrs30 := AllPWRs(returns, 30)
 					_, err = stmt.Exec(
 						"|"+strings.Join(stat.Assets, "|")+"|", // encode as string
 						len(stat.Assets), // NumAssets
@@ -630,10 +630,10 @@ func TestAllKAssetPortfolios__Deprecated(t *testing.T) {
 						stat.LongestDrawdown,
 						stat.StartDateSensitivity.Float(),
 						minPWR10.Float(),
-						standardDeviation(pwrs10).Float(),
-						slope(pwrs10).Float(),
-						standardDeviation(pwrs30).Float(),
-						slope(pwrs30).Float(),
+						StandardDeviation(pwrs10).Float(),
+						Slope(pwrs10).Float(),
+						StandardDeviation(pwrs30).Float(),
+						Slope(pwrs30).Float(),
 					)
 					if err != nil {
 						return err
@@ -682,7 +682,7 @@ func TestAllKAssetPortfolios__Deprecated(t *testing.T) {
 				input = goblFileBetterThanGB(8)
 
 				minPWRn = func(returns []Percent, nYears int) Percent {
-					val, _ := minPWR(returns, nYears)
+					val, _ := MinPWR(returns, nYears)
 					return val
 				}
 
@@ -848,7 +848,7 @@ func TestSingle(t *testing.T) {
 		series := data.MustFind(name)
 		returns, err := PortfolioReturns([][]Percent{series.AnnualReturns}, []Percent{1})
 		g.Expect(err).To(Succeed())
-		stat := evaluatePortfolio(returns, Combination{
+		stat := EvaluatePortfolio(returns, Combination{
 			Assets:      []string{name},
 			Percentages: []Percent{1},
 		})

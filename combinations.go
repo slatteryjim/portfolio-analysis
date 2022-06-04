@@ -247,6 +247,6 @@ func MustGoldenButterflyStat() *PortfolioStat {
 	if err != nil {
 		panic(err.Error())
 	}
-	stat := evaluatePortfolio(returns, Combination{Assets: assets, Percentages: targetAllocations})
+	stat := EvaluatePortfolio(returns, Combination{Assets: assets, Percentages: targetAllocations})
 	return stat
 }

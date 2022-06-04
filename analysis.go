@@ -164,9 +164,9 @@ func baselineReturn(returns []Percent, nYears int, percentile Percent) Percent {
 	return cagrs[int(Percent(len(cagrs))*percentile)]
 }
 
-// standardDeviation returns "The statistical uncertainty of the average real return"
+// StandardDeviation returns "The statistical uncertainty of the average real return"
 // See: https://portfoliocharts.com/portfolio/annual-returns/
-func standardDeviation(xs []Percent) Percent {
+func StandardDeviation(xs []Percent) Percent {
 	n := Percent(len(xs))
 	if n == 0 {
 		panic("returns list must not be empty")
@@ -181,9 +181,9 @@ func standardDeviation(xs []Percent) Percent {
 	return Percent(math.Sqrt(((1 / n) * sumOfSquaredDiffs).Float()))
 }
 
-// slope attempts to give some number indicating how the values generally appear to be changing.
+// Slope attempts to give some number indicating how the values generally appear to be changing.
 // https://www.dummies.com/education/math/statistics/how-to-calculate-a-regression-line/
-func slope(ys []Percent) Percent {
+func Slope(ys []Percent) Percent {
 	n := len(ys)
 
 	// manufacture x's, just percentages 1 through n
@@ -192,8 +192,8 @@ func slope(ys []Percent) Percent {
 		xs[i] = ReadablePercent(float64(i) + 1)
 	}
 
-	xsStddev := standardDeviation(xs)
-	ysStddev := standardDeviation(ys)
+	xsStddev := StandardDeviation(xs)
+	ysStddev := StandardDeviation(ys)
 
 	// correlation coefficient r
 	// https://www.dummies.com/education/math/statistics/how-to-calculate-a-correlation/
@@ -227,8 +227,8 @@ func pwr(returns []Percent) Percent {
 	return swr(returns) * Percent(preservationPercent-1/cumulative(returns).Float())
 }
 
-// minPWR looks at all of the nYears-long periods and evaluates their PWR. Returns the min PWR.
-func minPWR(returns []Percent, nYears int) (rate Percent, startAtIndex int) {
+// MinPWR looks at all of the nYears-long periods and evaluates their PWR. Returns the min PWR.
+func MinPWR(returns []Percent, nYears int) (rate Percent, startAtIndex int) {
 	if nYears == 0 {
 		return 0, 0
 	}
@@ -297,8 +297,8 @@ func pwrAndSWR(returns []Percent) (Percent, Percent) {
 	return pwr, swr
 }
 
-// allPWRs returns the PWRs of all the nYears-long periods.
-func allPWRs(returns []Percent, nYears int) (pwrs []Percent) {
+// AllPWRs returns the PWRs of all the nYears-long periods.
+func AllPWRs(returns []Percent, nYears int) (pwrs []Percent) {
 	if nYears == 0 {
 		return nil
 	}

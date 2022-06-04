@@ -239,12 +239,12 @@ func evaluatePortfolios(perms []Combination, assetMap map[string][]Percent) ([]*
 		if err != nil {
 			return nil, fmt.Errorf("perm #%d, error calculating portfolio returns for %+v: %w", i+1, p, err)
 		}
-		results = append(results, evaluatePortfolio(portfolioReturns, p))
+		results = append(results, EvaluatePortfolio(portfolioReturns, p))
 	}
 	return results, nil
 }
 
-func evaluatePortfolio(portfolioReturns []Percent, p Combination) *PortfolioStat {
+func EvaluatePortfolio(portfolioReturns []Percent, p Combination) *PortfolioStat {
 	minPWR30, minSWR30 := minPWRAndSWR(portfolioReturns, 30)
 	maxUlcerScore, deepestDrawdown, longestDrawdown := drawdownScores(portfolioReturns)
 
@@ -256,7 +256,7 @@ func evaluatePortfolio(portfolioReturns []Percent, p Combination) *PortfolioStat
 		BaselineSTReturn:     baselineShortTermReturn(portfolioReturns),
 		PWR30:                minPWR30,
 		SWR30:                minSWR30,
-		StdDev:               standardDeviation(portfolioReturns),
+		StdDev:               StandardDeviation(portfolioReturns),
 		UlcerScore:           maxUlcerScore,
 		DeepestDrawdown:      deepestDrawdown,
 		LongestDrawdown:      longestDrawdown,
@@ -273,7 +273,7 @@ func EvaluatePortfolioIfAsGoodOrBetterThan(portfolioReturns []Percent, p Combina
 	if avgReturn < other.AvgReturn {
 		return nil
 	}
-	stdDev := standardDeviation(portfolioReturns)
+	stdDev := StandardDeviation(portfolioReturns)
 	if stdDev > other.StdDev {
 		return nil
 	}
