@@ -136,10 +136,10 @@ func TestExtraPWRMetrics(t *testing.T) {
 		sb.WriteString(fmt.Sprintf("     avg: %15v\n", average(pwrs30)))
 		sb.WriteString(fmt.Sprintf("  stdDev: %15v\n", StandardDeviation(pwrs30)))
 		sb.WriteString(fmt.Sprintf("\n"))
-		sb.WriteString(fmt.Sprintf("10-year PWR Slope: %16v\n", Slope(pwrs10)))
-		sb.WriteString(fmt.Sprintf("30-year PWR Slope: %16v\n", Slope(pwrs30)))
+		sb.WriteString(fmt.Sprintf("10-year PWR slope: %16v\n", Slope(pwrs10)))
+		sb.WriteString(fmt.Sprintf("30-year PWR slope: %16v\n", Slope(pwrs30)))
 		sb.WriteString(fmt.Sprintf("\n"))
-		sb.WriteString(fmt.Sprintf("Overall portfolio Slope: %15v\n", Slope(returns)))
+		sb.WriteString(fmt.Sprintf("Overall portfolio slope: %15v\n", Slope(returns)))
 		return sb.String()
 	}
 

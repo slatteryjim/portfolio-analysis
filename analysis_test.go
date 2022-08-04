@@ -292,7 +292,7 @@ func Test_MinPWR(t *testing.T) {
 		var sb strings.Builder
 		reportLine := func(name string, returns []Percent, nYears int) string {
 			minPWR, index := minPWRProxy(returns, nYears)
-			return fmt.Sprintf("%s: %2d years MinPWR: %16v at index %2d\n", name, nYears, minPWR, index)
+			return fmt.Sprintf("%s: %2d years minPWR: %16v at index %2d\n", name, nYears, minPWR, index)
 		}
 		sb.WriteString(reportLine("TSM", TSM, 30))
 		sb.WriteString(reportLine("SCV", SCV, 30))
@@ -734,7 +734,7 @@ func Test_Slope(t *testing.T) {
 
 	t.Run("example series", func(t *testing.T) {
 		reportLine := func(name string, returns []Percent) string {
-			return fmt.Sprintf("%s Slope: %17v\n", name, Slope(returns))
+			return fmt.Sprintf("%s slope: %17v\n", name, Slope(returns))
 		}
 		var sb strings.Builder
 		sb.WriteString(reportLine("GoldenButterfly", GoldenButterfly))
