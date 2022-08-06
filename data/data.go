@@ -125,12 +125,18 @@ func parseSimbaTSV(tsv string) (map[string]Series, error) {
 	// Parse all of the assets' data series
 	var series []Series
 	for i, row := range rows[1:] {
-		// we'll stop processing on blank rows
-		if i == 53 {
-			if row[0] != "" || row[1] != "" {
-				return nil, fmt.Errorf("expected empty row #%d", i+1)
+		// we'll skip most of the content after blank rows
+		if i >= 53 {
+			if i < 70 {
+				if row[0] != "" || row[1] != "" {
+					return nil, fmt.Errorf("expected empty row #%d: %v", i+1, row)
+				}
+				continue
 			}
-			break
+			// skip unless it's one of the assets we care to include
+			if row[0] != "Hard Cash" {
+				continue
+			}
 		}
 		var (
 			name   = strings.TrimSpace(row[0])

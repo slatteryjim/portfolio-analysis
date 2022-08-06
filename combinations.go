@@ -15,6 +15,15 @@ type Combination struct {
 	Percentages []Percent
 }
 
+func (c Combination) Percentage(asset string) Percent {
+	for i, a := range c.Assets {
+		if a == asset {
+			return c.Percentages[i]
+		}
+	}
+	return 0
+}
+
 func Combinations(assets []string, percentages []Percent) []Combination {
 	perms := generateCombinations(assets, percentages)
 	// fix up the percentages as a last step, translating them into allocation amounts for each asset
@@ -249,4 +258,18 @@ func MustGoldenButterflyStat() *PortfolioStat {
 	}
 	stat := EvaluatePortfolio(returns, Combination{Assets: assets, Percentages: targetAllocations})
 	return stat
+}
+
+// SeriesRange returns numbers from `step` to 100 in increments of `step`
+func SeriesRange(step float64) []float64 {
+	return Series(step, 100, step)
+}
+
+// Series returns a slice of numbers from `start` to `end` in increments of `step`.
+func Series(start, end, step float64) []float64 {
+	var res []float64
+	for i := start; i <= end; i += step {
+		res = append(res, i)
+	}
+	return res
 }

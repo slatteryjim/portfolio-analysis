@@ -16,11 +16,12 @@ var (
 	// TODO: use an enum for the assets, so it's just an int under the covers, but has a nice String method,
 	//  and maybe even a Returns() method that returns the appropriate []float64?
 	assetMap = map[string][]Percent{
-		"TSM": TSM,
-		"SCV": SCV,
-		"LTT": LTT,
-		"STT": STT,
-		"GLD": GLD,
+		"TSM":  TSM,
+		"SCV":  SCV,
+		"LTT":  LTT,
+		"STT":  STT,
+		"GLD":  GLD,
+		"REIT": REIT,
 	}
 )
 
@@ -169,6 +170,15 @@ func (p PortfolioStat) MustReturns() []Percent {
 	}
 	return returns
 
+}
+
+func (p PortfolioStat) Percentage(asset string) (Percent, bool) {
+	for i, a := range p.Assets {
+		if a == asset {
+			return p.Percentages[i], true
+		}
+	}
+	return 0, false
 }
 
 func CopyAll(ps []*PortfolioStat) []*PortfolioStat {

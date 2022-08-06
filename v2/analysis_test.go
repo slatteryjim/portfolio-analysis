@@ -1,17 +1,18 @@
 package v2
 
 import (
-	"database/sql"
 	"fmt"
 	"sort"
-	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 	. "github.com/onsi/gomega"
 
 	pa "github.com/slatteryjim/portfolio-analysis"
 	"github.com/slatteryjim/portfolio-analysis/data"
+	"github.com/slatteryjim/portfolio-analysis/types"
 )
 
 func TestAllKAssetPortfolios(t *testing.T) {
@@ -363,129 +364,126 @@ func TestAllKAssetPortfolios(t *testing.T) {
 	*/
 }
 
-func EncodeResultsToSQLite(sqliteFile string, results chan *pa.PortfolioStat) error {
-	db, err := sql.Open("sqlite3", sqliteFile+"?mode=rwc")
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	// create table
-	sqlStmt := `
-		CREATE TABLE IF NOT EXISTS portfolios (
-			assets                TEXT NOT NULL,
-			num_assets            INTEGER,
-			num_years             INTEGER,
-			avg_return            REAL,
-			baseline_lt_return    REAL,
-			baseline_st_return    REAL,
-			pwr30                 REAL,
-			swr30                 REAL,
-			std_dev               REAL,
-			ulcer_score           REAL,
-			deepest_drawdown      REAL,
-			longest_drawdown      REAL,
-			startdate_sensitivity REAL,
-			pwr10                 REAL,
-			pwr10_stdev           REAL,
-			pwr10_slope           REAL,
-			pwr30_stdev           REAL,
-			pwr30_slope           REAL
-			);
-	`
-	_, err = db.Exec(sqlStmt)
-	if err != nil {
-		return err
-	}
-
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	stmt, err := tx.Prepare(`
-			INSERT INTO portfolios (
-				assets,
-				num_assets,
-				num_years,
-				avg_return,
-				baseline_lt_return,
-				baseline_st_return,
-				pwr30,
-				swr30,
-				std_dev,
-				ulcer_score,
-				deepest_drawdown,
-				longest_drawdown,
-				startdate_sensitivity,
-				pwr10,
-				pwr10_stdev,
-				pwr10_slope,
-				pwr30_stdev,
-				pwr30_slope
-			)
-			VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		`)
-	if err != nil {
-		return err
-	}
-	var totalRows int
-	for stat := range results {
-		returnsList := data.PortfolioReturnsList(stat.Assets...)
-		returns, err := pa.PortfolioReturns(returnsList, stat.Percentages)
-		if err != nil {
-			return err
-		}
-		minPWR10, _ := pa.MinPWR(returns, 10)
-		pwrs10 := pa.AllPWRs(returns, 10)
-		pwrs30 := pa.AllPWRs(returns, 30)
-		_, err = stmt.Exec(
-			"|"+strings.Join(stat.Assets, "|")+"|", // encode as string
-			len(stat.Assets), // NumAssets
-			len(returns),     // NumYears
-			stat.AvgReturn.Float(),
-			stat.BaselineLTReturn.Float(),
-			stat.BaselineSTReturn.Float(),
-			stat.PWR30.Float(),
-			stat.SWR30.Float(),
-			stat.StdDev.Float(),
-			stat.UlcerScore,
-			stat.DeepestDrawdown.Float(),
-			stat.LongestDrawdown,
-			stat.StartDateSensitivity.Float(),
-			minPWR10.Float(),
-			pa.StandardDeviation(pwrs10).Float(),
-			pa.Slope(pwrs10).Float(),
-			pa.StandardDeviation(pwrs30).Float(),
-			pa.Slope(pwrs30).Float(),
-		)
-		if err != nil {
-			return err
-		}
-		totalRows++
-	}
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-	if err := stmt.Close(); err != nil {
-		return err
-	}
-
-	fmt.Println("Wrote total rows:", totalRows)
-	return nil
-}
-
-func CountResults(resultsCh <-chan *pa.PortfolioStat) {
-	count := 0
-	for range resultsCh {
-		count++
-		// fmt.Println("Found:", result)
-	}
-	fmt.Println("\nOverall result count:", count)
-}
-
 func mustDelete(t *testing.T, names map[string]struct{}, name string) {
 	t.Helper()
 	g := NewGomegaWithT(t)
 	g.Expect(names).To(HaveKey(name))
 	delete(names, name)
+}
+
+func TestPortfolioCombinations_GoldenButterflyAndOtherAssets(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	// GoldenButterfly advertised on: https://portfoliocharts.com/portfolio/golden-butterfly/
+	// Pinwheel advertised on:        https://portfoliocharts.com/portfolio/pinwheel-portfolio/
+	startAt := time.Now()
+	// perms := Combinations([]string{"TSM", "SCV", "LTT", "STT", "GLD"}, ReadablePercents(seriesRange(5)...))
+	perms := pa.Combinations(
+		[]string{
+			// GoldenButterfly assets:
+			"TSM",
+			"SCV",
+			"LTT",
+			"STT",
+			"Gold",
+			// Other asset:
+			"REIT",
+		},
+		types.ReadablePercents(pa.SeriesRange(5)...),
+	)
+	// g.Expect(len(perms)).To(Equal(53_130))
+	Log(t, "Generated", len(perms), "combinations in", time.Since(startAt))
+
+	// filter to only include certain combinations
+	// (See: https://github.com/golang/go/wiki/SliceTricks#filtering-without-allocating)
+	{
+		startAt := time.Now()
+		filtered := perms[:0]
+		for _, p := range perms {
+			// limit how much certain assets can be in the portfolio
+			if p.Percentage("LTT") > 0.20 {
+				continue
+			}
+			if p.Percentage("REIT") > 0.25 {
+				continue
+			}
+			if p.Percentage("Gold") > 0.20 {
+				continue
+			}
+			// must have STT
+			if p.Percentage("STT") <= 0 {
+				continue
+			}
+			// Don't let SCV percentage exceed TSM
+			if p.Percentage("SCV") > p.Percentage("TSM") {
+				continue
+			}
+			filtered = append(filtered, p)
+		}
+		for i := len(filtered); i < len(perms); i++ {
+			perms[i] = pa.Combination{}
+		}
+		fmt.Printf("...culled down to %0.1f%% combinations in %s\n", float64(len(filtered))/float64(len(perms))*100, time.Since(startAt))
+		perms = filtered
+	}
+	// g.Expect(len(perms)).To(Equal(36_901))
+	startAt = time.Now()
+	Log(t, "...Evaluating", len(perms), "combinations.")
+
+	var (
+		results []*pa.PortfolioStat
+		ideal   *pa.PortfolioStat
+	)
+	for _, p := range perms {
+		returnsList := data.PortfolioReturnsList(p.Assets...)
+		returns, err := pa.PortfolioReturns(returnsList, p.Percentages)
+		g.Expect(err).To(Succeed())
+		var stat *pa.PortfolioStat
+		if ideal != nil {
+			stat = pa.EvaluatePortfolioIfAsGoodOrBetterThan(returns, p, ideal)
+		} else {
+			stat = pa.EvaluatePortfolio(returns, p)
+		}
+		if stat != nil {
+			results = append(results, stat)
+		}
+	}
+
+	elapsed := time.Since(startAt)
+	fmt.Println("Done evaluating portfolios in", elapsed, "or", int(float64(len(results))/elapsed.Seconds()), "portfolios/second")
+
+	// write to sqlite file
+	// spawn a goroutine to convert the slice to the channel
+	resultsCh := make(chan *pa.PortfolioStat)
+	wg := GoWriteSliceToChannel(results, resultsCh)
+	err := EncodeResultsToSQLite("output/portfolios_varying_percentages.sqlite", resultsCh)
+	g.Expect(err).To(Succeed())
+
+	Log(t, "Waiting for goroutine to finish")
+	wg.Wait()
+}
+
+func GoWriteSliceToChannel[T any](results []T, resultsCh chan T) *sync.WaitGroup {
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for _, result := range results {
+			resultsCh <- result
+		}
+		close(resultsCh)
+	}()
+	return wg
+}
+
+func Log(t *testing.T, content ...interface{}) {
+	t.Helper()
+	// fmt.Println(content...)
+	t.Log(content...)
+}
+
+func Logf(t *testing.T, format string, content ...interface{}) {
+	t.Helper()
+	// fmt.Printf(format, content...)
+	t.Logf(format, content...)
 }

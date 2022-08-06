@@ -59,16 +59,16 @@ func TestCombinations(t *testing.T) {
 		{[]string{"C"}, []Percent{1.00}},
 	}))
 
-	perms = Combinations([]string{"A", "B", "C"}, ReadablePercents(series(1, 100, 1)...))
+	perms = Combinations([]string{"A", "B", "C"}, ReadablePercents(Series(1, 100, 1)...))
 	g.Expect(len(perms)).To(Equal(5151))
 
-	perms = Combinations([]string{"A", "B", "C", "D"}, ReadablePercents(series(1, 100, 1)...))
+	perms = Combinations([]string{"A", "B", "C", "D"}, ReadablePercents(Series(1, 100, 1)...))
 	g.Expect(len(perms)).To(Equal(176_851))
 
 	// perms = Combinations([]string{"A", "B", "C", "D", "E"}, floats(1, 100, 1))
 	// g.Expect(len(perms)).To(Equal(4_598_126))
 
-	perms = Combinations([]string{"A", "B", "C", "D", "E"}, ReadablePercents(series(2.5, 100, 2.5)...))
+	perms = Combinations([]string{"A", "B", "C", "D", "E"}, ReadablePercents(Series(2.5, 100, 2.5)...))
 	g.Expect(len(perms)).To(Equal(135_751))
 
 	// perms = Combinations([]string{"A", "B", "C", "D", "E", "F"}, floats(2.5, 100, 2.5))
@@ -119,7 +119,7 @@ func TestPortfolioCombinations_GoldenButterflyAssets(t *testing.T) {
 	//   ...rank by all their ranks (equally weighted)
 	//   Ranked portfolios in 1m8.660651682s
 	startAt := time.Now()
-	perms := Combinations([]string{"TSM", "SCV", "LTT", "STT", "GLD"}, ReadablePercents(seriesRange(5)...))
+	perms := Combinations([]string{"TSM", "SCV", "LTT", "STT", "GLD"}, ReadablePercents(SeriesRange(5)...))
 	// g.Expect(len(perms)).To(Equal(10_626)) // only 3,876 include all five.
 	Log(t, "Generated", len(perms), "combinations in", time.Since(startAt))
 
@@ -178,11 +178,13 @@ func TestPortfolioCombinations_GoldenButterflyAssets(t *testing.T) {
 }
 
 func Log(t *testing.T, content ...interface{}) {
+	t.Helper()
 	// fmt.Println(content...)
 	t.Log(content...)
 }
 
 func Logf(t *testing.T, format string, content ...interface{}) {
+	t.Helper()
 	// fmt.Printf(format, content...)
 	t.Logf(format, content...)
 }
@@ -1017,28 +1019,16 @@ func approxEqual(x, y, tolerance float64) bool {
 func Test_seriesRange(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	g.Expect(seriesRange(25)).To(Equal([]float64{25, 50, 75, 100}))
-	g.Expect(seriesRange(10)).To(Equal([]float64{10, 20, 30, 40, 50, 60, 70, 80, 90, 100}))
-	g.Expect(seriesRange(33.333333333333333)).To(Equal([]float64{33.333333333333336, 66.66666666666667, 100}))
+	g.Expect(SeriesRange(25)).To(Equal([]float64{25, 50, 75, 100}))
+	g.Expect(SeriesRange(10)).To(Equal([]float64{10, 20, 30, 40, 50, 60, 70, 80, 90, 100}))
+	g.Expect(SeriesRange(33.333333333333333)).To(Equal([]float64{33.333333333333336, 66.66666666666667, 100}))
 }
 
 func Test_series(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	g.Expect(series(25, 100, 25)).To(Equal([]float64{25, 50, 75, 100}))
-	g.Expect(series(12.5, 100, 12.5)).To(Equal([]float64{12.5, 25, 37.5, 50, 62.5, 75, 87.5, 100}))
-}
-
-func seriesRange(step float64) []float64 {
-	return series(step, 100, step)
-}
-
-func series(start, end, step float64) []float64 {
-	var res []float64
-	for i := start; i <= end; i += step {
-		res = append(res, i)
-	}
-	return res
+	g.Expect(Series(25, 100, 25)).To(Equal([]float64{25, 50, 75, 100}))
+	g.Expect(Series(12.5, 100, 12.5)).To(Equal([]float64{12.5, 25, 37.5, 50, 62.5, 75, 87.5, 100}))
 }
 
 func min(a, b int) int {

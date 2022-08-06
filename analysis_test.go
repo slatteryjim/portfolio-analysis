@@ -445,7 +445,7 @@ func Test_average(t *testing.T) {
 	g.Expect(average(ReadablePercents(1))).To(Equal(Percent(0.01)))
 	g.Expect(average(ReadablePercents(1, 2))).To(Equal(Percent(0.015)))
 	g.Expect(average(ReadablePercents(1, 2, -3))).To(BeNumerically("~", 0))
-	g.Expect(average(ReadablePercents(series(0, 100, 1)...))).To(Equal(Percent(0.50)))
+	g.Expect(average(ReadablePercents(Series(0, 100, 1)...))).To(Equal(Percent(0.50)))
 }
 
 func Test_startDateSensitivity(t *testing.T) {
@@ -470,7 +470,7 @@ func Test_startDateSensitivity(t *testing.T) {
 	})
 
 	// long steadily increasing set of returns
-	returns := ReadablePercents(series(0, 100, 1)...)
+	returns := ReadablePercents(Series(0, 100, 1)...)
 	g.Expect(startDateSensitivity(returns)).To(Equal(Percent(0.10003452051664796)))
 }
 

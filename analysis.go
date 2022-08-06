@@ -12,12 +12,13 @@ import (
 // some data from Boglehead's "Simba Spreadsheet"
 // 1969 start date - returns (percentage as a float, 100.0 == 100%)
 var (
-	TSM = data.MustFind("TSM").AnnualReturnsStartingIn(1969)
-	SCV = data.MustFind("SCV").AnnualReturnsStartingIn(1969)
-	LTT = data.MustFind("LTT").AnnualReturnsStartingIn(1969)
-	STT = data.MustFind("STT").AnnualReturnsStartingIn(1969)
-	STB = data.MustFind("STB").AnnualReturnsStartingIn(1969)
-	GLD = data.MustFind("Gold").AnnualReturnsStartingIn(1969)
+	TSM  = data.MustFind("TSM").AnnualReturnsStartingIn(1969)
+	SCV  = data.MustFind("SCV").AnnualReturnsStartingIn(1969)
+	LTT  = data.MustFind("LTT").AnnualReturnsStartingIn(1969)
+	STT  = data.MustFind("STT").AnnualReturnsStartingIn(1969)
+	STB  = data.MustFind("STB").AnnualReturnsStartingIn(1969)
+	GLD  = data.MustFind("Gold").AnnualReturnsStartingIn(1969)
+	REIT = data.MustFind("REIT").AnnualReturnsStartingIn(1969)
 
 	GoldenButterfly, _ = PortfolioReturns([][]Percent{TSM, SCV, LTT, STT, GLD}, ReadablePercents(20, 20, 20, 20, 20))
 )
@@ -382,7 +383,7 @@ func zipWalk(streams [][]Percent, fn func([]Percent)) {
 	length := len(streams[0])
 	for i := range streams {
 		if len(streams[i]) != length {
-			panic(fmt.Sprintf("expected stream %d to have length %d", i+1, length))
+			panic(fmt.Sprintf("expected stream %d to have length %d but got %d", i+1, length, len(streams[i])))
 		}
 	}
 	var (
