@@ -110,7 +110,8 @@ func EncodeResultsToSQLite(sqliteFile string, results <-chan *pa.PortfolioStat) 
 			percent_ltt           REAL,
 			percent_stt           REAL,
 			percent_gold          REAL,
-			percent_reit          REAL
+			percent_reit          REAL,
+			percent_tips          REAL
 			);
 	`
 	_, err = db.Exec(sqlStmt)
@@ -149,9 +150,10 @@ func EncodeResultsToSQLite(sqliteFile string, results <-chan *pa.PortfolioStat) 
 				percent_ltt,
 				percent_stt,
 				percent_gold,
-				percent_reit
+				percent_reit,
+				percent_tips
 			)
-			VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`)
 	if err != nil {
 		return err
@@ -173,6 +175,7 @@ func EncodeResultsToSQLite(sqliteFile string, results <-chan *pa.PortfolioStat) 
 		percentSTT, _ := stat.Percentage("STT")
 		percentGold, _ := stat.Percentage("Gold")
 		percentREIT, _ := stat.Percentage("REIT")
+		percentTIPS, _ := stat.Percentage("TIPS")
 		_, err = stmt.Exec(
 			"|"+strings.Join(stat.Assets, "|")+"|",               // encode as string
 			"|"+strings.Join(Strings(stat.Percentages), "|")+"|", // encode as string
@@ -200,6 +203,7 @@ func EncodeResultsToSQLite(sqliteFile string, results <-chan *pa.PortfolioStat) 
 			percentSTT.Float(),
 			percentGold.Float(),
 			percentREIT.Float(),
+			percentTIPS.Float(),
 		)
 		if err != nil {
 			return err

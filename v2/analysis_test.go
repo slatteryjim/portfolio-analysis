@@ -388,6 +388,7 @@ func TestPortfolioCombinations_GoldenButterflyAndOtherAssets(t *testing.T) {
 			"Gold",
 			// Other asset:
 			"REIT",
+			"TIPS",
 		},
 		types.ReadablePercents(pa.SeriesRange(5)...),
 	)
@@ -401,17 +402,13 @@ func TestPortfolioCombinations_GoldenButterflyAndOtherAssets(t *testing.T) {
 		filtered := perms[:0]
 		for _, p := range perms {
 			// limit how much certain assets can be in the portfolio
-			if p.Percentage("LTT") > 0.20 {
+			if p.Percentage("LTT") > 0.21 {
 				continue
 			}
-			if p.Percentage("REIT") > 0.25 {
+			if p.Percentage("REIT") > 0.26 {
 				continue
 			}
-			if p.Percentage("Gold") > 0.20 {
-				continue
-			}
-			// must have STT
-			if p.Percentage("STT") <= 0 {
+			if p.Percentage("Gold") > 0.26 {
 				continue
 			}
 			// Don't let SCV percentage exceed TSM
