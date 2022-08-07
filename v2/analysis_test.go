@@ -371,6 +371,53 @@ func mustDelete(t *testing.T, names map[string]struct{}, name string) {
 	delete(names, name)
 }
 
+func TestCashOptionsSTTvsTIPS(t *testing.T) {
+	g := NewGomegaWithT(t)
+	// Try out Golden butterfly portfolio STT or TIPS
+	// Use the same assets list for each, so the same set of years are covered.
+	// Otherwise, STT has 53 years of data, while TIPS only has 37.
+	assets := []string{"LTT", "Gold", "SCV", "TSM", "STT", "TIPS"}
+	var (
+		gbSTT = pa.Combination{Assets: assets,
+			Percentages: types.ReadablePercents(20, 20, 20, 20, 20, 0),
+		}
+		gbTIPS = pa.Combination{Assets: assets,
+			Percentages: types.ReadablePercents(20, 20, 20, 20, 0, 20),
+		}
+		gbTipsSTT = pa.Combination{Assets: assets,
+			Percentages: types.ReadablePercents(20, 20, 20, 20, 10, 10),
+		}
+	)
+	gbSttStat, err := mustEvaluatePortfolio(gbSTT)
+	g.Expect(err).To(Succeed())
+	gbTipsStat, err := mustEvaluatePortfolio(gbTIPS)
+	g.Expect(err).To(Succeed())
+	gbTipsSttStat, err := mustEvaluatePortfolio(gbTipsSTT)
+	g.Expect(err).To(Succeed())
+
+	Log(t, "STT:     ", gbSttStat)
+	Log(t, "TIPS:    ", gbTipsStat)
+	Log(t, "TIPS+STT:", gbTipsSttStat)
+
+	// STT:      [LTT Gold SCV TSM STT TIPS] [20% 20% 20% 20% 20% 0%]  (0) RF:0.00 AvgReturn:6.306%(0) BLT:5.080%(0) BST:2.907%(0) PWR:4.911%(0) SWR:6.184%(0) StdDev:6.899%(0) Ulcer:0.9(0) DeepestDrawdown:-8.57%(0) LongestDrawdown:1(0), StartDateSensitivity:4.52%(0)
+	// TIPS:     [LTT Gold SCV TSM STT TIPS] [20% 20% 20% 20% 0% 20%]  (0) RF:0.00 AvgReturn:6.819%(0) BLT:5.391%(0) BST:3.086%(0) PWR:5.137%(0) SWR:6.320%(0) StdDev:7.600%(0) Ulcer:0.9(0) DeepestDrawdown:-8.84%(0) LongestDrawdown:1(0), StartDateSensitivity:4.77%(0)
+	// TIPS+STT: [LTT Gold SCV TSM STT TIPS] [20% 20% 20% 20% 10% 10%] (0) RF:0.00 AvgReturn:6.563%(0) BLT:5.230%(0) BST:2.971%(0) PWR:5.027%(0) SWR:6.253%(0) StdDev:7.237%(0) Ulcer:0.9(0) DeepestDrawdown:-8.71%(0) LongestDrawdown:1(0), StartDateSensitivity:4.64%(0)
+
+	// So the difference isn't as dramatic, but still seems like a worthwhile switch.
+	// The combination of 50% TIPS + 50% STT is nothing special, the results are just an average of the two.
+}
+
+func mustEvaluatePortfolio(combo pa.Combination) (*pa.PortfolioStat, error) {
+	returns, err := pa.PortfolioReturns(
+		data.PortfolioReturnsList(combo.Assets...),
+		combo.Percentages,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return pa.EvaluatePortfolio(returns, combo), nil
+}
+
 func TestPortfolioCombinations_GoldenButterflyAndOtherAssets(t *testing.T) {
 	g := NewGomegaWithT(t)
 
