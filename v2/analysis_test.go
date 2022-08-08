@@ -420,6 +420,8 @@ func mustEvaluatePortfolio(combo pa.Combination) (*pa.PortfolioStat, error) {
 }
 
 func TestPortfolioCombinations_GoldenButterflyAndOtherAssets(t *testing.T) {
+	t.Skip("Run manually; generates a SQLite file for local analysis.")
+
 	g := NewGomegaWithT(t)
 
 	// GoldenButterfly advertised on: https://portfoliocharts.com/portfolio/golden-butterfly/
