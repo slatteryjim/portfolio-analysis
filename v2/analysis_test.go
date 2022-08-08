@@ -2,6 +2,7 @@ package v2
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"sync"
 	"testing"
@@ -431,13 +432,13 @@ func TestPortfolioCombinations_GoldenButterflyAndOtherAssets(t *testing.T) {
 			"TSM",
 			"SCV",
 			"LTT",
-			"STT",
+			// "STT",
 			"Gold",
 			// Other asset:
 			"REIT",
-			"TIPS",
+			// "TIPS",
 		},
-		types.ReadablePercents(pa.SeriesRange(5)...),
+		types.ReadablePercents(pa.SeriesRange(1)...),
 	)
 	// g.Expect(len(perms)).To(Equal(53_130))
 	Log(t, "Generated", len(perms), "combinations in", time.Since(startAt))
@@ -449,17 +450,21 @@ func TestPortfolioCombinations_GoldenButterflyAndOtherAssets(t *testing.T) {
 		filtered := perms[:0]
 		for _, p := range perms {
 			// limit how much certain assets can be in the portfolio
-			if p.Percentage("LTT") > 0.21 {
+			if math.Abs(p.Percentage("LTT").Float()-0.10) > 0.0001 {
 				continue
 			}
-			if p.Percentage("REIT") > 0.26 {
+			if p.Percentage("REIT") < 0.15 ||
+				p.Percentage("REIT") > 0.30 {
 				continue
 			}
-			if p.Percentage("Gold") > 0.26 {
+			if p.Percentage("Gold") < 0.10 ||
+				p.Percentage("Gold") > 0.30 {
 				continue
 			}
-			// Don't let SCV percentage exceed TSM
-			if p.Percentage("SCV") > p.Percentage("TSM") {
+			if p.Percentage("TSM") > 0.30 {
+				continue
+			}
+			if p.Percentage("SCV") > 0.30 {
 				continue
 			}
 			filtered = append(filtered, p)

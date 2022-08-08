@@ -81,10 +81,12 @@ func EncodeResultsToSQLite(sqliteFile string, results <-chan *pa.PortfolioStat) 
 	}
 	defer db.Close()
 
+	const tableName = "portfolios_1pct_10ltt"
+
 	// create table
 	sqlStmt := `
-		DROP TABLE IF EXISTS portfolios;
-		CREATE TABLE IF NOT EXISTS portfolios (
+		DROP TABLE IF EXISTS '` + tableName + `';
+		CREATE TABLE IF NOT EXISTS '` + tableName + `' (
 			assets                TEXT NOT NULL,
 			percentages           TEXT NOT NULL,
 			num_assets            INTEGER,
@@ -124,7 +126,7 @@ func EncodeResultsToSQLite(sqliteFile string, results <-chan *pa.PortfolioStat) 
 		return err
 	}
 	stmt, err := tx.Prepare(`
-			INSERT INTO portfolios (
+			INSERT INTO '` + tableName + `' (
 				assets,
 				percentages,                    
 				num_assets,
