@@ -44,7 +44,8 @@ Here are the results of evaluating that portfolio:
 | Start Date Sensitivity     |   7.71% |      6.7% | 
 
 It was a little disappointing to see the diminished performance of the real portfolio compared to
-what was advertised on portfolio charts.
+what was advertised on PortfolioCharts.com.
+(UPDATE 2022-08: it turns out the difference is mainly because I was testing with 50 years of data, instead of closer to 40).
 Notably:
 - The Perpetual Withdrawal Rate was a full percentage point lower: 4.2% rather than 5.3%!
 - The Deepest Drawdown was also a little scarier: -15% rather than -11%.
@@ -81,3 +82,8 @@ Now:
 (they were all simply equally-weighted, 1/N portfolios).
 
 To be determined...
+
+## Followup
+See: [2022-08 New Portfolio](notes/2022-08_new_portfolio.md)
+
+
