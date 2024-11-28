@@ -1,11 +1,35 @@
 ### New Portfolio - 2022 August
 
-Playing around with portfolio allocations, I found a new one that I liked:
+Playing around with portfolio allocations (see the [2022-08 notebooks here](../v2/)), I [found a new one](../v2/2022-08-07_refine_GB+REIT_allocations.ipynb) that I liked:
 - 22% TSM (Total Stock Market)
 - 23% SCV (Small-cap Value)
 - 10% LTT (Long-term Treasuries)
 - 25% REIT (Real Estate Investment Trust)
 - 20% GLD (Gold)
+
+Here were the stats from [that run](../v2/2022-08-07_refine_GB+REIT_allocations.ipynb):
+
+| assets                 | \|TSM\|SCV\|LTT\|Gold\|REIT\| |
+| ---------------------- | ----------------------------- |
+| percentages            | \|22%\|23%\|10%\|20%\|25%\|   |
+| num\_assets            | 5                             |
+| num\_years             | 50                            |
+| avg\_return            | 0.081298                      |
+| baseline\_lt\_return   | 0.064707                      |
+| baseline\_st\_return   | 0.036117                      |
+| pwr30                  | 0.057678                      |
+| swr30                  | 0.066947                      |
+| std\_dev               | 0.111316                      |
+| ulcer\_score           | 3.434891                      |
+| deepest\_drawdown      | -0.224129                     |
+| longest\_drawdown      | 3                             |
+| startdate\_sensitivity | 0.089617                      |
+| pwr5                   | 0.012002                      |
+| pwr10                  | 0.040567                      |
+| pwr10\_stdev           | 0.013823                      |
+| pwr10\_slope           | -0.022336                     |
+| pwr30\_stdev           | 0.009041                      |
+| pwr30\_slope           | -0.040522                     |
 
 You can plug those numbers into the [PortfolioCharts.com](https://portfoliocharts.com/) tools:
 - the [My Portfolio](https://portfoliocharts.com/portfolio/my-portfolio/) tool to see its stats 
@@ -18,7 +42,7 @@ to compare it against other portfolios
 Here are some highlights vs. Golden Butterfly:
 
 | Metrics                                             | New Portfolio | Golden Butterfly |
-|-----------------------------------------------------|--------------:|-----------------:|
+| --------------------------------------------------- | ------------: | ---------------: |
 | Minimum 30-year PWR<br/>(Perpetual Withdrawal Rate) |          5.9% |             5.1% |
 | Baseline Long-Term Return                           |          6.8% |             5.6% |
 | Average Return                                      |          8.2% |             6.3% |
