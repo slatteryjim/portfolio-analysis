@@ -7,29 +7,32 @@ Playing around with portfolio allocations (see the [2022-08 notebooks here](../v
 - 25% REIT (Real Estate Investment Trust)
 - 20% GLD (Gold)
 
-Here were the stats from [that run](../v2/2022-08-07_refine_GB+REIT_allocations.ipynb):
+Here are the updated stats using Simba spreadsheet Rev25c's revised historical data through 2021.
+The 2022-2025 returns are intentionally deferred to a second update so their effects can be
+evaluated separately. The original search is in
+[this notebook](../v2/2022-08-07_refine_GB+REIT_allocations.ipynb).
 
 | assets                 | \|TSM\|SCV\|LTT\|Gold\|REIT\| |
 | ---------------------- | ----------------------------- |
 | percentages            | \|22%\|23%\|10%\|20%\|25%\|   |
 | num\_assets            | 5                             |
 | num\_years             | 50                            |
-| avg\_return            | 0.081298                      |
-| baseline\_lt\_return   | 0.064707                      |
-| baseline\_st\_return   | 0.036117                      |
-| pwr30                  | 0.057678                      |
-| swr30                  | 0.066947                      |
-| std\_dev               | 0.111316                      |
-| ulcer\_score           | 3.434891                      |
-| deepest\_drawdown      | -0.224129                     |
+| avg\_return            | 0.079700                      |
+| baseline\_lt\_return   | 0.064408                      |
+| baseline\_st\_return   | 0.034495                      |
+| pwr30                  | 0.056556                      |
+| swr30                  | 0.065918                      |
+| std\_dev               | 0.111111                      |
+| ulcer\_score           | 3.568121                      |
+| deepest\_drawdown      | -0.224203                     |
 | longest\_drawdown      | 3                             |
-| startdate\_sensitivity | 0.089617                      |
-| pwr5                   | 0.012002                      |
-| pwr10                  | 0.040567                      |
-| pwr10\_stdev           | 0.013823                      |
-| pwr10\_slope           | -0.022336                     |
-| pwr30\_stdev           | 0.009041                      |
-| pwr30\_slope           | -0.040522                     |
+| startdate\_sensitivity | 0.089471                      |
+| pwr5                   | 0.011488                      |
+| pwr10                  | 0.040242                      |
+| pwr10\_stdev           | 0.013502                      |
+| pwr10\_slope           | -0.012626                     |
+| pwr30\_stdev           | 0.008663                      |
+| pwr30\_slope           | -0.029283                     |
 
 You can plug those numbers into the [PortfolioCharts.com](https://portfoliocharts.com/) tools:
 - the [My Portfolio](https://portfoliocharts.com/portfolio/my-portfolio/) tool to see its stats 
@@ -43,10 +46,10 @@ Here are some highlights vs. Golden Butterfly:
 
 | Metrics                                             | New Portfolio | Golden Butterfly |
 | --------------------------------------------------- | ------------: | ---------------: |
-| Minimum 30-year PWR<br/>(Perpetual Withdrawal Rate) |          5.9% |             5.1% |
-| Baseline Long-Term Return                           |          6.8% |             5.6% |
-| Average Return                                      |          8.2% |             6.3% |
-| Ulcer index                                         |           5.2 |              2.5 |
+| Minimum 30-year PWR<br/>(Perpetual Withdrawal Rate) |          5.7% |             4.2% |
+| Baseline Long-Term Return                           |          6.4% |             4.8% |
+| Average Return                                      |          8.0% |             5.7% |
+| Ulcer index                                         |           3.6 |              3.4 |
 
 I wanted to explore alternatives to the Golden Butterfly portfolio with reduced exposure to Long-Term Treasuries
 (see Ray Dalio's article: [Why in the World Would You Own Bonds When...](https://www.linkedin.com/pulse/why-world-would-you-own-bonds-when-ray-dalio/)).
@@ -54,7 +57,7 @@ I wanted to explore alternatives to the Golden Butterfly portfolio with reduced 
 I found REIT turned out to be a strong asset to include.
 
 And surprisingly, this new portfolio entirely dropped the "cash" asset, STT (Short-term Treasuries),
-yet its 10-year minimum PWR was 4%, as high as Golden Butterfly!
+yet its 10-year minimum PWR remains 4%, versus 2.1% for Golden Butterfly in the latest data.
 
 Here are a few screenshots showing the new portfolio's performance:
 

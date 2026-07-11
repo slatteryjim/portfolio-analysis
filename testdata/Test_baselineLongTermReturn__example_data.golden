@@ -1,8 +1,8 @@
-TSM: baselineLongTermReturn:  3.060813637927%
-SCV: baselineLongTermReturn:  5.925736306162%
-GLD: baselineLongTermReturn: -5.204257311616%
-LTT: baselineLongTermReturn:  2.216591965054%
-STT: baselineLongTermReturn:  0.285220384969%
-STB: baselineLongTermReturn:  0.995378252249%
+TSM: baselineLongTermReturn:  3.060814522979%
+SCV: baselineLongTermReturn:  5.925737060939%
+GLD: baselineLongTermReturn: -5.457622484892%
+LTT: baselineLongTermReturn:  1.974064354659%
+STT: baselineLongTermReturn:   0.27253099602%
+STB: baselineLongTermReturn:  0.995378991257%
 
-GoldenButterfly: baselineLongTermReturn:  5.240937633854%
+GoldenButterfly: baselineLongTermReturn:  4.993074915637%

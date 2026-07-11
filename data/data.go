@@ -64,7 +64,7 @@ var _seriesByName map[string]Series
 
 func init() {
 	var err error
-	_seriesByName, err = parseSimbaTSV(simbaBacktestingSpreadsheetRev21bTSV)
+	_seriesByName, err = parseSimbaTSV(simbaBacktestingSpreadsheetRev25cTSV)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -126,7 +126,7 @@ func parseSimbaTSV(tsv string) (map[string]Series, error) {
 	var series []Series
 	for i, row := range rows[1:] {
 		// we'll skip most of the content after blank rows
-		if i >= 53 {
+		if i >= 55 {
 			if i < 70 {
 				if row[0] != "" || row[1] != "" {
 					return nil, fmt.Errorf("expected empty row #%d: %v", i+1, row)
@@ -180,7 +180,7 @@ func parseSimbaTSV(tsv string) (map[string]Series, error) {
 		if lastYear != expectedLastYear {
 			return nil, fmt.Errorf("row #%d: all rows should have data up to the same year", i+1)
 		}
-		if len(annualReturns) < 35 {
+		if len(annualReturns) < 30 {
 			return nil, fmt.Errorf("row #%d: expected asset to have a minimum number of years", i+1)
 		}
 		series = append(series, Series{
