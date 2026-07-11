@@ -7,32 +7,49 @@ Playing around with portfolio allocations (see the [2022-08 notebooks here](../v
 - 25% REIT (Real Estate Investment Trust)
 - 20% GLD (Gold)
 
-Here are the updated stats using Simba spreadsheet Rev25c's revised historical data through 2021.
-The 2022-2025 returns are intentionally deferred to a second update so their effects can be
-evaluated separately. The original search is in
-[this notebook](../v2/2022-08-07_refine_GB+REIT_allocations.ipynb).
+Here are the updated stats using Simba spreadsheet Rev25c data through 2025
+(the original search is in [this notebook](../v2/2022-08-07_refine_GB+REIT_allocations.ipynb)):
 
 | assets                 | \|TSM\|SCV\|LTT\|Gold\|REIT\| |
 | ---------------------- | ----------------------------- |
 | percentages            | \|22%\|23%\|10%\|20%\|25%\|   |
 | num\_assets            | 5                             |
-| num\_years             | 50                            |
-| avg\_return            | 0.079700                      |
+| num\_years             | 54                            |
+| avg\_return            | 0.077170                      |
 | baseline\_lt\_return   | 0.064408                      |
-| baseline\_st\_return   | 0.034495                      |
+| baseline\_st\_return   | -0.001783                     |
 | pwr30                  | 0.056556                      |
 | swr30                  | 0.065918                      |
-| std\_dev               | 0.111111                      |
+| std\_dev               | 0.114828                      |
 | ulcer\_score           | 3.568121                      |
 | deepest\_drawdown      | -0.224203                     |
 | longest\_drawdown      | 3                             |
-| startdate\_sensitivity | 0.089471                      |
+| startdate\_sensitivity | 0.090436                      |
 | pwr5                   | 0.011488                      |
 | pwr10                  | 0.040242                      |
-| pwr10\_stdev           | 0.013502                      |
-| pwr10\_slope           | -0.012626                     |
-| pwr30\_stdev           | 0.008663                      |
-| pwr30\_slope           | -0.029283                     |
+| pwr10\_stdev           | 0.013915                      |
+| pwr10\_slope           | -0.027865                     |
+| pwr30\_stdev           | 0.008044                      |
+| pwr30\_slope           | -0.021094                     |
+
+Adding 2022-2025 to the revised Rev25c history had the following isolated effects:
+
+| Metric                     | Through 2021 | Through 2025 | Change        |
+| -------------------------- | -----------: | -----------: | ------------: |
+| Average Return             |        7.97% |        7.72% | -0.25 points  |
+| Baseline Long-Term Return  |        6.44% |        6.44% | no change     |
+| Baseline Short-Term Return |        3.45% |       -0.18% | -3.63 points  |
+| Minimum 30-year PWR        |        5.66% |        5.66% | no change     |
+| Minimum 30-year SWR        |        6.59% |        6.59% | no change     |
+| Standard Deviation         |       11.11% |       11.48% | +0.37 points  |
+| Ulcer Index                |         3.57 |         3.57 | no change     |
+| Deepest Drawdown           |      -22.42% |      -22.42% | no change     |
+| Start Date Sensitivity     |        8.95% |        9.04% | +0.09 points  |
+
+The long-horizon minimum withdrawal rates and worst drawdown did not change because their
+limiting historical periods occurred before 2022. The largest impact is on the short-term
+baseline: the simultaneous real losses in stocks, long-term Treasuries, REITs, and gold during
+2022 substantially weakened the latest short rolling window, despite the recovery in 2023-2025.
 
 You can plug those numbers into the [PortfolioCharts.com](https://portfoliocharts.com/) tools:
 - the [My Portfolio](https://portfoliocharts.com/portfolio/my-portfolio/) tool to see its stats 
@@ -48,7 +65,7 @@ Here are some highlights vs. Golden Butterfly:
 | --------------------------------------------------- | ------------: | ---------------: |
 | Minimum 30-year PWR<br/>(Perpetual Withdrawal Rate) |          5.7% |             4.2% |
 | Baseline Long-Term Return                           |          6.4% |             4.8% |
-| Average Return                                      |          8.0% |             5.7% |
+| Average Return                                      |          7.7% |             5.6% |
 | Ulcer index                                         |           3.6 |              3.4 |
 
 I wanted to explore alternatives to the Golden Butterfly portfolio with reduced exposure to Long-Term Treasuries

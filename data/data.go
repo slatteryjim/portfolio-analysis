@@ -74,7 +74,7 @@ func init() {
 // and returns a map of the series identified by name.
 func parseSimbaTSV(tsv string) (map[string]Series, error) {
 	const (
-		expectedLastYear = 2021
+		expectedLastYear = 2025
 	)
 	normalizeNames := map[string]string{
 		"TSM (US)": "TSM",
@@ -87,7 +87,7 @@ func parseSimbaTSV(tsv string) (map[string]Series, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(records) != 153 {
+	if len(records) != 157 {
 		return nil, fmt.Errorf("unexpected records length: %d", len(records))
 	}
 
@@ -180,7 +180,7 @@ func parseSimbaTSV(tsv string) (map[string]Series, error) {
 		if lastYear != expectedLastYear {
 			return nil, fmt.Errorf("row #%d: all rows should have data up to the same year", i+1)
 		}
-		if len(annualReturns) < 30 {
+		if len(annualReturns) < 35 {
 			return nil, fmt.Errorf("row #%d: expected asset to have a minimum number of years", i+1)
 		}
 		series = append(series, Series{

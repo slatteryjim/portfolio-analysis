@@ -26,31 +26,30 @@ I want to see how portfolios will perform using real ETFs that I have access to.
 I found a wonderful resource, [Simba's backtesting spreadsheet](https://www.bogleheads.org/wiki/Simba%27s_backtesting_spreadsheet), 
 containing inflation-adjusted return data for many Vanguard funds.
 
-I loaded the historical data for the five Golden Butterfly assets from 1969 through 2021,
-using the revised historical series from Simba spreadsheet Rev25c. The 2022-2025 returns
-are intentionally deferred to a separate update so their effects can be evaluated independently.
+I loaded the historical data for the five Golden Butterfly assets from 1969 through 2025,
+using Simba spreadsheet Rev25c.
 
 Here are the results of evaluating that portfolio:
 
 | Metrics  | Golden Butterfly using Vanguard Funds | Golden Butterfly as Advertised on PortfolioCharts.com  |
 |---|---:|---:|
-| Average Return             |  5.653% |      6.4% |
-| Baseline Return (15years)  |  4.993% |      5.5% |
-| Baseline Return (3years)   |  2.829% |      2.8% |
+| Average Return             |  5.557% |      6.4% |
+| Baseline Return (15years)  |  4.830% |      5.5% |
+| Baseline Return (3years)   |  2.073% |      2.8% |
 | Perpetual Withdrawal Rate  |  4.199% |      5.3% |
 | Safe Withdrawal Rate       |  5.317% |      6.4% |
-| Standard Deviation         |  8.019% |      7.9% |
+| Standard Deviation         |  8.496% |      7.9% |
 | Ulcer Index                |     3.4 |       2.7 |    
-| Deepest Drawdown           | -15.42% |      -11% |
+| Deepest Drawdown           | -17.87% |      -11% |
 | Longest Drawdown           | 3 years | 2.8 years |    
-| Start Date Sensitivity     |   7.17% |      6.7% |
+| Start Date Sensitivity     |   9.07% |      6.7% |
 
 It was a little disappointing to see the diminished performance of the real portfolio compared to
 what was advertised on PortfolioCharts.com.
 (UPDATE 2022-08: it turns out the difference is mainly because I was testing with 50 years of data, instead of closer to 40).
 Notably:
 - The Perpetual Withdrawal Rate was a full percentage point lower: 4.2% rather than 5.3%!
-- The Deepest Drawdown was also scarier: about -15% rather than -11%.
+- The Deepest Drawdown was also scarier: about -18% rather than -11%.
 
 Still, the portfolio still seems solid, and likely one of the best.
 
